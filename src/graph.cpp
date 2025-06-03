@@ -281,7 +281,7 @@ public:
     for(auto &op: nodes){
       sparsity += op->get_sparsity_ratio();
     }
-    return (float)(sparsity/nodes.size()) + output->get_sparsity_ratio() + 1;
+    return (float)(sparsity/nodes.size());
 
   }
 
@@ -319,10 +319,10 @@ public:
 };
 
 int main() {
-  auto X = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "X");
-  auto W1 = std::make_shared<Tensor>(4, 4, 0.5, 0.5, "W1");
+  auto X = std::make_shared<Tensor>(4, 4, 0.5, 0.0, "X");
+  auto W1 = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "W1");
   auto O1 = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "O1");
-  auto W2 = std::make_shared<Tensor>(4, 4, 0.5, 0.5, "W2");
+  auto W2 = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "W2");
   auto O2 = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "O2");
   auto Y = std::make_shared<Tensor>(4, 4, 0.0, 0.0, "Y");
 
