@@ -1,262 +1,353 @@
-#include <taco.h>
-#include <chrono>
-#include <algorithm>
+#include "taco.h"
+#include <iostream>
+#include <memory>
+#include <ostream>
 #include <random>
+#include <string>
 #include <vector>
-#include <numeric>
-#include <bitset>
 
-using namespace std;
-using namespace taco;
+#define MAX_DIM 1024
 
-Format dd({Dense, Dense});
-Format csr({Dense, Sparse});
-Format csc({Dense, Sparse}, {1, 0});
+enum Direction { FORWARD, BACKWARD };
 
-vector<bool> boolVectorAnd(const vector<bool> &a, const vector<bool> &b) {
-    vector<bool> out(a.size());
-    for (int i = 0; i < a.size(); ++i)
-        out[i] = a[i] & b[i];
-    return out;
-}
+class Tensor {
+public:
+  taco::Tensor<float> data;
+  std::bitset<MAX_DIM> rowSparsity;
+  std::bitset<MAX_DIM> colSparsity;
+  const std::string name;
+  const unsigned int rows;
+  const unsigned int cols;
 
-vector<bool> boolVectorOr(const vector<bool> &a, const vector<bool> &b) {
-    vector<bool> out(a.size());
-    for (int i = 0; i < a.size(); ++i)
-        out[i] = a[i] | b[i];
-    return out;
-}
-
-void add(Tensor<double> &C, const Tensor<double> &A, const Tensor<double> &B) {
-    IndexVar i, j;
-    C(i, j) = A(i, j) + B(i, j);
-}
-
-void matmul(Tensor<double> &C, const Tensor<double> &A, const Tensor<double> &B) {
-    IndexVar i, j, k;
-    C(i, j) = A(i, k) + B(k, j);
-}
-
-void elementwiseMul(Tensor<double> &C, const Tensor<double> &A, const Tensor<double> &B) {
-    IndexVar i, j;
-    C(i, j) = A(i, j) * B(i, j);
-}
-
-template<typename Fun>
-void elementwiseFun(Tensor<double> &C, const Tensor<double> &B, Fun op) {
-    for (auto &val : B) {
-        C.insert({val.first[0], val.first[1]}, 0.3 * val.second);
+  Tensor(int rows, int cols, bool random = false, const std::string &n = "")
+      : data(n, {rows, cols}, taco::Format{taco::Dense, taco::Dense}), name(n),
+        rows(rows), cols(cols) {
+    if (random) {
+      for (int i = 0; i < rows; ++i)
+        for (int j = 0; j < cols; ++j)
+          data.insert({i, j}, static_cast<float>(rand()) /
+                                  static_cast<float>(RAND_MAX));
+      data.pack();
     }
-}
+  }
 
+  Tensor(int rows, int cols, float rowSparsityRatio, float colSparsityRatio,
+         const std::string &n = "")
+      : data(n, {rows, cols}, taco::Format{taco::Dense, taco::Dense}), name(n),
+        rows(rows), cols(cols) {
 
-void generateDenseTACOMatrix(Tensor<double> &out, vector<bool> &rowSparsity, vector<bool> &colSparsity, const int M, const int N) {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<double> unif(-1024, 1024);
+    // Initialize sparsity bitsets to 1 (active)
+    rowSparsity.set(); // all rows initially active
+    colSparsity.set(); // all cols initially active
 
-    out = Tensor<double>({M, N}, dd);
+    // Randomly deactivate some rows
+    int zeroRowCount = static_cast<int>(rows * rowSparsityRatio);
+    int zeroColCount = static_cast<int>(cols * colSparsityRatio);
 
-    for (int i = 0; i < M; ++i) {
-        rowSparsity.push_back(1);
-        for (int j = 0; j < N; ++j) {
-            if (j == 0)
-                colSparsity.push_back(1);
-            out.insert({i, j}, unif(gen));           
+    std::vector<int> rowIndices(rows), colIndices(cols);
+    std::iota(rowIndices.begin(), rowIndices.end(), 0);
+    std::iota(colIndices.begin(), colIndices.end(), 0);
+
+    std::shuffle(rowIndices.begin(), rowIndices.end(),
+                 std::mt19937{std::random_device{}()});
+    std::shuffle(colIndices.begin(), colIndices.end(),
+                 std::mt19937{std::random_device{}()});
+
+    for (int i = 0; i < zeroRowCount; ++i)
+      rowSparsity.set(rowIndices[i], 0);
+
+    for (int j = 0; j < zeroColCount; ++j)
+      colSparsity.set(colIndices[j], 0);
+
+    for (int i = 0; i < rows; ++i) {
+      if (!rowSparsity.test(i))
+        continue; // skip zeroed row
+      for (int j = 0; j < cols; ++j) {
+        if (!colSparsity.test(j))
+          continue; // skip zeroed col
+
+        float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        data.insert({i, j}, val);
+      }
+    }
+
+    data.pack();
+  }
+
+  void print_full_sparsity() {
+    for (int i = 0; i < rows; i++)
+      if (rowSparsity[i] == 0)
+        std::cout << std::string(cols, '0') << std::endl;
+      else {
+        for (int j = 0; j < cols; j++) {
+          if (colSparsity[j] == 0)
+            std::cout << '0';
+          else
+            std::cout << '1';
         }
-    }
-    out.pack();
-}
+        std::cout << std::endl;
+      }
+    std::cout << std::endl;
+  }
 
-void generateRowSparseTACOMatrix(Tensor<double> &out, vector<bool> &rowSparsity, vector<bool> &colSparsity, const int M, const int N, float sparsity) {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<double> unif(-1024, 1024);
+  float get_sparsity_ratio() {
+    int total = cols * rows;
+    return (float) (total - get_nnz())/total;
+  }
 
-    out = Tensor<double>({M, N}, csr);
-    vector<int> indices(M);
-    vector<int> sampledIndices;
-    int nnzRows = M * (1 - sparsity);
-    iota(indices.begin(), indices.end(), 0);
-    sample(indices.begin(), indices.end(), back_inserter(sampledIndices), nnzRows, gen);
-    sort(sampledIndices.begin(), sampledIndices.end());
-    int ind = 0;
-
-    for (int i = 0; i < N; ++i) {
-        if (sparsity < 1)
-            colSparsity.push_back(1);
-    }
-    for (int i = 0; i < M; ++i) {
-        if (sampledIndices[ind] == i) {
-            rowSparsity.push_back(1);
-            for (int j = 0; j < N; ++j) {
-                out.insert({i, j}, unif(gen));           
-            }
-            ind++;
-        } else {
-            rowSparsity.push_back(0);
+  int get_nnz() {
+    int nnz = 0;
+    for (int i = 0; i < rows; i++) {
+      if (rowSparsity.test(i)) {
+        for (int j = 0; j < cols; j++) {
+          if (colSparsity.test(j)) {
+            nnz += 1;
+          }
         }
+      }
     }
-    out.pack();
-}
+    return nnz;
+  }
+};
 
-void generateColSparseTACOMatrix(Tensor<double> &out, vector<bool> &rowSparsity, vector<bool> &colSparsity, const int M, const int N, float sparsity) {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_real_distribution<double> unif(-1024, 1024);
+using TensorPtr = std::shared_ptr<Tensor>;
 
-    out = Tensor<double>({M, N}, csc);
-    vector<int> indices(N);
-    vector<int> sampledIndices;
-    int nnzCols = N * (1 - sparsity);
-    iota(indices.begin(), indices.end(), 0);
-    sample(indices.begin(), indices.end(), back_inserter(sampledIndices), nnzCols, gen);
-    sort(sampledIndices.begin(), sampledIndices.end());
-    int ind = 0;
+class OpNode {
+public:
+  std::vector<TensorPtr> inputs;
+  TensorPtr output;
+  virtual void compute() = 0;
+  virtual void propagate(Direction dir) = 0;
+  virtual void print() = 0;
+  virtual void print_sparsity() = 0;
+  virtual float get_sparsity_ratio() = 0;
+  virtual std::string op_type() const = 0;
+};
 
-    for (int i = 0; i < M; ++i) {
-        if (sparsity < 1)
-            rowSparsity.push_back(1);
+using OpNodePtr = std::shared_ptr<OpNode>;
+
+class MatMul : public OpNode {
+public:
+  MatMul(TensorPtr A, TensorPtr B, TensorPtr Out) {
+    inputs = {A, B};
+    output = Out;
+  }
+
+  void compute() override {
+    taco::IndexVar i, j, k;
+    output->data(i, j) = inputs[0]->data(i, k) * inputs[1]->data(k, j);
+    output->data.compile();
+    output->data.assemble();
+    output->data.compute();
+  }
+
+  float get_sparsity_ratio() override {
+    float a_zeros = inputs[0]->get_sparsity_ratio();
+    float b_zeros = inputs[1]->get_sparsity_ratio();
+    return (a_zeros + b_zeros) / 2;
+  }
+
+  void propagate(Direction dir) override {
+    if (dir == FORWARD) {
+      ////////BETWEEN OPERANDS
+      inputs[1]->rowSparsity &= inputs[0]->colSparsity;
+      inputs[0]->colSparsity &= inputs[1]->rowSparsity;
+      ////////TO THE OUTPUT
+      output->rowSparsity &= inputs[0]->rowSparsity;
+      output->colSparsity &= inputs[1]->colSparsity;
+    } else {
+      inputs[1]->colSparsity &= output->colSparsity;
+      inputs[0]->rowSparsity &= output->rowSparsity;
     }
-    for (int i = 0; i < N; ++i) {
-        if (sampledIndices[ind] == i) {
-            colSparsity.push_back(1);
-            for (int j = 0; j < M; ++j) {
-                out.insert({i, j}, unif(gen));           
-            }
-            ind++;
-        } else {
-            colSparsity.push_back(0);
-        }
+  }
+
+  std::string op_type() const override { return "MatMul"; }
+
+  void print() override {
+    std::cout << "->Mul(" << inputs[0]->name << "," << inputs[1]->name
+              << ",out=" << output->name << ")";
+  }
+  void print_sparsity() override {
+    inputs[0]->print_full_sparsity();
+    std::cout << "*" << std::endl;
+    inputs[1]->print_full_sparsity();
+    std::cout << " = " << std::endl;
+    output->print_full_sparsity();
+    std::cout << std::endl;
+  }
+};
+
+class Add : public OpNode {
+public:
+  Add(TensorPtr A, TensorPtr B, TensorPtr Out) {
+    inputs = {A, B};
+    output = Out;
+  }
+
+  void compute() override {
+    taco::IndexVar i, j;
+    output->data(i, j) = inputs[0]->data(i, j) + inputs[1]->data(i, j);
+    output->data.compile();
+    output->data.assemble();
+    output->data.compute();
+  }
+
+
+  float get_sparsity_ratio() override {
+    float a_ratio = inputs[0]->get_sparsity_ratio();
+    float b_ratio = inputs[1]->get_sparsity_ratio();
+    return (a_ratio + b_ratio) / 2;
+  }
+
+  void propagate(Direction dir) override {
+    if (dir == FORWARD) {
+      output->rowSparsity = inputs[0]->rowSparsity | inputs[1]->rowSparsity;
+      output->colSparsity = inputs[0]->colSparsity | inputs[1]->colSparsity;
     }
-    out.pack();
-}
+  }
 
-double calculateSparsityRatio(vector<bool> boolVector) {
-    float numZeros = 0;
-    for (bool b : boolVector)
-        numZeros += !b;
+  void print() override {
+    std::cout << "->Add(" << inputs[0]->name << "," << inputs[1]->name
+              << ",out=" << output->name << ")";
+  }
 
-    return numZeros / boolVector.size();
-}
+  void print_sparsity() override {
+    inputs[0]->print_full_sparsity();
+    std::cout << "+" << std::endl;
+    inputs[1]->print_full_sparsity();
+    std::cout << " = " << std::endl;
+    output->print_full_sparsity();
+    std::cout << std::endl;
+  }
+  std::string op_type() const override { return "Add"; }
+};
 
-int checkNumSparseRows(Tensor<double> csrMatrix) {
-    int rows = 0;
-    int prevRow = -1;
+class Relu : public OpNode {
+public:
+  Relu(TensorPtr In, TensorPtr Out) {
+    inputs = {In};
+    output = Out;
+  }
 
-    // doing this O(N^2) because it's not clear how to do it O(N) 
-    for (auto v : csrMatrix) {
-        auto coords = v.first;
-        if (coords[0] != prevRow) {
-            prevRow = coords[0];
-            rows++;
-        }
+  void compute() override {
+    for (auto &val : inputs[0]->data)
+      output->data.insert(val.first.toVector(), val.second);
+
+    output->data.pack();
+  }
+
+
+  float get_sparsity_ratio() override {
+    return inputs[0]->get_sparsity_ratio();
+  }
+
+  void propagate(Direction dir) override {
+    if (dir == FORWARD) {
+      output->rowSparsity &= inputs[0]->rowSparsity;
+      output->colSparsity &= inputs[0]->colSparsity;
     }
+  }
 
-    return rows;
-}
+  void print() override {
+    std::cout << "->ReLU(" << inputs[0]->name << ",out=" << output->name << ")";
+  }
 
-void printCsrMatrix(Tensor<double> csrMatrix) {
-    // only prints the rows that exist (just for debugging)
-    int prevRow = 0;
-    for (auto p : csrMatrix) {
-        auto coords = p.first;
-        auto val = p.second;
+  void print_sparsity() override {
+    std::cout << "Relu" << std::endl;
+    inputs[0]->print_full_sparsity();
+    std::cout << " = " << std::endl;
+    output->print_full_sparsity();
+    std::cout << std::endl;
+  }
+  std::string op_type() const override { return "Relu"; }
+};
 
-        cout << val << " ";
-        if (coords[0] != prevRow) {
-            cout << endl;
-            prevRow = coords[0];
-        }
+class Graph {
+  std::vector<OpNodePtr> nodes;
+  TensorPtr input, output;
+
+public:
+  static Graph build_graph(TensorPtr in, TensorPtr out,
+                           const std::vector<OpNodePtr> &ops) {
+    Graph g;
+    g.input = in;
+    g.output = out;
+    g.nodes = ops;
+    return g;
+  }
+
+  float get_sparsity_ratio() {
+    float sparsity = 0.0;
+    for(auto &op: nodes){
+      sparsity += op->get_sparsity_ratio();
     }
-    cout << endl;
-}
+    return (float)(sparsity/nodes.size());
 
-void printSparsityVector(vector<bool> sparsity) {
-    for (auto s : sparsity)
-        cout << (s ? "1 " : "0 ");
-    cout << endl;
-}
+  }
 
-int main(int argc, char** argv) {
-    int size = 1200;
-
-    Tensor<double> input;
-    vector<bool> inputRows, inputCols;
-    generateRowSparseTACOMatrix(input, inputRows, inputCols, size, size, 0.7);
-
-    Tensor<double> input2;
-    vector<bool> input2Rows, input2Cols;
-    generateRowSparseTACOMatrix(input2, input2Rows, input2Cols, size, size, 0.7);
-
-    Tensor<double> W1;
-    vector<bool> W1Rows, W1Cols;
-    generateDenseTACOMatrix(W1, W1Rows, W1Cols, size, size);
-
-    Tensor<double> W2;
-    vector<bool> W2Rows, W2Cols;
-    generateDenseTACOMatrix(W2, W2Rows, W2Cols, size, size);
-
-    Tensor<double> W3;
-    vector<bool> W3Rows, W3Cols;
-    generateDenseTACOMatrix(W3, W3Rows, W3Cols, size, size);
-
-    Tensor<double> W4;
-    vector<bool> W4Rows, W4Cols;
-    generateDenseTACOMatrix(W4, W4Rows, W4Cols, size, size);
-
-    const auto start{chrono::steady_clock::now()};
-    Format currFormat;
-    vector<bool> rowSparsity = inputRows;
-    
-    bool doInference = false;
-
-    if (calculateSparsityRatio(rowSparsity) > 0.25)
-        currFormat = csr;
-    else
-        currFormat = dd;
-    Tensor<double> O1({size, size}, currFormat); // matmul 
-    rowSparsity = boolVectorAnd(rowSparsity, W1Cols);
-    
-    Tensor<double> O2({size, size}, currFormat); // matmul
-    rowSparsity = boolVectorAnd(rowSparsity, W2Cols);
-    Tensor<double> O3({size, size}, currFormat); // elementwise
-
-    // addition: sparsity could decrease so recompute
-    rowSparsity = boolVectorOr(rowSparsity, input2Rows);
-    if (!doInference) {
-        currFormat = dd;
-    } else if (calculateSparsityRatio(boolVectorOr(rowSparsity, input2Rows)) > 0.25) {
-        currFormat = csr;
-        cout << "Over 25% sparsity!" << endl;
-    } else { 
-        currFormat = dd;
-        cout << "Under 25% sparsity!" << endl;
+  void propagate(Direction dir = FORWARD) {
+    std::cout << ">Propagation pass" << std::endl;
+    for (auto &op : nodes) {
+      op->propagate(dir);
     }
+  }
 
-    Tensor<double> O4({size, size}, currFormat); // addition
-                                                 //
-    rowSparsity = boolVectorAnd(rowSparsity, W3Cols);
-    Tensor<double> O5({size, size}, currFormat); // matmul
-    rowSparsity = boolVectorAnd(rowSparsity, W4Cols);
-    cout << "After O5 @ W4 = O6: ";
-    Tensor<double> O6({size, size}, currFormat); // matmul
-    const auto finish1{chrono::steady_clock::now()};
+  void set_formats() {
+    std::cout << "Inferring formats (placeholder)...\n";
+    // Example: auto-set sparse/dense formats
+  }
 
-    matmul(O1, input, W1);
-    matmul(O2, O1, W2);
-    elementwiseFun(O3, O2, [](double x) { return x * 0.7; });
-    add(O4, O3, input2);
-    matmul(O5, O4, W3);
-    matmul(O6, O5, W4);
+  TensorPtr compute() {
+    for (auto &op : nodes)
+      op->compute();
+    return output;
+  }
 
-    O6.evaluate();
-    const auto finish2{chrono::steady_clock::now()};
-    const chrono::duration<double> inferenceSecs{finish1 - start};
-    const chrono::duration<double> totalSecs{finish2 - start};
+  void print() {
+    std::cout << input->name;
+    for (auto &op : nodes) {
+      op->print();
+    }
+    std::cout << "->" << output->name << std::endl;
+  }
 
-    cout << "Inference took: " << inferenceSecs.count() << "s" << endl;
-    cout << "Total runtime was: " << totalSecs.count() << "s" << endl;
+  void print_sparsity() {
+    for (auto &op : nodes) {
+      op->print_sparsity();
+    }
+  }
+};
 
-    return 0;
+int main() {
+  
+  auto X = std::make_shared<Tensor>(1024, 512, 0.5, 0.0, "X");
+  auto W1 = std::make_shared<Tensor>(512, 512, 0.0, 0.0, "W1");
+  auto O1 = std::make_shared<Tensor>(1024, 512, 0.0, 0.0, "O1");
+  auto W2 = std::make_shared<Tensor>(512, 1024, 0.0, 0.0, "W2");
+  auto O2 = std::make_shared<Tensor>(1024, 1024, 0.0, 0.0, "O2");
+  auto Y = std::make_shared<Tensor>(1024, 1024, 0.0, 0.0, "Y");
+
+  auto g = Graph::build_graph(X, Y,
+                              {std::make_shared<MatMul>(X, W1, O1),
+                               std::make_shared<MatMul>(O1, W2, O2),
+                               std::make_shared<Relu>(O2, Y)});
+
+  float sparsity = g.get_sparsity_ratio();
+  std::cout << "before = " << sparsity << std::endl;
+  // g.print();
+  // g.print_sparsity();
+  const auto startProp{std::chrono::steady_clock::now()};
+  g.propagate(FORWARD);
+  g.propagate(BACKWARD);
+  const auto finishProp{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> propSecs{finishProp - startProp};
+  // g.print_sparsity();
+  sparsity = g.get_sparsity_ratio();
+  std::cout << "after = " << sparsity << std::endl;
+  const auto startRuntime{std::chrono::steady_clock::now()};
+  auto result = g.compute();
+  const auto finishRuntime{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
+  std::cout << "inference = " << propSecs.count() << std::endl;
+  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
 }
