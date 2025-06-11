@@ -1,6 +1,7 @@
 #include "taco.h"
 #include <iostream>
 #include <memory>
+#include <cassert>
 #include <ostream>
 #include <random>
 #include <string>
@@ -11,7 +12,16 @@
 
 #define MAX_DIM 1024
 
-enum Direction { FORWARD, BACKWARD };
+enum Direction { FORWARD, INTRA, BACKWARD };
+
+bool first_n_equal(std::bitset<MAX_DIM> &a, std::bitset<MAX_DIM> &b, int n) {
+  assert(n <= MAX_DIM);
+  for (int i = 0; i < n; ++i)
+    if (a[i] != b[i])
+      return false;
+
+  return true;
+}
 
 class Tensor {
 public:
@@ -120,7 +130,7 @@ public:
   std::vector<TensorPtr> inputs;
   TensorPtr output;
   virtual void compute() = 0;
-  virtual void propagate(Direction dir) = 0;
+  virtual bool propagate(Direction dir) = 0;
   virtual void print() = 0;
   virtual void print_sparsity() = 0;
   virtual float get_sparsity_ratio() = 0;
@@ -150,19 +160,31 @@ public:
     return (a_zeros + b_zeros) / 2;
   }
 
-  void propagate(Direction dir) override {
+  bool propagate(Direction dir) override {
+    bool changed = false;
     if (dir == FORWARD) {
-      ////////TO THE OUTPUT
+      auto initRowSparsity = output->rowSparsity;
+      auto initColSparsity = output->colSparsity;
       output->rowSparsity &= inputs[0]->rowSparsity;
       output->colSparsity &= inputs[1]->colSparsity;
-    } else {
-      ////////BETWEEN OPERANDS
+      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
+    } else if (dir == INTRA) {
+      auto initRowSparsity = inputs[1]->rowSparsity;
+      auto initColSparsity = inputs[0]->colSparsity;
       inputs[1]->rowSparsity &= inputs[0]->colSparsity;
       inputs[0]->colSparsity &= inputs[1]->rowSparsity;
-
+      changed |= !first_n_equal(initRowSparsity, inputs[1]->rowSparsity, inputs[1]->rows);
+      changed |= !first_n_equal(initColSparsity, inputs[0]->colSparsity, inputs[0]->cols);
+    } else if (dir == BACKWARD) {
+      auto initColSparsity = inputs[1]->colSparsity;
+      auto initRowSparsity = inputs[0]->rowSparsity;
       inputs[1]->colSparsity &= output->colSparsity;
       inputs[0]->rowSparsity &= output->rowSparsity;
+      changed |= !first_n_equal(initRowSparsity, inputs[0]->rowSparsity, inputs[0]->rows);
+      changed |= !first_n_equal(initColSparsity, inputs[1]->colSparsity, inputs[1]->cols);
     }
+    return changed;
   }
 
   std::string op_type() const override { return "MatMul"; }
@@ -203,11 +225,17 @@ public:
     return (a_ratio + b_ratio) / 2;
   }
 
-  void propagate(Direction dir) override {
+  bool propagate(Direction dir) override {
+    bool changed = false;
     if (dir == FORWARD) {
+      auto initRowSparsity = output->rowSparsity;
+      auto initColSparsity = output->colSparsity;
       output->rowSparsity = inputs[0]->rowSparsity | inputs[1]->rowSparsity;
       output->colSparsity = inputs[0]->colSparsity | inputs[1]->colSparsity;
+      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
     }
+    return changed;
   }
 
   void print() override {
@@ -245,11 +273,17 @@ public:
     return inputs[0]->get_sparsity_ratio();
   }
 
-  void propagate(Direction dir) override {
+  bool propagate(Direction dir) override {
+    bool changed = false;
     if (dir == FORWARD) {
+      auto initRowSparsity = output->rowSparsity;
+      auto initColSparsity = output->colSparsity;
       output->rowSparsity &= inputs[0]->rowSparsity;
-      output->colSparsity &= inputs[0]->colSparsity;
+      output->colSparsity &= inputs[0]->colSparsity;     
+      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
     }
+    return changed;
   }
 
   void print() override {
@@ -282,11 +316,17 @@ public:
     return inputs[0]->get_sparsity_ratio();
   }
 
-  void propagate(Direction dir) override {
+  bool propagate(Direction dir) override {
+    bool changed = false;
     if (dir == FORWARD) {
+      auto initRowSparsity = output->rowSparsity;
+      auto initColSparsity = output->colSparsity;
       output->rowSparsity &= inputs[0]->colSparsity;
       output->colSparsity &= inputs[0]->rowSparsity;
+      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
     }
+    return changed;
   }
 
   void print() override {
@@ -307,6 +347,7 @@ public:
 class Graph {
   std::vector<OpNodePtr> nodes;
   TensorPtr input, output;
+  bool fixed = false;
 
 public:
   static Graph build_graph(TensorPtr in, TensorPtr out,
@@ -331,6 +372,19 @@ public:
     std::cout << ">Propagation pass" << std::endl;
     for (auto &op : nodes) {
       op->propagate(dir);
+    }
+  }
+
+  void propagate_full() {
+    while (!fixed) {
+      bool changed = false;
+      for (auto &op : nodes) {
+        changed |= op->propagate(Direction::FORWARD);
+        changed |= op->propagate(Direction::INTRA);
+        changed |= op->propagate(Direction::BACKWARD);
+      }
+      if (!changed)
+          fixed = true;
     }
   }
 
@@ -367,9 +421,9 @@ void run_graph_with_logging(Graph& g) {
     std::cout << "before = " << sparsity << std::endl;
     
     const auto startProp{std::chrono::steady_clock::now()};
-    g.propagate(FORWARD);
     g.print_sparsity();
-    g.propagate(BACKWARD);
+    std::cout << "PROPAGATE ALL" << std::endl;
+    g.propagate_full();
     g.print_sparsity();
     const auto finishProp{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> propSecs{finishProp - startProp};
