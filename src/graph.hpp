@@ -25,23 +25,18 @@ bool first_n_equal(std::bitset<MAX_DIM> &a, std::bitset<MAX_DIM> &b, int n) {
 
 class Tensor {
 public:
-  taco::Tensor<float> data;
+  taco::Tensor<float> data {};
   std::bitset<MAX_DIM> rowSparsity;
   std::bitset<MAX_DIM> colSparsity;
   const std::string name;
-  const unsigned int rows;
-  const unsigned int cols;
-
-  Tensor(int rows, int cols, bool random = false, const std::string &n = "")
-      : data(n, {rows, cols}, taco::Format{taco::Dense, taco::Dense}), name(n),
-        rows(rows), cols(cols) {
-    if (random) {
-      for (int i = 0; i < rows; ++i)
-        for (int j = 0; j < cols; ++j)
-          data.insert({i, j}, static_cast<float>(rand()) /
-                                  static_cast<float>(RAND_MAX));
-      data.pack();
-    }
+  const int rows;
+  const int cols;
+  
+  // constructor for empty output tensors
+  Tensor(int rows, int cols, const std::string &n = "")
+      : name(n), rows(rows), cols(cols) {
+    rowSparsity.set(); // all rows initially active
+    colSparsity.set(); // all cols initially active
   }
 
   Tensor(int rows, int cols, float rowSparsityRatio, float colSparsityRatio,
@@ -87,6 +82,10 @@ public:
     data.pack();
   }
 
+  void create_data(taco::Format format) {
+    data = taco::Tensor<float>(name, {rows, cols}, format);
+  }
+
   void print_full_sparsity() {
     for (int i = 0; i < rows; i++)
       if (rowSparsity[i] == 0)
@@ -106,6 +105,26 @@ public:
   float get_sparsity_ratio() {
     int total = cols * rows;
     return (float) (total - get_nnz())/total;
+  }
+
+  // how many bits are set in the first n bits 
+  int count_bits(std::bitset<MAX_DIM> &sparsityVec, int n) {
+    int numSet = 0;
+    for (int i = 0; i < n; ++i) {
+      if (sparsityVec[i])
+        numSet += 1;
+    }
+    return numSet;
+  }
+
+  float get_row_sparsity_ratio() {
+    int total = rows;
+    return (float) (total - count_bits(rowSparsity, rows)/total);
+  }
+
+  float get_col_sparsity_ratio() {
+    int total = cols;
+    return (float) (total - count_bits(colSparsity, cols)/total);
   }
 
   int get_nnz() {
@@ -388,9 +407,15 @@ public:
     }
   }
 
-  void set_formats() {
-    std::cout << "Inferring formats (placeholder)...\n";
-    // Example: auto-set sparse/dense formats
+  void set_output_formats(float threshold) {
+    for (auto &op : nodes) {
+      if (op->output->get_row_sparsity_ratio() > threshold) {
+        op->output->create_data(taco::Format({taco::Sparse, taco::Dense}));
+      } else if (op->output->get_col_sparsity_ratio() > threshold) {
+        op->output->create_data(taco::Format({taco::Sparse, taco::Dense}, {1, 0}));
+      }
+
+    }
   }
 
   TensorPtr compute() {
@@ -425,6 +450,8 @@ void run_graph_with_logging(Graph& g) {
     std::cout << "PROPAGATE ALL" << std::endl;
     g.propagate_full();
     g.print_sparsity();
+    std::cout << "SETFORMATS" << std::endl;
+    g.set_output_formats(0.4);
     const auto finishProp{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> propSecs{finishProp - startProp};
     
