@@ -31,6 +31,7 @@ public:
   const std::string name;
   const int rows;
   const int cols;
+  int numOps = 0; // number of operators this tensor belongs to as an operand
   
   // constructor for empty output tensors
   Tensor(int rows, int cols, const std::string &n = "")
@@ -161,6 +162,8 @@ using OpNodePtr = std::shared_ptr<OpNode>;
 class MatMul : public OpNode {
 public:
   MatMul(TensorPtr A, TensorPtr B, TensorPtr Out) {
+    A->numOps++;
+    B->numOps++;
     inputs = {A, B};
     output = Out;
   }
@@ -189,19 +192,27 @@ public:
       changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
       changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
     } else if (dir == INTRA) {
-      auto initRowSparsity = inputs[1]->rowSparsity;
-      auto initColSparsity = inputs[0]->colSparsity;
-      inputs[1]->rowSparsity &= inputs[0]->colSparsity;
-      inputs[0]->colSparsity &= inputs[1]->rowSparsity;
-      changed |= !first_n_equal(initRowSparsity, inputs[1]->rowSparsity, inputs[1]->rows);
-      changed |= !first_n_equal(initColSparsity, inputs[0]->colSparsity, inputs[0]->cols);
+      if (inputs[1]->numOps == 1) {
+        auto initRowSparsity = inputs[1]->rowSparsity;
+        inputs[1]->rowSparsity &= inputs[0]->colSparsity;
+        changed |= !first_n_equal(initRowSparsity, inputs[1]->rowSparsity, inputs[1]->rows);
+      }
+      if (inputs[0]->numOps == 1) {
+        auto initColSparsity = inputs[0]->colSparsity;
+        inputs[0]->colSparsity &= inputs[1]->rowSparsity;
+        changed |= !first_n_equal(initColSparsity, inputs[0]->colSparsity, inputs[0]->cols);
+      }
     } else if (dir == BACKWARD) {
-      auto initColSparsity = inputs[1]->colSparsity;
-      auto initRowSparsity = inputs[0]->rowSparsity;
-      inputs[1]->colSparsity &= output->colSparsity;
-      inputs[0]->rowSparsity &= output->rowSparsity;
-      changed |= !first_n_equal(initRowSparsity, inputs[0]->rowSparsity, inputs[0]->rows);
-      changed |= !first_n_equal(initColSparsity, inputs[1]->colSparsity, inputs[1]->cols);
+      if (inputs[1]->numOps == 1) {
+        auto initColSparsity = inputs[1]->colSparsity;
+        inputs[1]->colSparsity &= output->colSparsity;
+        changed |= !first_n_equal(initColSparsity, inputs[1]->colSparsity, inputs[1]->cols);
+      }
+      if (inputs[0]->numOps == 1) {
+        auto initRowSparsity = inputs[0]->rowSparsity;
+        inputs[0]->rowSparsity &= output->rowSparsity;
+        changed |= !first_n_equal(initRowSparsity, inputs[0]->rowSparsity, inputs[0]->rows);
+      }
     }
     return changed;
   }
@@ -225,6 +236,8 @@ public:
 class Add : public OpNode {
 public:
   Add(TensorPtr A, TensorPtr B, TensorPtr Out) {
+    A->numOps++;
+    B->numOps++;
     inputs = {A, B};
     output = Out;
   }
@@ -276,6 +289,7 @@ public:
 class Relu : public OpNode {
 public:
   Relu(TensorPtr In, TensorPtr Out) {
+    In->numOps++;
     inputs = {In};
     output = Out;
   }
@@ -302,6 +316,16 @@ public:
       changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
       changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
     }
+    if (dir == BACKWARD) {
+      if (inputs[0]->numOps == 1) {
+        auto initRowSparsity = output->rowSparsity;
+        auto initColSparsity = output->colSparsity;
+        inputs[0]->rowSparsity &= output->rowSparsity;
+        inputs[0]->colSparsity &= output->colSparsity;     
+        changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+        changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
+      }
+    }
     return changed;
   }
 
@@ -322,6 +346,7 @@ public:
 class Transpose : public OpNode {
 public:
   Transpose(TensorPtr In, TensorPtr Out) {
+    In->numOps++;
     inputs = {In};
     output = Out;
   }
@@ -344,6 +369,15 @@ public:
       output->colSparsity &= inputs[0]->rowSparsity;
       changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
       changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
+    } else if (dir == BACKWARD) {
+      if (inputs[0]->numOps == 1) {
+        auto initRowSparsity = output->rowSparsity;
+        auto initColSparsity = output->colSparsity;
+        inputs[0]->rowSparsity &= output->colSparsity;
+        inputs[0]->colSparsity &= output->rowSparsity;
+        changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
+        changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
+      }
     }
     return changed;
   }
