@@ -4,13 +4,14 @@
 #include <cassert>
 #include <ostream>
 #include <random>
+#include <bitset>
 #include <string>
 #include <vector>
 
 #ifndef GRAPH
 #define GRAPH
 
-#define MAX_DIM 1024
+#define MAX_DIM 4096
 
 enum Direction { FORWARD, INTRA, BACKWARD };
 
@@ -85,6 +86,19 @@ public:
 
   void create_data(taco::Format format) {
     data = taco::Tensor<float>(name, {rows, cols}, format);
+  }
+
+  void print_tensor() {
+    std::vector<std::vector<float>> tmp( rows, std::vector<float>(cols, 0.0 ));
+    for (auto entry : data) {
+      tmp[entry.first[0]][entry.first[1]] = entry.second;
+    }
+    for (int i = 0; i < rows; ++i) {
+      for (int j = 0; j < cols; ++j) {
+        std::cout << tmp[i][j] << " ";
+      }
+      std::cout << std::endl;
+    }
   }
 
   void print_full_sparsity() {
@@ -171,9 +185,9 @@ public:
   void compute() override {
     taco::IndexVar i, j, k;
     output->data(i, j) = inputs[0]->data(i, k) * inputs[1]->data(k, j);
-    output->data.compile();
-    output->data.assemble();
-    output->data.compute();
+    /*output->data.compile();*/
+    /*output->data.assemble();*/
+    /*output->data.compute();*/
   }
 
   float get_sparsity_ratio() override {
@@ -245,9 +259,9 @@ public:
   void compute() override {
     taco::IndexVar i, j;
     output->data(i, j) = inputs[0]->data(i, j) + inputs[1]->data(i, j);
-    output->data.compile();
-    output->data.assemble();
-    output->data.compute();
+    /*output->data.compile();*/
+    /*output->data.assemble();*/
+    /*output->data.compute();*/
   }
 
 
@@ -286,62 +300,62 @@ public:
   std::string op_type() const override { return "Add"; }
 };
 
-class Relu : public OpNode {
-public:
-  Relu(TensorPtr In, TensorPtr Out) {
-    In->numOps++;
-    inputs = {In};
-    output = Out;
-  }
-
-  void compute() override {
-    for (auto &val : inputs[0]->data)
-      output->data.insert(val.first.toVector(), val.second);
-
-    output->data.pack();
-  }
-
-
-  float get_sparsity_ratio() override {
-    return inputs[0]->get_sparsity_ratio();
-  }
-
-  bool propagate(Direction dir) override {
-    bool changed = false;
-    if (dir == FORWARD) {
-      auto initRowSparsity = output->rowSparsity;
-      auto initColSparsity = output->colSparsity;
-      output->rowSparsity &= inputs[0]->rowSparsity;
-      output->colSparsity &= inputs[0]->colSparsity;     
-      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
-      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
-    }
-    if (dir == BACKWARD) {
-      if (inputs[0]->numOps == 1) {
-        auto initRowSparsity = output->rowSparsity;
-        auto initColSparsity = output->colSparsity;
-        inputs[0]->rowSparsity &= output->rowSparsity;
-        inputs[0]->colSparsity &= output->colSparsity;     
-        changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);
-        changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);
-      }
-    }
-    return changed;
-  }
-
-  void print() override {
-    std::cout << "->ReLU(" << inputs[0]->name << ",out=" << output->name << ")";
-  }
-
-  void print_sparsity() override {
-    std::cout << "Relu" << std::endl;
-    inputs[0]->print_full_sparsity();
-    std::cout << " = " << std::endl;
-    output->print_full_sparsity();
-    std::cout << std::endl;
-  }
-  std::string op_type() const override { return "Relu"; }
-};
+/*class Relu : public OpNode {*/
+/*public:*/
+/*  Relu(TensorPtr In, TensorPtr Out) {*/
+/*    In->numOps++;*/
+/*    inputs = {In};*/
+/*    output = Out;*/
+/*  }*/
+/**/
+/*  void compute() override {*/
+/*    for (auto &val : inputs[0]->data)*/
+/*      output->data.insert(val.first.toVector(), val.second);*/
+/**/
+/*    output->data.pack();*/
+/*  }*/
+/**/
+/**/
+/*  float get_sparsity_ratio() override {*/
+/*    return inputs[0]->get_sparsity_ratio();*/
+/*  }*/
+/**/
+/*  bool propagate(Direction dir) override {*/
+/*    bool changed = false;*/
+/*    if (dir == FORWARD) {*/
+/*      auto initRowSparsity = output->rowSparsity;*/
+/*      auto initColSparsity = output->colSparsity;*/
+/*      output->rowSparsity &= inputs[0]->rowSparsity;*/
+/*      output->colSparsity &= inputs[0]->colSparsity;     */
+/*      changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);*/
+/*      changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);*/
+/*    }*/
+/*    if (dir == BACKWARD) {*/
+/*      if (inputs[0]->numOps == 1) {*/
+/*        auto initRowSparsity = output->rowSparsity;*/
+/*        auto initColSparsity = output->colSparsity;*/
+/*        inputs[0]->rowSparsity &= output->rowSparsity;*/
+/*        inputs[0]->colSparsity &= output->colSparsity;     */
+/*        changed |= !first_n_equal(initColSparsity, output->colSparsity, output->cols);*/
+/*        changed |= !first_n_equal(initRowSparsity, output->rowSparsity, output->rows);*/
+/*      }*/
+/*    }*/
+/*    return changed;*/
+/*  }*/
+/**/
+/*  void print() override {*/
+/*    std::cout << "->ReLU(" << inputs[0]->name << ",out=" << output->name << ")";*/
+/*  }*/
+/**/
+/*  void print_sparsity() override {*/
+/*    std::cout << "Relu" << std::endl;*/
+/*    inputs[0]->print_full_sparsity();*/
+/*    std::cout << " = " << std::endl;*/
+/*    output->print_full_sparsity();*/
+/*    std::cout << std::endl;*/
+/*  }*/
+/*  std::string op_type() const override { return "Relu"; }*/
+/*};*/
 
 class Transpose : public OpNode {
 public:
@@ -352,7 +366,8 @@ public:
   }
 
   void compute() override {
-    output->data = inputs[0]->data.transpose({1, 0});
+    taco::IndexVar i, j;
+    output->data(i,j) = inputs[0]->data(j, i);
   }
 
 
@@ -399,10 +414,10 @@ public:
 
 class Graph {
   std::vector<OpNodePtr> nodes;
-  TensorPtr input, output;
   bool fixed = false;
 
 public:
+  TensorPtr input, output;
   static Graph build_graph(TensorPtr in, TensorPtr out,
                            const std::vector<OpNodePtr> &ops) {
     Graph g;
@@ -443,18 +458,29 @@ public:
 
   void set_output_formats(float threshold) {
     for (auto &op : nodes) {
-      if (op->output->get_row_sparsity_ratio() > threshold) {
-        op->output->create_data(taco::Format({taco::Sparse, taco::Dense}));
-      } else if (op->output->get_col_sparsity_ratio() > threshold) {
-        op->output->create_data(taco::Format({taco::Sparse, taco::Dense}, {1, 0}));
+      if (op->output->get_row_sparsity_ratio() >= threshold) {
+        if (typeid(*op) == typeid(Transpose)) {
+          op->output->create_data(taco::Format({taco::Sparse, taco::Dense}, {1, 0}));
+        } else {
+          op->output->create_data(taco::Format({taco::Sparse, taco::Dense}));
+        }
+      } else if (op->output->get_col_sparsity_ratio() >= threshold) {
+        if (typeid(*op) == typeid(Transpose)) {
+          op->output->create_data(taco::Format({taco::Sparse, taco::Dense}));
+        } else {
+          op->output->create_data(taco::Format({taco::Sparse, taco::Dense}, {1, 0}));
+        }
+      } else {
+        op->output->create_data(taco::Format({taco::Dense, taco::Dense}));
       }
-
     }
   }
 
   TensorPtr compute() {
-    for (auto &op : nodes)
+    for (auto &op : nodes) {
       op->compute();
+      std::cout << op->output->data.getStorage() << std::endl;
+    }
     return output;
   }
 
@@ -474,30 +500,21 @@ public:
 };
 
 void run_graph_with_logging(Graph& g) {
-    float sparsity = g.get_sparsity_ratio();
-    g.print();
-    g.print_sparsity();
-    std::cout << "before = " << sparsity << std::endl;
-    
     const auto startProp{std::chrono::steady_clock::now()};
-    g.print_sparsity();
-    std::cout << "PROPAGATE ALL" << std::endl;
     g.propagate_full();
-    g.print_sparsity();
-    std::cout << "SETFORMATS" << std::endl;
-    g.set_output_formats(0.4);
-    const auto finishProp{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> propSecs{finishProp - startProp};
-    
-    sparsity = g.get_sparsity_ratio();
-    std::cout << "after = " << sparsity << std::endl;
-    
-    const auto startRuntime{std::chrono::steady_clock::now()};
+    g.set_output_formats(0.0);
+    const auto startCompile{std::chrono::steady_clock::now()};
     auto result = g.compute();
+    g.output->data.compile();
+    g.output->data.assemble();
+    const auto startRuntime{std::chrono::steady_clock::now()};
+    g.output->data.compute();
     const auto finishRuntime{std::chrono::steady_clock::now()};
     const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
-    
+    const std::chrono::duration<double> compileSecs{startRuntime - startCompile};
+    const std::chrono::duration<double> propSecs{startCompile - startProp};
     std::cout << "inference = " << propSecs.count() << std::endl;
+    std::cout << "compile = " << compileSecs.count() << std::endl;
     std::cout << "runtime = " << runtimeSecs.count() << std::endl;
 }
 
