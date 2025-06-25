@@ -56,7 +56,7 @@ def main():
     program_path = sys.argv[1]
     sparsity_values = [round(i * 0.1, 1) for i in range(10)]  # 0.0 to 0.9
     use_prop_values = [0, 1]
-    num_runs = 1
+    num_runs = 5
     
     # Store all results: results[use_prop][sparsity][run_number] = metrics
     results = defaultdict(lambda: defaultdict(list))

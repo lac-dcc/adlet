@@ -479,7 +479,10 @@ public:
   TensorPtr compute() {
     for (auto &op : nodes) {
       op->compute();
-      std::cout << op->output->data.getStorage() << std::endl;
+      /*std::cout << "input[0] storage:" << std::endl;*/
+      /*std::cout << op->inputs[0]->data.getStorage().getFormat() << std::endl;*/
+      /*std::cout << "output storage:" << std::endl;*/
+      /*std::cout << op->output->data.getStorage().getFormat() << std::endl;*/
     }
     return output;
   }
