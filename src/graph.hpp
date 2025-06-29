@@ -154,7 +154,7 @@ class OpNode {
 public:
   std::vector<TensorPtr> inputs;
   TensorPtr output;
-  virtual void compute() = 0;
+  virtual void set_expression() = 0;
   virtual bool propagate(Direction dir) = 0;
   virtual void print() = 0;
   virtual void print_sparsity() = 0;
@@ -173,12 +173,9 @@ public:
     output = Out;
   }
 
-  void compute() override {
+  void set_expression() override {
     taco::IndexVar i, j, k;
     output->data(i, j) = inputs[0]->data(i, k) * inputs[1]->data(k, j);
-    /*output->data.compile();*/
-    /*output->data.assemble();*/
-    /*output->data.compute();*/
   }
 
   float get_sparsity_ratio() override {
@@ -247,12 +244,9 @@ public:
     output = Out;
   }
 
-  void compute() override {
+  void set_expression() override {
     taco::IndexVar i, j;
     output->data(i, j) = inputs[0]->data(i, j) + inputs[1]->data(i, j);
-    /*output->data.compile();*/
-    /*output->data.assemble();*/
-    /*output->data.compute();*/
   }
 
   float get_sparsity_ratio() override {
@@ -298,7 +292,7 @@ public:
     output = Out;
   }
 
-  void compute() override {
+  void set_expression() override {
     taco::IndexVar i, j;
     output->data(i, j) = inputs[0]->data(j, i);
   }
@@ -409,16 +403,16 @@ public:
     }
   }
 
-  TensorPtr compute() {
-    for (auto &op : nodes) {
-      op->compute();
-      /*std::cout << "input[0] storage:" << std::endl;*/
-      /*std::cout << op->inputs[0]->data.getStorage().getFormat() <<
-       * std::endl;*/
-      /*std::cout << "output storage:" << std::endl;*/
-      /*std::cout << op->output->data.getStorage().getFormat() << std::endl;*/
-    }
-    return output;
+  void assemble_expressions() {
+    for (auto &op : nodes)
+      op->set_expression();
+  }
+
+  taco::Tensor<float> compute() {
+    output->data.compile();
+    output->data.assemble();
+    output->data.compute();
+    return output->data;
   }
 
   void print() {
