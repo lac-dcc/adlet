@@ -161,7 +161,6 @@ public:
   }
 
   void prune() {
-    // NEED TO SETUP THE FORMAT IN FORWARD
     bool prunedRows = false, prunedCols = false;
     if (!outputTensor) {
       if (pruneRow) {

@@ -44,8 +44,8 @@ void test_pruning() {
   assert(1.0f == W1->data->at({0, 0}));
   assert(1.0f == W1->data->at({1, 0}));
 
-  g.propagate_all();
-  g.prune();
+  g.run_analysis();
+  g.run_propagation();
 
   assert(0.0f == O1->data->at({0, 0}));
   assert(0.0f == O1->data->at({1, 0}));
@@ -96,7 +96,7 @@ void test_propagation() {
   assert(size == count_bits(W1->colSparsity, size));
   assert(size - 1 == count_bits(W2->rowSparsity, size));
   assert(size == count_bits(W2->colSparsity, size));
-  g.propagate_all();
+  g.run_analysis();
   assert(size == count_bits(X->rowSparsity, size));
   assert(size == count_bits(X->colSparsity, size));
   assert(size == count_bits(O1->rowSparsity, size));
