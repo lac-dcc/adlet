@@ -1,5 +1,4 @@
 #include "graph.hpp"
-#include "taco.h"
 #include "taco/format.h"
 #include <algorithm>
 #include <bitset>
@@ -96,7 +95,6 @@ void noprop() {
   const auto startAllocate{std::chrono::steady_clock::now()};
   taco::Format format({taco::Dense, taco::Dense});
   auto X = std::make_shared<Tensor>(size, size, 0.0, 0.0, "X", format);
-  std::cout << X->data << std::endl;
   auto W1 = std::make_shared<Tensor>(size, size, "W1", format);
   auto W2 = std::make_shared<Tensor>(size, size, 0.0, 0.0, "W2", format);
   auto W3 = std::make_shared<Tensor>(size, size, 0.0, 0.0, "W3", format);
@@ -122,12 +120,22 @@ void noprop() {
   std::cout << "allocate = " << allocateSecs.count() << std::endl;
   const auto startCompile{std::chrono::steady_clock::now()};
   g.compile();
+  const auto startAnalysis{std::chrono::steady_clock::now()};
+  g.run_analysis();
+  const auto startPropagation{std::chrono::steady_clock::now()};
+  g.run_propagation();
   const auto startRuntime{std::chrono::steady_clock::now()};
   auto result = g.compute();
   const auto finishRuntime{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
-  const std::chrono::duration<double> compileSecs{startRuntime - startCompile};
+  const std::chrono::duration<double> compileSecs{startAnalysis - startCompile};
+  const std::chrono::duration<double> propagationSecs{startRuntime -
+                                                      startPropagation};
+  const std::chrono::duration<double> analysisSecs{startPropagation -
+                                                   startAnalysis};
   std::cout << "compile = " << compileSecs.count() << std::endl;
+  std::cout << "analysis = " << analysisSecs.count() << std::endl;
+  std::cout << "pruning = " << propagationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
 }
 
@@ -136,12 +144,9 @@ int main(int argc, char **argv) {
   double sparsity = std::stod(argv[1]);
   bool useProp = std::stoi(argv[2]);
 
-  /*test_compute();*/
-  /*test_propagation();*/
-  test_pruning();
-  /*if (!useProp) {*/
-  /*  noprop();*/
-  /*  return 0;*/
-  /*}*/
-  /*prop(sparsity);*/
+  if (!useProp) {
+    noprop();
+    return 0;
+  }
+  prop(sparsity);
 }

@@ -12,7 +12,7 @@
 #ifndef GRAPH
 #define GRAPH
 
-#define MAX_SIZE 2
+#define MAX_SIZE 2048
 
 typedef std::bitset<MAX_SIZE> bitset;
 
@@ -434,7 +434,7 @@ public:
     return (float)(sparsity / nodes.size());
   }
 
-  void propagate_all() {
+  void run_analysis() {
     for (auto &op : nodes)
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
@@ -443,7 +443,7 @@ public:
       op->propagate(Direction::BACKWARD);
   }
 
-  void prune() {
+  void run_propagation() {
     for (auto &op : nodes)
       op->prune();
   }
