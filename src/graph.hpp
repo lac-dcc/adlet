@@ -26,13 +26,16 @@ int count_bits(bitset A, int pos) {
 
 class Tensor {
 public:
-  taco::Tensor<float> data{};
+  std::shared_ptr<taco::Tensor<float>> data;
   bitset rowSparsity;
   bitset colSparsity;
   const std::string name;
   const int rows;
   const int cols;
   int numOps = 0; // number of operators this tensor belongs to as an operand
+  bool pruneRow = false;
+  bool pruneCol = false;
+  bool outputTensor = false;
 
   // constructor for empty output tensors
   Tensor(int rows, int cols, const std::string &n = "")
@@ -41,18 +44,20 @@ public:
     colSparsity.set(); // all cols initially active
   }
 
-  // constructor for empty output tensors
   Tensor(int rows, int cols, const std::string &n, taco::Format format)
-      : name(n), rows(rows), cols(cols), data(n, {rows, cols}, format) {
-    rowSparsity.set(); // all rows initially active
-    colSparsity.set(); // all cols initially active
+      : data(std::make_shared<taco::Tensor<float>>(
+            n, std::vector<int>{rows, cols}, format)),
+        name(n), rows(rows), cols(cols) {
+    rowSparsity.set();
+    colSparsity.set();
   }
 
   Tensor(int rows, int cols, float rowSparsityRatio, float colSparsityRatio,
          const std::string &n = "",
          taco::Format format = {taco::Dense, taco::Dense})
-      : data(n, {rows, cols}, format), name(n), rows(rows), cols(cols) {
-
+      : data(std::make_shared<taco::Tensor<float>>(
+            n, std::vector<int>{rows, cols}, format)),
+        name(n), rows(rows), cols(cols) {
     // Initialize sparsity bitsets to 1 (active)
     rowSparsity.set(); // all rows initially active
     colSparsity.set(); // all cols initially active
@@ -84,20 +89,20 @@ public:
           continue; // skip zeroed col
 
         float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-        data.insert({i, j}, val);
+        data->insert({i, j}, val);
       }
     }
 
-    data.pack();
+    data->pack();
   }
 
   void create_data(taco::Format format) {
-    data = taco::Tensor<float>(name, {rows, cols}, format);
+    *data = taco::Tensor<float>(name, {rows, cols}, format);
   }
 
   void print_tensor() {
     std::vector<std::vector<float>> tmp(rows, std::vector<float>(cols, 0.0));
-    for (auto entry : data) {
+    for (auto entry : *data) {
       tmp[entry.first[0]][entry.first[1]] = entry.second;
     }
     for (int i = 0; i < rows; ++i) {
@@ -155,23 +160,41 @@ public:
     return nnz;
   }
 
-  void prune(const bitset col_changes, const bitset row_changes) {
-    if (row_changes.any()) {
-      for (int i = 0; i < rows; i++)
-        if (row_changes.test(i))
-          for (int col = 0; col < cols; col++)
-            data.insert({i, col}, 0);
+  void prune() {
+    // NEED TO SETUP THE FORMAT IN FORWARD
+    bool prunedRows = false, prunedCols = false;
+    if (!outputTensor) {
+      if (pruneRow) {
+        for (int i = 0; i < rows; i++)
+          if (!rowSparsity.test(i))
+            for (int col = 0; col < cols; col++)
+              data->insert({i, col}, -data->at({i, col}));
+        prunedRows = true;
+      }
+      if (pruneCol) {
+        for (int i = 0; i < cols; i++)
+          if (!colSparsity.test(i))
+            for (int row = 0; row < rows; row++)
+              data->insert({row, i}, -data->at({row, i}));
+        prunedCols = true;
+      }
     }
-    if (col_changes.any()) {
-      for (int i = 0; i < cols; i++)
-        if (col_changes.test(i))
-          for (int row = 0; row < rows; row++)
-            data.insert({row, i}, 0);
-    }
-    // get the new format
     // taco::Format format = getFormat();
-    auto newTensor = data.removeExplicitZeros({taco::Dense, taco::Dense});
-    data = newTensor;
+    taco::Format sparse({taco::Dense, taco::Sparse});
+
+    if (prunedCols || prunedRows) {
+      auto newTensor = data->removeExplicitZeros(sparse);
+      newTensor.setName(data->getName() + "_pruned");
+      newTensor.pack();
+      *data = newTensor;
+    } else if (outputTensor && (pruneCol || pruneRow)) {
+      auto newTensor = taco::Tensor<float>({rows, cols}, sparse);
+      newTensor.setName(data->getName() + "_pruned");
+      newTensor.pack();
+      *data = newTensor;
+    }
+    pruneRow = false;
+    pruneCol = false;
   }
 };
 
@@ -187,6 +210,7 @@ public:
   virtual void print_sparsity() = 0;
   virtual float get_sparsity_ratio() = 0;
   virtual std::string op_type() const = 0;
+  virtual void prune() = 0;
 };
 
 using OpNodePtr = std::shared_ptr<OpNode>;
@@ -198,11 +222,12 @@ public:
     B->numOps++;
     inputs = {A, B};
     output = Out;
+    output->outputTensor = true;
   }
 
   void set_expression() override {
     taco::IndexVar i, j, k;
-    output->data(i, j) = inputs[0]->data(i, k) * inputs[1]->data(k, j);
+    (*output->data)(i, j) = (*inputs[0]->data)(i, k) * (*inputs[1]->data)(k, j);
   }
 
   float get_sparsity_ratio() override {
@@ -212,28 +237,50 @@ public:
   }
 
   void propagate(Direction dir) override {
-    auto initRowSparsity = output->rowSparsity;
-    auto initColSparsity = output->colSparsity;
-    if (dir == FORWARD) {
+    auto oldOutRow = output->rowSparsity;
+    auto oldOutCol = output->colSparsity;
+    auto oldLeftRow = inputs[0]->rowSparsity;
+    auto oldLeftCol = inputs[0]->colSparsity;
+    auto oldRightRow = inputs[1]->rowSparsity;
+    auto oldRightCol = inputs[1]->colSparsity;
+
+    auto detectChange = [](auto &before, auto &after, bool &pruneFlag,
+                           Direction &dir) {
+      if ((before ^ after).any()) {
+        pruneFlag = true & !(dir == FORWARD);
+      }
+    };
+
+    switch (dir) {
+    case FORWARD:
       output->rowSparsity &= inputs[0]->rowSparsity;
       output->colSparsity &= inputs[1]->colSparsity;
-    } else if (dir == INTRA) {
-      if (inputs[1]->numOps == 1) {
+      detectChange(oldOutCol, output->colSparsity, output->pruneCol, dir);
+      detectChange(oldOutRow, output->rowSparsity, output->pruneRow, dir);
+      break;
+
+    case INTRA:
+      if (inputs[1]->numOps == 1)
         inputs[1]->rowSparsity &= inputs[0]->colSparsity;
-      }
-      if (inputs[0]->numOps == 1) {
+      if (inputs[0]->numOps == 1)
         inputs[0]->colSparsity &= inputs[1]->rowSparsity;
-      }
-    } else if (dir == BACKWARD) {
-      if (inputs[1]->numOps == 1) {
+      detectChange(oldLeftCol, inputs[0]->colSparsity, inputs[0]->pruneCol,
+                   dir);
+      detectChange(oldRightRow, inputs[1]->rowSparsity, inputs[1]->pruneRow,
+                   dir);
+      break;
+
+    case BACKWARD:
+      if (inputs[1]->numOps == 1)
         inputs[1]->colSparsity &= output->colSparsity;
-      }
-      if (inputs[0]->numOps == 1) {
+      if (inputs[0]->numOps == 1)
         inputs[0]->rowSparsity &= output->rowSparsity;
-      }
+      detectChange(oldLeftRow, inputs[0]->rowSparsity, inputs[0]->pruneRow,
+                   dir);
+      detectChange(oldRightCol, inputs[1]->colSparsity, inputs[1]->pruneCol,
+                   dir);
+      break;
     }
-    auto rowChange = initRowSparsity ^ output->rowSparsity;
-    auto colChange = initColSparsity ^ output->colSparsity;
   }
 
   std::string op_type() const override { return "MatMul"; }
@@ -250,6 +297,11 @@ public:
     output->print_full_sparsity();
     std::cout << std::endl;
   }
+  void prune() override {
+    inputs[0]->prune();
+    inputs[1]->prune();
+    output->prune();
+  }
 };
 
 class Add : public OpNode {
@@ -263,7 +315,7 @@ public:
 
   void set_expression() override {
     taco::IndexVar i, j;
-    output->data(i, j) = inputs[0]->data(i, j) + inputs[1]->data(i, j);
+    (*output->data)(i, j) = (*inputs[0]->data)(i, j) + (*inputs[1]->data)(i, j);
   }
 
   float get_sparsity_ratio() override {
@@ -297,6 +349,12 @@ public:
     std::cout << std::endl;
   }
   std::string op_type() const override { return "Add"; }
+
+  void prune() override {
+    inputs[0]->prune();
+    inputs[1]->prune();
+    output->prune();
+  }
 };
 
 class Transpose : public OpNode {
@@ -309,7 +367,7 @@ public:
 
   void set_expression() override {
     taco::IndexVar i, j;
-    output->data(i, j) = inputs[0]->data(j, i);
+    (*output->data)(i, j) = (*inputs[0]->data)(j, i);
   }
 
   float get_sparsity_ratio() override {
@@ -345,6 +403,11 @@ public:
     std::cout << std::endl;
   }
   std::string op_type() const override { return "Transpose"; }
+
+  void prune() override {
+    inputs[0]->prune();
+    output->prune();
+  }
 };
 
 class Graph {
@@ -361,6 +424,8 @@ public:
     return g;
   }
 
+  ~Graph() {}
+
   float get_sparsity_ratio() {
     float sparsity = 0.0;
     for (auto &op : nodes) {
@@ -369,13 +434,18 @@ public:
     return (float)(sparsity / nodes.size());
   }
 
-  void propagate() {
+  void propagate_all() {
     for (auto &op : nodes)
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
       op->propagate(Direction::INTRA);
     for (auto &op : nodes)
       op->propagate(Direction::BACKWARD);
+  }
+
+  void prune() {
+    for (auto &op : nodes)
+      op->prune();
   }
 
   void assemble_expressions() {
@@ -385,12 +455,12 @@ public:
 
   void compile() {
     assemble_expressions();
-    output->data.compile();
-    output->data.assemble();
+    output->data->compile();
+    output->data->assemble();
   }
 
   TensorPtr compute() {
-    output->data.compute();
+    output->data->compute();
     return output;
   }
 
