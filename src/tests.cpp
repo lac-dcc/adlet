@@ -102,8 +102,51 @@ void test_addition() {
   assert(O1->sparsities[1][1] == 1 && "Add: Forward propagation failed!");
 }
 
+void test_einsum() {
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  std::vector<TensorPtr> inputs1{ X1, X2 };
+  auto einsum1 = std::make_shared<Einsum>(inputs1, O1, std::string{ "ik,kj->ij" });
+
+  auto X3 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  std::vector<TensorPtr> inputs2{ O1, X3 };
+  auto einsum2 = std::make_shared<Einsum>(inputs2, O2, std::string{ "ik,kj->ij" });
+
+  assert(einsum1->reductionDims['i'].size() == 0 && "Only 'k' should be a reduction dim!");
+  assert(einsum1->reductionDims['j'].size() == 0 && "Only 'k' should be a reduction dim!");
+  assert(einsum1->reductionDims['k'].size() == 2 && "'k' should appear twice!");
+  assert(einsum1->outputDims['i'].size() == 1 && "'i' should appear once!");
+  assert(einsum1->outputDims['j'].size() == 1 && "'j' should appear once!");
+  assert(einsum1->outputDims['k'].size() == 0 && "'k' shouldn't appear as an output dim!");
+
+  assert(einsum1->reductionDims['k'][1].first == 1 && einsum1->reductionDims['k'][1].second == 0
+          && "Should be the pair (1, 0)!");
+
+  auto g = Graph::build_graph({X1, X2, X3}, O2, {einsum1, einsum2});
+  g.run_propagation();
+
+  X1->create_data({ taco::Sparse, taco::Dense });
+  X2->create_data({ taco::Sparse, taco::Dense });
+  X3->create_data({ taco::Sparse, taco::Dense });
+  O1->create_data({ taco::Sparse, taco::Dense });
+  O2->create_data({ taco::Sparse, taco::Dense });
+
+  X1->initialize_data();
+  X2->initialize_data();
+  X3->initialize_data();
+
+  assert(O2->sparsities[0][1] == 0 && "Forward propagation failed!");
+  assert(O2->data->at({1, 0}) == 0 && O1->data->at({1, 1}) == 0 && "Computation not sparse!"); 
+
+  g.compile();
+  g.compute();
+}
+
 int main() {
   // test_compute();
   test_propagation();
   test_addition();
+  test_einsum();
 }

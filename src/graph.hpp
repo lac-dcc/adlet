@@ -396,7 +396,175 @@ public:
 //   }
 //   std::string op_type() const override { return "Transpose"; }
 // };
-//
+
+class Einsum : public OpNode {
+public:
+  std::string expression;
+  std::string outputInds;
+  std::vector<std::string> tensorIndicesVector;
+  std::unordered_map<char, std::vector<std::pair<int, int>>> outputDims;
+  std::unordered_map<char, std::vector<std::pair<int, int>>> reductionDims;
+  Einsum(std::vector<TensorPtr> inputs, TensorPtr Out, std::string expression) {
+    this->inputs = inputs;
+    for (auto &input : inputs)
+      input->numOps++;
+    this->expression = expression;
+    output = Out;
+
+    int arrowPos = expression.find("->");
+    std::string lhs = expression.substr(0, arrowPos);
+    outputInds = expression.substr(arrowPos + 2);
+
+    std::stringstream ss(lhs);
+    std::string token;
+
+    while (std::getline(ss, token, ','))
+      tensorIndicesVector.push_back(token);
+
+    for (char c : outputInds) {
+      for (int i = 0; i < tensorIndicesVector.size(); ++i) {
+        int pos = tensorIndicesVector[i].find(c);
+        if (pos != std::string::npos)
+          outputDims[c].push_back(std::make_pair(i, pos));
+      }
+    }
+
+    for (int i = 0; i < tensorIndicesVector.size(); ++i) {
+      for (int j = 0; j < tensorIndicesVector[i].size(); ++j) {
+        char c = tensorIndicesVector[i][j];
+        
+        if (outputDims.find(c) != outputDims.end())
+          continue;
+        if (reductionDims.find(c) != reductionDims.end())
+          continue;
+        
+        reductionDims[c].push_back(std::make_pair(i, j));
+        
+        for (int k = i + 1; k < tensorIndicesVector.size(); ++k) {
+          int pos = tensorIndicesVector[k].find(c);
+          if (pos != std::string::npos) {
+            reductionDims[c].push_back(std::make_pair(k, pos));
+          }
+        }
+      }
+    }
+  }
+  void set_expression() override {
+    std::vector<taco::TensorBase> tensors;
+    for (auto input : inputs)
+      tensors.push_back(*input->data);
+    taco::Format format{ output->data->getStorage().getFormat() };
+    taco::parser::EinsumParser parser(expression, tensors, format, taco::Datatype::Float32);
+    parser.parse();
+    output->data = std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
+  }
+  // void set_expression() override {
+  //   std::vector<taco::IndexVar> indexVars;
+  //   std::vector<taco::IndexVar> outputIndexVars;
+  //   std::vector<std::vector<taco::IndexVar>> inputIndexVarsVec(tensorIndicesVector.size());
+  //
+  //   std::unordered_map<char, int> indMap;
+  //   int ind = 0;
+  //   // map all indices to a number
+  //   for (char c : outputInds) {
+  //     indMap[c] = ind++;
+  //     taco::IndexVar i;
+  //     indexVars.push_back(i);
+  //     outputIndexVars.push_back(i);
+  //     assert(indexVars.back() == outputIndexVars.back());
+  //   }
+  //   for (int i = 0; i < tensorIndicesVector.size(); ++i) {
+  //     auto ti = tensorIndicesVector[i];
+  //     for (char c : ti) {
+  //       auto pos = indMap.find(c);
+  //       if (pos == indMap.end()) {
+  //         indMap[c] = ind++;
+  //         taco::IndexVar j;
+  //         indexVars.push_back(j);
+  //         inputIndexVarsVec[i].push_back(j);
+  //       } else
+  //         inputIndexVarsVec[i].push_back(indexVars[indMap[c]]);
+  //     }
+  //   }
+  //
+  //   std::cout << outputIndexVars.size() << std::endl;
+  //   std::cout << inputIndexVarsVec.size() << std::endl;
+  //
+  //   (*output->data)(outputIndexVars) = (*inputs[0]->data)(inputIndexVarsVec[0]);
+  //   for (int i = 1; i < tensorIndicesVector.size(); ++i) {
+  //     (*output->data)(outputIndexVars) = (*output->data)(outputIndexVars) * (*inputs[i]->data)(inputIndexVarsVec[i]);
+  //   }
+  // }
+
+  void propagate(Direction dir) override {
+    bitset inputBitset;
+    switch (dir) {
+    case FORWARD:
+      inputBitset.set();
+      for (int i = 0; i < outputInds.length(); ++i) {
+        char c = outputInds[i];
+        for (auto p : outputDims[c]) {
+          int inputInd = p.first;       // which of the inputs
+          int inputDim = p.second;      // which dimension
+          inputBitset &= inputs[inputInd]->sparsities[inputDim];
+        }
+        output->sparsities[i] &= inputBitset;
+      }
+      break;
+    case INTRA:
+      inputBitset.set();
+      for (auto kv : reductionDims) {
+        char c{ kv.first };
+        for (auto p : kv.second) {
+          int inputInd = p.first;       // which of the inputs
+          assert(inputs[inputInd]->numOps == 1 && "Case where numOps > 1 isn't implemented yet!");
+          int inputDim = p.second;      // which dimension
+          inputBitset &= inputs[inputInd]->sparsities[inputDim];
+        }
+        for (auto p : kv.second) {
+          int inputInd = p.first;       // which of the inputs
+          int inputDim = p.second;      // which dimension
+          inputs[inputInd]->sparsities[inputDim] &= inputBitset;
+        }
+      }
+    case BACKWARD:
+      for (int i = 0; i < outputInds.length(); ++i) {
+        char c = outputInds[i];
+        for (auto p : outputDims[c]) {
+          int inputInd = p.first;       // which of the inputs
+          assert(inputs[inputInd]->numOps == 1 && "Case where numOps > 1 isn't implemented yet!");
+          int inputDim = p.second;      // which dimension
+          inputBitset &= output->sparsities[i];
+        }
+      }
+      break;
+    }
+
+  }
+
+  void print() override {
+    std::cout << "->Einsum[" << expression << "](";
+    for (int i = 0; i < inputs.size(); ++i) {
+      std::cout << inputs[i]->name;
+      if (i != inputs.size() - 1)
+          std::cout << ", ";
+    }
+    std::cout << ", out=" << output->name << ")";
+  }
+
+  void print_sparsity() override {
+    for (int i = 0; i < inputs.size(); ++i) {
+      inputs[i]->print_full_sparsity();
+      if (i != inputs.size() - 1)
+          std::cout << ",";
+    }
+    std::cout << " = " << std::endl;
+    output->print_full_sparsity();
+    std::cout << std::endl;
+  }
+  std::string op_type() const override { return "Einsum"; }
+};
+
 class Graph {
   std::vector<OpNodePtr> nodes;
 
