@@ -1,8 +1,6 @@
 #include "graph.hpp"
 
 void test_propagation() {
-  taco::Format format({taco::Dense, taco::Dense});
-  taco::Format sparse({taco::Dense, taco::Sparse});
   int size = 2;
 
   auto X1 = std::make_shared<Tensor>(size, size, bitset("01"), bitset("11"), "X1");
@@ -18,7 +16,7 @@ void test_propagation() {
   auto O3 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "O3");
   auto matmul3 = std::make_shared<MatMul>(O1, O2, O3);
 
-  auto g = Graph::build_graph(X1, O3, {matmul1, matmul2, matmul3});
+  auto g = Graph::build_graph({X1, X2, W1, W2}, O3, {matmul1, matmul2, matmul3});
 
   g.run_propagation();
 
@@ -71,7 +69,7 @@ void test_compute() {
   auto O2 = std::make_shared<Tensor>(size, size, "O2", format);
   auto O2_T = std::make_shared<Tensor>(size, size, "O2_T", format);
 
-  auto g = Graph::build_graph(X, O2_T,
+  auto g = Graph::build_graph({X, W1, W2}, O2_T,
                               {std::make_shared<MatMul>(X, W1, O1),
                                std::make_shared<MatMul>(O1, W2, O2),
                                std::make_shared<Transpose>(O2, O2_T)});
@@ -84,8 +82,28 @@ void test_compute() {
   assert(4 == g.output->data->at({1, 1}));
 }
 
+void test_addition() {
+  auto X1 = std::make_shared<Tensor>(size, size, bitset("01"), bitset("01"), "X1");
+  auto X2 = std::make_shared<Tensor>(size, size, bitset("01"), bitset("10"), "X2");
+  auto X3 = std::make_shared<Tensor>(size, size, bitset("01"), bitset("01"), "X3");
+
+  auto O1 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "O1");
+
+  std::vector<TensorPtr> inputs{ X1, X2, X3 };
+  
+  auto add1 = std::make_shared<Add>(inputs, O1);
+
+  auto g = Graph::build_graph({X1, X2, X3}, O1, {add1});
+  g.run_propagation();
+
+  assert(O1->rowSparsity[0] == 1 && "Add: Forward propagation failed!");
+  assert(O1->rowSparsity[1] == 0 && "Add: Forward propagation failed!");
+  assert(O1->colSparsity[0] == 1 && "Add: Forward propagation failed!");
+  assert(O1->colSparsity[1] == 1 && "Add: Forward propagation failed!");
+}
+
 int main() {
   test_compute();
   test_propagation();
-  // test_pruning();
+  test_addition();
 }

@@ -34,7 +34,7 @@ void benchmark(bool propagate, float sparsity) {
   auto Y = std::make_shared<Tensor>(size, size, denseSparsityVector, denseSparsityVector, "Y");
   auto Y_T = std::make_shared<Tensor>(size, size, denseSparsityVector, denseSparsityVector, "Y_T");
 
-  auto g = Graph::build_graph(X, Y_T,
+  auto g = Graph::build_graph({X, W1, W2, W3, W4}, Y_T,
                               {std::make_shared<MatMul>(X, W1, O1),
                                std::make_shared<MatMul>(O1, W2, O2),
                                std::make_shared<Transpose>(O2, O2_T),

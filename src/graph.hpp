@@ -258,7 +258,7 @@ public:
     (*output->data)(i, j) = (*inputs[0]->data)(i, k) * (*inputs[1]->data)(k, j);
   }
 
-
+d
   void propagate(Direction dir) override {
     switch (dir) {
     case FORWARD:
@@ -299,7 +299,7 @@ public:
 class Add : public OpNode {
 public:
   Add(std::vector<TensorPtr> &inputs, TensorPtr &Out) {
-    inputs = std::move(inputs);
+    this->inputs = inputs;
     output = Out;
     for (auto &input : inputs)
       input->numOps++;
@@ -313,10 +313,14 @@ public:
 
   void propagate(Direction dir) override {
     if (dir == FORWARD) {
+      bitset inputRowSparsity;
+      bitset inputColSparsity;
       for (auto input : inputs) {
-        output->rowSparsity = input->rowSparsity;
-        output->colSparsity = input->colSparsity;
+        inputRowSparsity |= input->rowSparsity;
+        inputColSparsity |= input->colSparsity;
       }
+      output->rowSparsity &= inputRowSparsity;
+      output->colSparsity &= inputColSparsity;
     }
   }
 
@@ -387,11 +391,12 @@ class Graph {
   std::vector<OpNodePtr> nodes;
 
 public:
-  TensorPtr input, output;
-  static Graph build_graph(TensorPtr in, TensorPtr out,
+  std::vector<TensorPtr> inputs;
+  TensorPtr output;
+  static Graph build_graph(std::vector<TensorPtr> inputs, TensorPtr out,
                            const std::vector<OpNodePtr> &ops) {
     Graph g;
-    g.input = in;
+    g.inputs = inputs;
     g.output = out;
     g.nodes = ops;
     return g;
@@ -425,7 +430,9 @@ public:
   }
 
   void print() {
-    std::cout << input->name;
+    for (auto &input : inputs) {
+        std::cout << input->name << ",";
+    }
     for (auto &op : nodes) {
       op->print();
     }
