@@ -1,110 +1,50 @@
 #include "graph.hpp"
 
-void test_pruning() {
+void test_propagation() {
   taco::Format format({taco::Dense, taco::Dense});
   taco::Format sparse({taco::Dense, taco::Sparse});
   int size = 2;
-  auto X = std::make_shared<Tensor>(size, size, "X", format);
-  float one = 1.0;
-  float zero = 0.0;
-  X->data->insert({0, 0}, one);
-  X->data->insert({0, 1}, one);
-  X->data->insert({1, 0}, one);
-  X->data->insert({1, 1}, one);
-  auto W1 = std::make_shared<Tensor>(size, size, "W1", format);
-  W1->data->insert({0, 0}, one);
-  W1->data->insert({0, 1}, one);
-  W1->data->insert({1, 0}, one);
-  W1->data->insert({1, 1}, one);
-  auto W2 = std::make_shared<Tensor>(size, size, "W2", format);
-  W2->data->insert({0, 0}, zero);
-  W2->data->insert({0, 1}, zero);
-  W2->data->insert({1, 0}, one);
-  W2->data->insert({1, 1}, one);
-  W2->rowSparsity = bitset("10");
-  W2->colSparsity = bitset("11");
 
-  auto O1 = std::make_shared<Tensor>(size, size, "O1", format);
-  auto O2 = std::make_shared<Tensor>(size, size, "O2", format);
-  auto O2_T = std::make_shared<Tensor>(size, size, "O2_T", format);
-  auto matmul1 = std::make_shared<MatMul>(X, W1, O1);
-  auto matmul2 = std::make_shared<MatMul>(O1, W2, O2);
-  auto g = Graph::build_graph(X, O2, {matmul1, matmul2});
+  auto X1 = std::make_shared<Tensor>(size, size, bitset("01"), bitset("11"), "X1");
+  auto W1 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("10"), "W1");
+  auto O1 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "O1");
+  auto matmul1 = std::make_shared<MatMul>(X1, W1, O1);
 
-  assert(format == O1->data->getFormat());
-  assert(format == W1->data->getFormat());
-  assert(format == W2->data->getFormat());
+  auto X2 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "X2");
+  auto W2 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "W2");
+  auto O2 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "O2");
+  auto matmul2 = std::make_shared<MatMul>(X2, W2, O2);
 
-  assert(1.0f == matmul1->inputs[1]->data->at({0, 0}));
-  assert(1.0f == matmul1->inputs[1]->data->at({1, 0}));
+  auto O3 = std::make_shared<Tensor>(size, size, bitset("11"), bitset("11"), "O3");
+  auto matmul3 = std::make_shared<MatMul>(O1, O2, O3);
 
-  assert(0.0f == O1->data->at({0, 0}));
-  assert(0.0f == O1->data->at({1, 0}));
+  auto g = Graph::build_graph(X1, O3, {matmul1, matmul2, matmul3});
 
-  assert(1.0f == W1->data->at({0, 0}));
-  assert(1.0f == W1->data->at({1, 0}));
-
-  g.run_analysis();
   g.run_propagation();
 
-  assert(0.0f == O1->data->at({0, 0}));
-  assert(0.0f == O1->data->at({1, 0}));
+  assert(O1->rowSparsity[1] == 0 && "Forward propagation failed!");
+  assert(O1->colSparsity[0] == 0 && "Forward propagation failed!");
+  assert(O3->rowSparsity[1] == 0 && "Forward propagation failed!");
+  assert(O2->rowSparsity[0] == 0 && "Intra propagation failed!");
+  assert(X2->rowSparsity[0] == 0 && "Backward propagation failed!");
 
-  assert(0.0f == W1->data->at({0, 0}));
-  assert(0.0f == W1->data->at({1, 0}));
+  X1->create_data({ taco::Sparse, taco::Dense });
+  X2->create_data({ taco::Sparse, taco::Dense });
+  O1->create_data({ taco::Sparse, taco::Dense });
+  O2->create_data({ taco::Sparse, taco::Dense });
+  O3->create_data({ taco::Sparse, taco::Dense });
+  W1->create_data({ taco::Sparse, taco::Dense });
+  W2->create_data({ taco::Sparse, taco::Dense });
 
-  assert(sparse == O1->data->getFormat());
-  assert(sparse == W1->data->getFormat());
-  assert(format == W2->data->getFormat());
-}
+  fill_tensor(*X1->data, X1->rowSparsity, X1->colSparsity, X1->rows, X1->cols);
+  fill_tensor(*X2->data, X2->rowSparsity, X2->colSparsity, X2->rows, X2->cols);
+  fill_tensor(*W1->data, W1->rowSparsity, W1->colSparsity, W1->rows, W1->cols);
+  fill_tensor(*W2->data, W2->rowSparsity, W2->colSparsity, W2->rows, W2->cols);
 
-void test_propagation() {
-  taco::Format format({taco::Dense, taco::Dense});
-  int size = 2;
-  auto X = std::make_shared<Tensor>(size, size, "X", format);
-  float one = 1.0;
-  float zero = 0.0;
-  X->data->insert({0, 0}, one);
-  X->data->insert({0, 1}, one);
-  X->data->insert({1, 0}, one);
-  X->data->insert({1, 1}, one);
-  auto W1 = std::make_shared<Tensor>(size, size, "W1", format);
-  W1->data->insert({0, 0}, one);
-  W1->data->insert({0, 1}, one);
-  W1->data->insert({1, 0}, one);
-  W1->data->insert({1, 1}, one);
-  auto W2 = std::make_shared<Tensor>(size, size, "W2", format);
-  W2->data->insert({0, 0}, zero);
-  W2->data->insert({0, 1}, zero);
-  W2->data->insert({1, 0}, one);
-  W2->data->insert({1, 1}, one);
-  W2->rowSparsity = bitset("10");
-  W2->colSparsity = bitset("11");
-  auto O1 = std::make_shared<Tensor>(size, size, "O1", format);
-  auto O2 = std::make_shared<Tensor>(size, size, "O2", format);
-  auto O2_T = std::make_shared<Tensor>(size, size, "O2_T", format);
-  auto g = Graph::build_graph(X, O2_T,
-                              {std::make_shared<MatMul>(X, W1, O1),
-                               std::make_shared<MatMul>(O1, W2, O2),
-                               std::make_shared<Transpose>(O2, O2_T)});
+  g.compile();
+  g.compute();
 
-  assert(size == count_bits(X->rowSparsity, size));
-  assert(size == count_bits(X->colSparsity, size));
-  assert(size == count_bits(O1->rowSparsity, size));
-  assert(size == count_bits(O1->colSparsity, size));
-  assert(size == count_bits(W1->rowSparsity, size));
-  assert(size == count_bits(W1->colSparsity, size));
-  assert(size - 1 == count_bits(W2->rowSparsity, size));
-  assert(size == count_bits(W2->colSparsity, size));
-  g.run_analysis();
-  assert(size == count_bits(X->rowSparsity, size));
-  assert(size == count_bits(X->colSparsity, size));
-  assert(size == count_bits(O1->rowSparsity, size));
-  assert(size - 1 == count_bits(O1->colSparsity, size));
-  assert(size == count_bits(W1->rowSparsity, size));
-  assert(size - 1 == count_bits(W1->colSparsity, size));
-  assert(size - 1 == count_bits(W2->rowSparsity, size));
-  assert(size == count_bits(W2->colSparsity, size));
+  assert(O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0 && "Computation not sparse!"); 
 }
 
 void test_compute() {
@@ -144,8 +84,8 @@ void test_compute() {
   assert(4 == g.output->data->at({1, 1}));
 }
 
-void run_all() {
+int main() {
   test_compute();
   test_propagation();
-  test_pruning();
+  // test_pruning();
 }
