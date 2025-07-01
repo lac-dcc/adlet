@@ -7,7 +7,7 @@
 #include <cassert>
 #include <iostream>
 #include <unordered_map>
-#include <pair>
+#include <utility>
 #include <memory>
 #include <ostream>
 #include <random>
@@ -317,9 +317,9 @@ public:
   }
 
   void set_expression() override {
-    taco::IndexVar i, j;
+    std::vector<taco::IndexVar> inds(output->numDims);
     for (auto &input : inputs)
-      (*output->data)(i, j) += (*input->data)(i, j);
+      (*output->data)(inds) += (*input->data)(inds);
   }
 
   void propagate(Direction dir) override {
