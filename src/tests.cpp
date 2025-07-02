@@ -1,4 +1,9 @@
 #include "graph.hpp"
+#include "taco.h"
+#include "taco/format.h"
+#include <memory>
+#include <vector>
+#include <cassert>
 
 void test_propagation() {
   int size = 2;

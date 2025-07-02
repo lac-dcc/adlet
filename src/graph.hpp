@@ -20,6 +20,9 @@ using bitset = std::bitset<size>;
 
 enum Direction { FORWARD, INTRA, BACKWARD };
 
+class OpNode;
+using OpNodePtr = std::shared_ptr<OpNode>;
+
 int count_bits(bitset A, int pos) {
   int high_bits_to_eliminate = (size - 1) - (pos - 1);
   A <<= (high_bits_to_eliminate & (size - 1));
@@ -94,6 +97,8 @@ public:
   std::vector<int> sizes;
   int numOps{ 0 }; // number of operators this tensor belongs to as an operand
   bool outputTensor = false;
+
+  std::vector<OpNodePtr> inputOps; // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities, const std::string &n = "")
@@ -249,8 +254,6 @@ public:
   virtual void print_sparsity() = 0;
   virtual std::string op_type() const = 0;
 };
-
-using OpNodePtr = std::shared_ptr<OpNode>;
 
 class MatMul : public OpNode {
 public:
@@ -449,6 +452,7 @@ public:
       }
     }
   }
+
   void set_expression() override {
     std::vector<taco::TensorBase> tensors;
     for (auto input : inputs)
@@ -458,43 +462,6 @@ public:
     parser.parse();
     output->data = std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
   }
-  // void set_expression() override {
-  //   std::vector<taco::IndexVar> indexVars;
-  //   std::vector<taco::IndexVar> outputIndexVars;
-  //   std::vector<std::vector<taco::IndexVar>> inputIndexVarsVec(tensorIndicesVector.size());
-  //
-  //   std::unordered_map<char, int> indMap;
-  //   int ind = 0;
-  //   // map all indices to a number
-  //   for (char c : outputInds) {
-  //     indMap[c] = ind++;
-  //     taco::IndexVar i;
-  //     indexVars.push_back(i);
-  //     outputIndexVars.push_back(i);
-  //     assert(indexVars.back() == outputIndexVars.back());
-  //   }
-  //   for (int i = 0; i < tensorIndicesVector.size(); ++i) {
-  //     auto ti = tensorIndicesVector[i];
-  //     for (char c : ti) {
-  //       auto pos = indMap.find(c);
-  //       if (pos == indMap.end()) {
-  //         indMap[c] = ind++;
-  //         taco::IndexVar j;
-  //         indexVars.push_back(j);
-  //         inputIndexVarsVec[i].push_back(j);
-  //       } else
-  //         inputIndexVarsVec[i].push_back(indexVars[indMap[c]]);
-  //     }
-  //   }
-  //
-  //   std::cout << outputIndexVars.size() << std::endl;
-  //   std::cout << inputIndexVarsVec.size() << std::endl;
-  //
-  //   (*output->data)(outputIndexVars) = (*inputs[0]->data)(inputIndexVarsVec[0]);
-  //   for (int i = 1; i < tensorIndicesVector.size(); ++i) {
-  //     (*output->data)(outputIndexVars) = (*output->data)(outputIndexVars) * (*inputs[i]->data)(inputIndexVarsVec[i]);
-  //   }
-  // }
 
   void propagate(Direction dir) override {
     bitset inputBitset;
@@ -534,7 +501,7 @@ public:
           int inputInd = p.first;       // which of the inputs
           assert(inputs[inputInd]->numOps == 1 && "Case where numOps > 1 isn't implemented yet!");
           int inputDim = p.second;      // which dimension
-          inputBitset &= output->sparsities[i];
+          inputs[inputInd]->sparsities[inputDim] &= output->sparsities[i];
         }
       }
       break;
@@ -577,6 +544,11 @@ public:
     g.inputs = inputs;
     g.output = out;
     g.nodes = ops;
+    for (auto op : ops) {
+      for (auto input : op->inputs) {
+        input->inputOps.push_back(op);
+      }
+    }
     return g;
   }
 
