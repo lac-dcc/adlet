@@ -157,28 +157,46 @@ public:
     data = std::make_shared<taco::Tensor<float>>(taco::Tensor<float>(name, sizes, format));
   }
 
+  std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+    int numDims = dimSizes.size();
+    std::vector<int> indices(numDims);
+    std::vector<int> cumulativeSize(numDims);
+    cumulativeSize[0] = 1;
+
+    for (int i = 1; i < numDims; ++i)
+      cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
+
+    for (int i = 0; i < numDims; ++i) {
+      if (numElement < cumulativeSize[numDims - 1 - i])
+        continue;
+      indices[i] = numElement / cumulativeSize[numDims - 1 - i];
+      numElement %= cumulativeSize[numDims - 1 - i];
+    }
+
+    return indices;
+  }
+
   void initialize_data() {
     // number of dimensions can vary so compute num elements
     int numElements = 1;
     for (auto size : sizes)
       numElements *= size;
 
-    for (int i = 0; i < numElements; ++i) {
-      std::vector<int> index(numDims);
-      bool skip = false;
-      for (int j = 0; j < numDims; ++j) {
-        // check if this index is sparse, skip if it is
-        if (sparsities[j][i % sizes[j]] == 0) {
-          skip = true;
+    for (int numElement = 0; numElement < numElements; ++numElement) {
+      auto indices = get_indices(sizes, numElement);
+      bool isZero = false;
+
+      for (int i = 0; i < numDims; ++i) {
+        if (sparsities[i][indices[i]] == 0) {
+          isZero = true;
           break;
         }
-        index[j] = i % sizes[j]; // not sparse: we want to insert into it
       }
-      if (skip)
+      if (isZero)
         continue;
 
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      data->insert(index, val);
+      data->insert(indices, val);
     }
 
     data->pack();
@@ -360,46 +378,6 @@ public:
   std::string op_type() const override { return "Add"; }
 };
 
-// class Transpose : public OpNode {
-// public:
-//   Transpose(TensorPtr In, TensorPtr Out, int ) {
-//     In->numOps++;
-//     inputs = {In};
-//     output = Out;
-//   }
-//
-//   void set_expression() override {
-//     taco::IndexVar i, j;
-//     (*output->data)(i, j) = (*inputs[0]->data)(j, i);
-//   }
-//
-//   void propagate(Direction dir) override {
-//     if (dir == FORWARD) {
-//       output->rowSparsity &= inputs[0]->colSparsity;
-//       output->colSparsity &= inputs[0]->rowSparsity;
-//     } else if (dir == BACKWARD) {
-//       if (inputs[0]->numOps == 1) {
-//         inputs[0]->rowSparsity &= output->colSparsity;
-//         inputs[0]->colSparsity &= output->rowSparsity;
-//       }
-//     }
-//   }
-//
-//   void print() override {
-//     std::cout << "->Transpose(" << inputs[0]->name << ",out=" << output->name
-//               << ")";
-//   }
-//
-//   void print_sparsity() override {
-//     std::cout << "Transpose" << std::endl;
-//     inputs[0]->print_full_sparsity();
-//     std::cout << " = " << std::endl;
-//     output->print_full_sparsity();
-//     std::cout << std::endl;
-//   }
-//   std::string op_type() const override { return "Transpose"; }
-// };
-
 class Einsum : public OpNode {
 public:
   std::string expression;
@@ -463,50 +441,171 @@ public:
     output->data = std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
   }
 
-  void propagate(Direction dir) override {
+  void propagate_forward() {
+    for (int i = 0; i < outputInds.length(); ++i) {
+      bitset inputBitset;
+      inputBitset.set();
+
+      char c = outputInds[i];
+      for (auto p : outputDims[c]) {
+        int inputInd = p.first;       // which of the inputs
+        int inputDim = p.second;      // which dimension
+        inputBitset &= inputs[inputInd]->sparsities[inputDim];
+      }
+      output->sparsities[i] &= inputBitset;
+    }
+  }
+
+  // op: pointer to Add
+  // inputInd: the location of the input propagating to in THIS Einsum
+  // inputDim: the dim of the input propagating to in THIS Einsum
+  bitset or_all_operands_add(OpNodePtr op, int inputInd, int inputDim) {
     bitset inputBitset;
-    switch (dir) {
-    case FORWARD:
-      inputBitset.set();
-      for (int i = 0; i < outputInds.length(); ++i) {
-        char c = outputInds[i];
-        for (auto p : outputDims[c]) {
-          int inputInd = p.first;       // which of the inputs
-          int inputDim = p.second;      // which dimension
-          inputBitset &= inputs[inputInd]->sparsities[inputDim];
-        }
-        output->sparsities[i] &= inputBitset;
-      }
-      break;
-    case INTRA:
-      inputBitset.set();
-      for (auto kv : reductionDims) {
-        char c{ kv.first };
-        for (auto p : kv.second) {
-          int inputInd = p.first;       // which of the inputs
-          assert(inputs[inputInd]->numOps == 1 && "Case where numOps > 1 isn't implemented yet!");
-          int inputDim = p.second;      // which dimension
-          inputBitset &= inputs[inputInd]->sparsities[inputDim];
-        }
-        for (auto p : kv.second) {
-          int inputInd = p.first;       // which of the inputs
-          int inputDim = p.second;      // which dimension
-          inputs[inputInd]->sparsities[inputDim] &= inputBitset;
-        }
-      }
-    case BACKWARD:
-      for (int i = 0; i < outputInds.length(); ++i) {
-        char c = outputInds[i];
-        for (auto p : outputDims[c]) {
-          int inputInd = p.first;       // which of the inputs
-          assert(inputs[inputInd]->numOps == 1 && "Case where numOps > 1 isn't implemented yet!");
-          int inputDim = p.second;      // which dimension
-          inputs[inputInd]->sparsities[inputDim] &= output->sparsities[i];
-        }
-      }
+    for (auto input : op->inputs) { // go through ops in the addition and skip the current one
+      if (input.get() == inputs[inputInd].get())
+        continue;
+      inputBitset |= input->sparsities[inputDim]; // all operands have the same dimensionality
+    }
+    return inputBitset;
+  }
+
+  // op: pointer to Einsum
+  // inputInd: the location of the input propagating to in THIS Einsum
+  // inputDim: the dim of the input propagating to in THIS Einsum
+  bitset or_all_operands_einsum(OpNodePtr op, int inputInd, int inputDim) {
+    bitset inputBitset;
+    int currInd{ };
+    char currChar{ };
+    auto einsumOp = dynamic_cast<Einsum*> (op.get());
+    // find the index of this operand in einsumOp, save into currInd
+    // use currInd to get the char IndexVar of this tensor, save to currChar
+    for (int i =0; i < op->inputs.size(); ++i) {
+      if (op->inputs[i].get() != inputs[inputInd].get())
+        continue;
+      currInd = i;
+      currChar = einsumOp->tensorIndicesVector[currInd][inputDim];
       break;
     }
+    // std::cout << "currChar " << currChar << std::endl;
+    // iterate all reduction vars corresponding to this char
+    for (auto loc : einsumOp->reductionDims[currChar]) {
+      if (einsumOp->inputs[loc.first].get() == inputs[inputInd].get())
+        continue;
+      // std::cout << loc.first << ", " << loc.second << "(" << einsumOp->inputs[loc.first]->name << ")" << std::endl;
+      inputBitset |= einsumOp->inputs[loc.first]->sparsities[loc.second];
+    }
+    return inputBitset;
+  }
 
+  // returns op output sparsity for the corresponding dimension or empty set if not in output
+  bitset op_output_sparsity_einsum(OpNodePtr op, int inputInd, int inputDim) {
+    auto einsumOp = dynamic_cast<Einsum*> (op.get());
+    char outputChar = '?';
+    for (int i = 0; i < einsumOp->inputs.size(); ++i) {
+      auto einsumInputTensor = einsumOp->inputs[i];
+      if (einsumInputTensor.get() != inputs[inputInd].get())
+        continue;
+      outputChar = einsumOp->tensorIndicesVector[i][inputDim];
+    }
+    assert(outputChar != '?');
+    int outputInd = -1;
+    for (int i = 0; i < einsumOp->outputInds.length(); ++i) {
+      if (einsumOp->outputInds[i] == outputChar) {
+        outputInd = i;
+        break;
+      }
+    }
+
+    if (outputInd == -1)
+      return bitset(); // not in the output: return empty bitset
+    return einsumOp->output->sparsities[outputInd];
+  }
+
+  bitset propagate_intra_multiop(OpNodePtr op, int inputInd, int inputDim) {
+    bitset inputBitset; // start off 0
+    OpNode* opType = op.get();
+    if (typeid(*opType) == typeid(Add)) {
+      inputBitset |= or_all_operands_add(op, inputInd, inputDim);
+    } else if (typeid(*opType) == typeid(Einsum)) {
+      // std::cout << inputBitset[0] << inputBitset[1] << std::endl;
+      // std::cout << "updating " << inputs[inputInd]->name << " dim " << inputDim << std::endl;
+      inputBitset |= or_all_operands_einsum(op, inputInd, inputDim);
+      // std::cout << inputBitset[0] << inputBitset[1] << std::endl;
+      inputBitset |= op_output_sparsity_einsum(op, inputInd, inputDim);
+    }
+    return inputBitset;
+  }
+
+  bitset propagate_intra_dimension(char indexChar) {
+    bitset inputBitset;
+    inputBitset.set();
+
+    for (auto inputLocation : reductionDims[indexChar]) {
+      int inputInd = inputLocation.first;       // which of the inputs
+      int inputDim = inputLocation.second;      // which dimension
+      inputBitset &= inputs[inputInd]->sparsities[inputDim]; // handle the main case
+
+      for (auto op : inputs[inputInd]->inputOps) {
+        if (op.get() == this)
+          continue;
+        inputBitset |= propagate_intra_multiop(op, inputInd, inputDim);
+      }
+    }
+    return inputBitset;
+  }
+
+  void propagate_intra() {
+    for (auto kv : reductionDims) { // iterate over character: pair(inputInd, inputDim) map.
+      bitset inputBitset = propagate_intra_dimension(kv.first);
+      for (auto p : kv.second) {
+        int inputInd = p.first;       // which of the inputs
+        int inputDim = p.second;      // which dimension
+        inputs[inputInd]->sparsities[inputDim] &= inputBitset;
+      }
+    }
+  }
+
+  void propagate_backward_dimension(int outputInd) {
+    char indexChar = outputInds[outputInd];
+    for (auto p : outputDims[indexChar]) {
+      int inputInd = p.first;       // which of the inputs
+      int inputDim = p.second;      // which dimension
+      bitset inputBitset;
+      for (auto op : inputs[inputInd]->inputOps) {
+        if (op.get() == this)
+          continue;
+        OpNode* opType = op.get();
+        if (typeid(*opType) == typeid(Add))
+          inputBitset |= or_all_operands_add(op, inputInd, inputDim);
+        else if (typeid(*opType) == typeid(Einsum)) {
+          inputBitset |= or_all_operands_einsum(op, inputInd, inputDim);
+          inputBitset |= op_output_sparsity_einsum(op, inputInd, inputDim);
+        }
+      }
+      inputBitset |= output->sparsities[outputInd];
+      inputs[inputInd]->sparsities[inputDim] &= inputBitset;
+    }
+  }
+
+  void propagate_backward() {
+    for (int i = 0; i < outputInds.length(); ++i) {
+      propagate_backward_dimension(i);
+    }
+  }
+
+  void propagate(Direction dir) override {
+    switch (dir) {
+    case FORWARD:
+      propagate_forward();
+      break;
+    case INTRA:
+      if (inputs.size() >= 2)
+        propagate_intra();
+      break;
+    case BACKWARD:
+      propagate_backward();
+      break;
+    }
   }
 
   void print() override {

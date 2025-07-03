@@ -11,25 +11,34 @@ void test_propagation() {
   auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("01"), bitset("11")}, "X1");
   auto W1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("10")}, "W1");
   auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
-  auto matmul1 = std::make_shared<MatMul>(std::vector<TensorPtr>{X1, W1}, O1);
+  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
 
   auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
   auto W2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "W2");
   auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
-  auto matmul2 = std::make_shared<MatMul>(std::vector<TensorPtr>{X2, W2}, O2);
+  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W2}, O2, "ik,kj->ij");
 
   auto O3 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
-  auto matmul3 = std::make_shared<MatMul>(std::vector<TensorPtr>{O1, O2}, O3);
+  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
-  auto g = Graph::build_graph({X1, X2, W1, W2}, O3, {matmul1, matmul2, matmul3});
+  auto g = Graph::build_graph({X1, W1, X2, W2}, O3, {matmul1, matmul2, matmul3});
 
   g.run_propagation();
 
-  assert(O1->sparsities[0][1] == 0 && "Forward propagation failed!");
+  assert(X1->sparsities[0][0] == 1 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[0][1] == 0 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[1][0] == 1 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[1][1] == 1 && "X1 sparsity shouldn't change!");
+
+  assert(W1->sparsities[0][0] == 1 && "W1 sparsity shouldn't change!");
+  assert(W1->sparsities[0][1] == 1 && "W1 sparsity shouldn't change!");
+  assert(W1->sparsities[1][0] == 0 && "W1 sparsity shouldn't change!");
+  assert(W1->sparsities[1][1] == 1 && "W1 sparsity shouldn't change!");
+
   assert(O1->sparsities[1][0] == 0 && "Forward propagation failed!");
-  assert(O3->sparsities[0][1] == 0 && "Forward propagation failed!");
-  assert(O2->sparsities[0][0] == 0 && "Intra propagation failed!");
-  assert(X2->sparsities[0][0] == 0 && "Backward propagation failed!");
+  assert(O1->sparsities[0][1] == 0 && "Forward propagation failed!");
+  assert(O1->sparsities[1][1] == 1 && "Forward propagation failed!");
+  assert(O1->sparsities[0][0] == 1 && "Forward propagation failed!");
 
   X1->create_data({ taco::Sparse, taco::Dense });
   X2->create_data({ taco::Sparse, taco::Dense });
@@ -47,7 +56,8 @@ void test_propagation() {
   g.compile();
   g.compute();
 
-  assert(O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0 && "Computation not sparse!"); 
+  assert(O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0 && "Values expected to be sparse aren't!"); 
+  assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) != 0 && "Values expected to be dense are sparse!"); 
 }
 //
 // void test_compute() {
@@ -149,9 +159,115 @@ void test_einsum() {
   g.compute();
 }
 
+void test_einsum_transpose() {
+  int size = 2;
+
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("01"), bitset("10")}, "X1");
+  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto transpose = std::make_shared<Einsum>(std::vector<TensorPtr>{X1}, O1, "ij->ji");
+
+  auto g = Graph::build_graph({X1}, O1, {transpose});
+  g.run_propagation();
+
+  assert(X1->sparsities[0][0] == 1 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[0][1] == 0 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[1][0] == 0 && "X1 sparsity shouldn't change!");
+  assert(X1->sparsities[1][1] == 1 && "X1 sparsity shouldn't change!");
+
+  assert(O1->sparsities[0][0] == 0 && "Forward propagation failed!");
+  assert(O1->sparsities[0][1] == 1 && "Forward propagation failed!");
+  assert(O1->sparsities[1][0] == 1 && "Forward propagation failed!");
+  assert(O1->sparsities[1][1] == 0 && "Forward propagation failed!");
+
+  X1->create_data({ taco::Sparse, taco::Dense });
+  O1->create_data({ {taco::Sparse, taco::Dense}, {1, 0}});
+
+  X1->initialize_data();
+
+  g.compile();
+  g.compute();
+
+  assert(X1->data->at({0, 1}) == O1->data->at({1, 0}));
+}
+
+void test_einsum_multiop_1() {
+  int size = 2;
+
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto W1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+
+  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
+  auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X2}, O2, "ik,kj->ij");
+
+  auto O3 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
+
+  auto g = Graph::build_graph({X1, X2, W1}, O1, {matmul1, matmul2, matmul3});
+  g.run_propagation();
+
+  X1->create_data({ taco::Sparse, taco::Dense });
+  X2->create_data({ taco::Sparse, taco::Dense });
+  W1->create_data({ taco::Sparse, taco::Dense });
+  O1->create_data({ taco::Sparse, taco::Dense });
+  O2->create_data({ taco::Sparse, taco::Dense });
+  O3->create_data({ taco::Sparse, taco::Dense });
+
+  X1->initialize_data();
+  X2->initialize_data();
+  W1->initialize_data();
+
+  g.compile();
+  g.compute();
+
+  assert(X2->data->at({0, 0}) != 0 && X2->data->at({0, 1}) != 0 && X2->data->at({1, 0}) == 0 && X2->data->at({1, 1}) == 0);
+  assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) != 0 && O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0);
+}
+
+void test_einsum_multiop_2() {
+  int size = 2;
+
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto W1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+
+  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
+  auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
+
+  auto O3 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
+
+  auto g = Graph::build_graph({X1, X2, W1}, O1, {matmul1, matmul2, matmul3});
+  g.run_propagation();
+
+  X1->create_data({ taco::Sparse, taco::Dense });
+  X2->create_data({ taco::Sparse, taco::Dense });
+  W1->create_data({ taco::Sparse, taco::Dense });
+  O1->create_data({ taco::Sparse, taco::Dense });
+  O2->create_data({ taco::Sparse, taco::Dense });
+  O3->create_data({ taco::Sparse, taco::Dense });
+
+  X1->initialize_data();
+  X2->initialize_data();
+  W1->initialize_data();
+
+  g.compile();
+  g.compute();
+
+  assert(X2->data->at({0, 0}) != 0 && X2->data->at({0, 1}) != 0 && X2->data->at({1, 0}) != 0 && X2->data->at({1, 1}) != 0);
+  assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) == 0 && O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0);
+}
+
 int main() {
   // test_compute();
   test_propagation();
   test_addition();
   test_einsum();
+  test_einsum_transpose();
+  test_einsum_multiop_1();
+  test_einsum_multiop_2();
 }
