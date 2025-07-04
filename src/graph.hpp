@@ -519,8 +519,9 @@ public:
 
   // inputInd: the location of the input propagating to in THIS Einsum
   // inputDim: the dim of the input propagating to in THIS Einsum
-  bitset or_all_operands_einsum(Einsum* einsumOp, int inputInd, int inputDim) {
+  bitset and_all_operands_einsum(Einsum* einsumOp, int inputInd, int inputDim) {
     bitset inputBitset;
+    inputBitset.set();
     int currInd{ };
     char currChar{ };
     // find the index of this operand in einsumOp, save into currInd
@@ -538,7 +539,7 @@ public:
       if (einsumOp->inputs[loc.first].get() == inputs[inputInd].get())
         continue;
       // std::cout << loc.first << ", " << loc.second << "(" << einsumOp->inputs[loc.first]->name << ")" << std::endl;
-      inputBitset |= einsumOp->inputs[loc.first]->sparsities[loc.second];
+      inputBitset &= einsumOp->inputs[loc.first]->sparsities[loc.second];
     }
     return inputBitset;
   }
@@ -578,7 +579,7 @@ public:
       }
     } else if (typeid(*opPtr) == typeid(Einsum)) {
       Einsum* einsumOp = dynamic_cast<Einsum*>(op.get());
-      inputBitset |= or_all_operands_einsum(einsumOp, inputInd, inputDim);
+      inputBitset |= and_all_operands_einsum(einsumOp, inputInd, inputDim);
       inputBitset |= op_output_sparsity_einsum(einsumOp, inputInd, inputDim);
     }
     return inputBitset;
