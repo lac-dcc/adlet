@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-constexpr int size = 2048;
+constexpr int size = 1024;
 
 using bitset = std::bitset<size>;
 
@@ -28,6 +28,26 @@ int count_bits(bitset A, int pos) {
   A <<= (high_bits_to_eliminate & (size - 1));
   return (A[size - 1] ? ~0ULL : 0) & A.count();
 }
+
+std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+  int numDims = dimSizes.size();
+  std::vector<int> indices(numDims);
+  std::vector<int> cumulativeSize(numDims);
+  cumulativeSize[0] = 1;
+
+  for (int i = 1; i < numDims; ++i)
+    cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
+
+  for (int i = 0; i < numDims; ++i) {
+    if (numElement < cumulativeSize[numDims - 1 - i])
+      continue;
+    indices[i] = numElement / cumulativeSize[numDims - 1 - i];
+    numElement %= cumulativeSize[numDims - 1 - i];
+  }
+
+  return indices;
+}
+
 
 bitset generate_sparsity_vector(double sparsity, int size) {
   bitset sparsityVector;
@@ -47,41 +67,28 @@ bitset generate_sparsity_vector(double sparsity, int size) {
 }
 
 // should be used for creating non-adlet tensors for comparison
-void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
-                 double colSparsityRatio, int rows, int cols) {
-  int zeroRowCount = static_cast<int>(rows * rowSparsityRatio);
-  int zeroColCount = static_cast<int>(cols * colSparsityRatio);
+void fill_tensor(taco::Tensor<float> &tensor, std::vector<bitset> sparsities,
+    std::vector<int> sizes) {
+  int numDims = sparsities.size();
+  int numElements = 1;
+  for (auto size : sizes)
+    numElements *= size;
 
-  std::bitset<size> rowSparsity;
-  std::bitset<size> colSparsity;
-  rowSparsity.set();
-  colSparsity.set();
+  for (int numElement = 0; numElement < numElements; ++numElement) {
+    auto indices = get_indices(sizes, numElement);
+    bool isZero = false;
 
-  std::vector<int> rowIndices(rows), colIndices(cols);
-  std::iota(rowIndices.begin(), rowIndices.end(), 0);
-  std::iota(colIndices.begin(), colIndices.end(), 0);
-
-  std::shuffle(rowIndices.begin(), rowIndices.end(),
-               std::mt19937{std::random_device{}()});
-  std::shuffle(colIndices.begin(), colIndices.end(),
-               std::mt19937{std::random_device{}()});
-
-  for (int i = 0; i < zeroRowCount; ++i)
-    rowSparsity.set(rowIndices[i], 0);
-
-  for (int j = 0; j < zeroColCount; ++j)
-    colSparsity.set(colIndices[j], 0);
-
-  for (int i = 0; i < rows; ++i) {
-    if (!rowSparsity.test(i))
-      continue; // skip zeroed row
-    for (int j = 0; j < cols; ++j) {
-      if (!colSparsity.test(j))
-        continue; // skip zeroed col
-
-      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      tensor.insert({i, j}, val);
+    for (int i = 0; i < numDims; ++i) {
+      if (sparsities[i][indices[i]] == 0) {
+        isZero = true;
+        break;
+      }
     }
+    if (isZero)
+      continue;
+
+    float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    tensor.insert(indices, val);
   }
 
   tensor.pack();
@@ -99,6 +106,7 @@ public:
   bool outputTensor = false;
 
   std::vector<OpNodePtr> inputOps; // ops where this tensor is an input
+  OpNodePtr outputOp; // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities, const std::string &n = "")
@@ -157,25 +165,6 @@ public:
     data = std::make_shared<taco::Tensor<float>>(taco::Tensor<float>(name, sizes, format));
   }
 
-  std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
-    int numDims = dimSizes.size();
-    std::vector<int> indices(numDims);
-    std::vector<int> cumulativeSize(numDims);
-    cumulativeSize[0] = 1;
-
-    for (int i = 1; i < numDims; ++i)
-      cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
-
-    for (int i = 0; i < numDims; ++i) {
-      if (numElement < cumulativeSize[numDims - 1 - i])
-        continue;
-      indices[i] = numElement / cumulativeSize[numDims - 1 - i];
-      numElement %= cumulativeSize[numDims - 1 - i];
-    }
-
-    return indices;
-  }
-
   void initialize_data() {
     // number of dimensions can vary so compute num elements
     int numElements = 1;
@@ -201,6 +190,8 @@ public:
 
     data->pack();
   }
+
+  bool input_ops_propagated();
 
   void print_matrix() {
     assert(numDims == 2 && "Tensor must be a matrix to call this method");
@@ -266,6 +257,7 @@ class OpNode {
 public:
   std::vector<TensorPtr> inputs;
   TensorPtr output;
+  bool doneProp;
   virtual void set_expression() = 0;
   virtual void propagate(Direction dir) = 0;
   virtual void print() = 0;
@@ -352,6 +344,7 @@ public:
 
         output->sparsities[dim] &= inputSparsity;
       }
+      doneProp = true;
     }
   }
 
@@ -658,6 +651,7 @@ public:
       inputBitset |= output->sparsities[outputInd];
       inputs[inputInd]->sparsities[inputDim] &= inputBitset;
     }
+    doneProp = true;
   }
 
   void propagate_backward() {
@@ -704,6 +698,15 @@ public:
   std::string op_type() const override { return "Einsum"; }
 };
 
+bool Tensor::input_ops_propagated() {
+  bool allPropagated = true;
+  for (auto op : inputOps) {
+    if (!op->doneProp)
+      allPropagated = false;
+  }
+  return allPropagated;
+}
+
 class Graph {
   std::vector<OpNodePtr> nodes;
 
@@ -720,6 +723,7 @@ public:
       for (auto input : op->inputs) {
         input->inputOps.push_back(op);
       }
+      op->output->outputOp = op;
     }
     return g;
   }
@@ -731,8 +735,21 @@ public:
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
       op->propagate(Direction::INTRA);
-    for (auto &op : nodes)
+    std::vector<OpNodePtr> backwardStack { output->outputOp };
+    while (backwardStack.size() > 0) {
+      auto op = backwardStack.back();
+      backwardStack.pop_back();
+      if (op->doneProp)
+        continue;
       op->propagate(Direction::BACKWARD);
+      for (auto input : op->inputs) {
+        if (input->input_ops_propagated()) {
+          if (input->outputOp == nullptr)
+            continue;
+          backwardStack.push_back(input->outputOp);
+        }
+      }
+    }
   }
 
   void assemble_expressions() {
