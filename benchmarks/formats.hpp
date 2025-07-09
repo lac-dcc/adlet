@@ -35,6 +35,8 @@ taco::Format getFormat(const std::string format) {
     outFormat = taco::Format({taco::Sparse, taco::Sparse}, {1, 0});
   } else if (format == "SparseDense") {
     outFormat = taco::Format({taco::Sparse, taco::Dense});
+  } else if (format == "SparseDense10") {
+    outFormat = taco::Format({taco::Sparse, taco::Dense}, {1, 0});
   }
   return outFormat;
 }
