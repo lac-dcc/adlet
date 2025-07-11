@@ -1,7 +1,7 @@
 #pragma once
 #include "taco.h"
 
-constexpr int size = 2048;
+constexpr int size = 10;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -63,4 +63,49 @@ taco::Format getFormat(const std::string format) {
     outFormat = taco::Format({taco::Sparse, taco::Dense}, {1, 0});
   }
   return outFormat;
+}
+
+int count_bits(std::bitset<size> A, int pos) {
+  if (pos < 0)
+    return 0;
+  if (pos == size)
+    return A.count();
+
+  std::bitset<size> mask((1ULL << pos) - 1);
+  return (A & mask).count();
+}
+
+std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+  int numDims = dimSizes.size();
+  std::vector<int> indices(numDims);
+  std::vector<int> cumulativeSize(numDims);
+  cumulativeSize[0] = 1;
+
+  for (int i = 1; i < numDims; ++i)
+    cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
+
+  for (int i = 0; i < numDims; ++i) {
+    if (numElement < cumulativeSize[numDims - 1 - i])
+      continue;
+    indices[i] = numElement / cumulativeSize[numDims - 1 - i];
+    numElement %= cumulativeSize[numDims - 1 - i];
+  }
+
+  return indices;
+}
+
+std::bitset<size> generate_sparsity_vector(double sparsity, int length) {
+  std::bitset<size> sparsityVector;
+  sparsityVector.set();
+
+  int numZeros = static_cast<int>(length * sparsity);
+
+  std::vector<int> indices(length);
+  std::iota(indices.begin(), indices.end(), 0);
+  std::shuffle(indices.begin(), indices.end(),
+               std::mt19937{std::random_device{}()});
+  for (int i = 0; i < numZeros; ++i)
+    sparsityVector.set(indices[i], 0);
+
+  return sparsityVector;
 }
