@@ -1,3 +1,4 @@
+#pragma once
 #include "taco.h"
 
 constexpr int size = 2048;
