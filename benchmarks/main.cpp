@@ -1,3 +1,3 @@
-#include "formats.hpp"
+#include "formats/formats.hpp"
 
-int main(int argc, char *argv[]) { return benchmarkFormats(argc, argv); }
+int int main(int argc, char *argv[]) { return 0; }
