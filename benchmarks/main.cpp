@@ -1,0 +1,3 @@
+#include "formats/formats.hpp"
+
+int int main(int argc, char *argv[]) { return 0; }
