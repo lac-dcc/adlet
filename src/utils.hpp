@@ -1,51 +1,6 @@
 #include "taco.h"
-#include "taco/format.h"
-#include <stdexcept>
-#include <string>
-#include <vector>
 
 constexpr int size = 2048;
-
-std::vector<int> get_permutation_from_einsum(const std::string &einsum) {
-  auto arrow = einsum.find("->");
-  if (arrow == std::string::npos) {
-    throw std::invalid_argument("Expected '->' in einsum string.");
-  }
-
-  std::string source = einsum.substr(0, arrow);
-  std::string target = einsum.substr(arrow + 2);
-
-  if (source.size() != target.size()) {
-    throw std::invalid_argument("Source and target must be the same length.");
-  }
-
-  std::vector<int> permutation;
-  for (char c : source) {
-    auto pos = target.find(c);
-    if (pos == std::string::npos) {
-      throw std::invalid_argument("Character from source not found in target.");
-    }
-    permutation.push_back(static_cast<int>(pos));
-  }
-
-  return permutation;
-}
-
-std::vector<taco::ModeFormat>
-permute_format(const std::vector<int> permutation,
-               const std::vector<taco::ModeFormat> &formats) {
-  if (permutation.size() != formats.size()) {
-    throw std::invalid_argument(
-        "Permutation and format vector must have the same size.");
-  }
-
-  std::vector<taco::ModeFormat> reordered(formats.size());
-  for (size_t i = 0; i < permutation.size(); ++i) {
-    reordered[permutation[i]] = formats[i];
-  }
-
-  return reordered;
-}
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
