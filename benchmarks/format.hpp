@@ -20,27 +20,6 @@ double compute(taco::Tensor<float> &A, const taco::Tensor<float> &B,
   return time;
 }
 
-taco::Format getFormat(const std::string format) {
-
-  taco::Format outFormat;
-  if (format == "CSR")
-    outFormat = taco::Format({taco::Dense, taco::Sparse});
-  else if (format == "CSC")
-    outFormat = taco::Format({taco::Dense, taco::Sparse}, {1, 0});
-  else if (format == "DD")
-    outFormat = taco::Format({taco::Dense, taco::Dense});
-  else if (format == "DCSR") {
-    outFormat = taco::Format({taco::Sparse, taco::Sparse}, {0, 1});
-  } else if (format == "DCSC") {
-    outFormat = taco::Format({taco::Sparse, taco::Sparse}, {1, 0});
-  } else if (format == "SparseDense") {
-    outFormat = taco::Format({taco::Sparse, taco::Dense});
-  } else if (format == "SparseDense10") {
-    outFormat = taco::Format({taco::Sparse, taco::Dense}, {1, 0});
-  }
-  return outFormat;
-}
-
 taco::Tensor<float> assembleTensor(const int rows, const int cols,
                                    double rowSparsity, double columnSparsity,
                                    taco::Format format) {

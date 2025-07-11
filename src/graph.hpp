@@ -48,7 +48,6 @@ std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
   return indices;
 }
 
-
 bitset generate_sparsity_vector(double sparsity, int size) {
   bitset sparsityVector;
   sparsityVector.set();
@@ -77,7 +76,7 @@ public:
   bool outputTensor = false;
 
   std::vector<OpNodePtr> inputOps; // ops where this tensor is an input
-  OpNodePtr outputOp; // ops where this tensor is an input
+  OpNodePtr outputOp;              // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
@@ -726,7 +725,7 @@ public:
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
       op->propagate(Direction::INTRA);
-    std::vector<OpNodePtr> backwardStack { output->outputOp };
+    std::vector<OpNodePtr> backwardStack{output->outputOp};
     while (backwardStack.size() > 0) {
       auto op = backwardStack.back();
       backwardStack.pop_back();
