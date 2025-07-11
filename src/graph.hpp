@@ -736,4 +736,16 @@ public:
       op->print_sparsity();
     }
   }
+
+  float get_sparsity_ratio() {
+    int count = 0;
+    float total_ratio = 0;
+    for (auto &ops : this->nodes) {
+      for (auto &input : ops->inputs) {
+        count++;
+        total_ratio += input->get_sparsity_ratio();
+      }
+    }
+    return total_ratio / count;
+  }
 };
