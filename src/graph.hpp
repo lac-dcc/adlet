@@ -29,6 +29,26 @@ int count_bits(bitset A, int pos) {
   return (A[size - 1] ? ~0ULL : 0) & A.count();
 }
 
+std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+  int numDims = dimSizes.size();
+  std::vector<int> indices(numDims);
+  std::vector<int> cumulativeSize(numDims);
+  cumulativeSize[0] = 1;
+
+  for (int i = 1; i < numDims; ++i)
+    cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
+
+  for (int i = 0; i < numDims; ++i) {
+    if (numElement < cumulativeSize[numDims - 1 - i])
+      continue;
+    indices[i] = numElement / cumulativeSize[numDims - 1 - i];
+    numElement %= cumulativeSize[numDims - 1 - i];
+  }
+
+  return indices;
+}
+
+
 bitset generate_sparsity_vector(double sparsity, int size) {
   bitset sparsityVector;
   sparsityVector.set();
@@ -57,6 +77,7 @@ public:
   bool outputTensor = false;
 
   std::vector<OpNodePtr> inputOps; // ops where this tensor is an input
+  OpNodePtr outputOp; // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
@@ -117,25 +138,6 @@ public:
         taco::Tensor<float>(name, sizes, format));
   }
 
-  std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
-    int numDims = dimSizes.size();
-    std::vector<int> indices(numDims);
-    std::vector<int> cumulativeSize(numDims);
-    cumulativeSize[0] = 1;
-
-    for (int i = 1; i < numDims; ++i)
-      cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
-
-    for (int i = 0; i < numDims; ++i) {
-      if (numElement < cumulativeSize[numDims - 1 - i])
-        continue;
-      indices[i] = numElement / cumulativeSize[numDims - 1 - i];
-      numElement %= cumulativeSize[numDims - 1 - i];
-    }
-
-    return indices;
-  }
-
   void initialize_data() {
     // number of dimensions can vary so compute num elements
     int numElements = 1;
@@ -161,6 +163,8 @@ public:
 
     data->pack();
   }
+
+  bool input_ops_propagated();
 
   void print_matrix() {
     assert(numDims == 2 && "Tensor must be a matrix to call this method");
@@ -229,6 +233,7 @@ class OpNode {
 public:
   std::vector<TensorPtr> inputs;
   TensorPtr output;
+  bool doneProp;
   virtual void set_expression() = 0;
   virtual void propagate(Direction dir) = 0;
   virtual void print() = 0;
@@ -316,6 +321,7 @@ public:
 
         output->sparsities[dim] &= inputSparsity;
       }
+      doneProp = true;
     }
   }
 
@@ -635,6 +641,7 @@ public:
       inputBitset |= output->sparsities[outputInd];
       inputs[inputInd]->sparsities[inputDim] &= inputBitset;
     }
+    doneProp = true;
   }
 
   void propagate_backward() {
@@ -682,6 +689,15 @@ public:
   std::string op_type() const override { return "Einsum"; }
 };
 
+bool Tensor::input_ops_propagated() {
+  bool allPropagated = true;
+  for (auto op : inputOps) {
+    if (!op->doneProp)
+      allPropagated = false;
+  }
+  return allPropagated;
+}
+
 class Graph {
   std::vector<OpNodePtr> nodes;
 
@@ -698,6 +714,7 @@ public:
       for (auto input : op->inputs) {
         input->inputOps.push_back(op);
       }
+      op->output->outputOp = op;
     }
     return g;
   }
@@ -709,8 +726,21 @@ public:
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
       op->propagate(Direction::INTRA);
-    for (auto &op : nodes)
+    std::vector<OpNodePtr> backwardStack { output->outputOp };
+    while (backwardStack.size() > 0) {
+      auto op = backwardStack.back();
+      backwardStack.pop_back();
+      if (op->doneProp)
+        continue;
       op->propagate(Direction::BACKWARD);
+      for (auto input : op->inputs) {
+        if (input->input_ops_propagated()) {
+          if (input->outputOp == nullptr)
+            continue;
+          backwardStack.push_back(input->outputOp);
+        }
+      }
+    }
   }
 
   void assemble_expressions() {
