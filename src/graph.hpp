@@ -746,6 +746,8 @@ public:
         total_ratio += input->get_sparsity_ratio();
       }
     }
+    total_ratio += this->output->get_sparsity_ratio();
+    count++;
     return total_ratio / count;
   }
 };

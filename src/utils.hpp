@@ -1,7 +1,7 @@
 #pragma once
 #include "taco.h"
 
-constexpr int size = 10;
+constexpr int size = 4096;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
