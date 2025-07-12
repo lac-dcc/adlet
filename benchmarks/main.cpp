@@ -1,3 +1,4 @@
+#include "format.hpp"
 #include "graph.hpp"
 #include <iostream>
 
@@ -12,6 +13,8 @@ int main(int argc, char *argv[]) {
 
   if (benchmark == "graph") {
     return benchmark_graph(argc, argv);
+  } else if (benchmark == "format") {
+    return parseArguments(argc, argv);
   } else {
     std::cerr << "Error: unknown benchmark" << std::endl;
   }
