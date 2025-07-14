@@ -18,17 +18,23 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
+                          denseSparsityVector},
       "W1");
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W2");
+      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
+                          denseSparsityVector},
+      "W2");
   auto W3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W3");
+      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
+                          denseSparsityVector},
+      "W3");
   auto W4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W4");
+      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
+                          denseSparsityVector},
+      "W4");
   auto W5 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W5");
@@ -59,19 +65,30 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{W3, O2}, O3, "ik,kj->ij");
 
+  auto matmul4 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{W4, O3}, O4, "ik,kj->ij");
+
   auto addition = std::make_shared<Add>(std::vector<TensorPtr>{O3, W4}, O4);
 
   auto transpose =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O4}, O5, "ij->ji");
 
-  auto g = Graph::build_graph({X, W1}, O5,
-                              {matmul1, matmul2, matmul3, addition, transpose});
+  auto g =
+      Graph::build_graph({X, W1}, O4, {matmul1, matmul2, matmul3, matmul4});
+  /*{matmul1, matmul2, matmul3, addition, transpose});*/
 
   const auto finishAllocate1{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
                                                     startAllocate1};
 
+  std::cout << "W1 rows " << count_bits(W1->sparsities[0], size) << " W1 cols "
+            << count_bits(W1->sparsities[1], size) << std::endl;
+  std::cout << "W2 rows " << count_bits(W2->sparsities[0], size) << " W2 cols "
+            << count_bits(W2->sparsities[1], size) << std::endl;
+  std::cout << "W3 rows " << count_bits(W3->sparsities[0], size) << " W3 cols "
+            << count_bits(W3->sparsities[1], size) << std::endl;
   std::cout << "ratio before " << g.get_sparsity_ratio() << std::endl;
+
   if (propagate) {
     const auto startPropagation{std::chrono::steady_clock::now()};
     g.run_propagation();
@@ -85,26 +102,40 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "ratio after " << g.get_sparsity_ratio() << std::endl;
   const auto startAllocate2{std::chrono::steady_clock::now()};
 
-  W1->create_data({format});
-  W2->create_data({format});
-  W3->create_data({format});
-  W4->create_data({format});
-  W5->create_data({format});
-  X->create_data({format});
+  std::cout << "W1 rows " << count_bits(W1->sparsities[0], size) << " W1 cols "
+            << count_bits(W1->sparsities[1], size) << std::endl;
+  std::cout << "W2 rows " << count_bits(W2->sparsities[0], size) << " W2 cols "
+            << count_bits(W2->sparsities[1], size) << std::endl;
+  std::cout << "W3 rows " << count_bits(W3->sparsities[0], size) << " W3 cols "
+            << count_bits(W3->sparsities[1], size) << std::endl;
 
-  O1->create_data({format});
-  O2->create_data({format});
-  O3->create_data({format});
-  O4->create_data({format});
-  O5->create_data({{taco::Sparse, taco::Dense}, {1, 0}});
+  X->create_data(format);
+  W1->create_data(format);
+  W2->create_data(format);
+  W3->create_data(format);
+  W4->create_data(format);
+  W5->create_data(format);
 
+  /*O1->create_data({taco::Dense, taco::Sparse});*/
+  /*O2->create_data({taco::Dense, taco::Sparse});*/
+  /*O3->create_data({taco::Dense, taco::Sparse});*/
+
+  O1->create_data({taco::Dense, taco::Dense});
+  O2->create_data({taco::Dense, taco::Dense});
+  O3->create_data({taco::Dense, taco::Dense});
+  O4->create_data({taco::Dense, taco::Dense});
+
+  /*O5->create_data({{taco::Sparse, taco::Dense}, {1, 0}});*/
+
+  print_memory_usage();
+  X->initialize_data();
   W1->initialize_data();
   W2->initialize_data();
   W3->initialize_data();
   W4->initialize_data();
-  W5->initialize_data();
-
-  X->initialize_data();
+  print_memory_usage();
+  /*W4->initialize_data();*/
+  /*W5->initialize_data();*/
 
   const auto finishAllocate2{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate2Secs{finishAllocate2 -
@@ -121,6 +152,7 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
+  print_memory_usage();
 }
 
 int benchmark_graph(int argc, char *argv[]) {

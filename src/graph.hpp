@@ -117,7 +117,6 @@ public:
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
       data->insert(indices, val);
     }
-
     data->pack();
   }
 

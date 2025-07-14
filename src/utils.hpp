@@ -1,7 +1,9 @@
 #pragma once
 #include "taco.h"
+#include <iostream>
+#include <sys/resource.h>
 
-constexpr int size = 4096;
+constexpr int size = 2048;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -108,4 +110,16 @@ std::bitset<size> generate_sparsity_vector(double sparsity, int length) {
     sparsityVector.set(indices[i], 0);
 
   return sparsityVector;
+}
+
+void print_memory_usage() {
+  struct rusage usage;
+  getrusage(RUSAGE_SELF, &usage);
+#ifdef __APPLE__
+  std::cout << "Memory used: " << usage.ru_maxrss / (1024.0 * 1024.0)
+            << " MB\n";
+#else
+  std::cout << "Memory used: " << usage.ru_maxrss / 1024.0
+            << " MB\n"; // ru_maxrss is in kilobytes
+#endif
 }

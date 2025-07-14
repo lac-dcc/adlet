@@ -113,44 +113,7 @@ void test_propagation() {
          "Values expected to be dense are sparse!");
   std::cout << "test_propagation() OK " << std::endl;
 }
-//
-// void test_compute() {
-//   taco::Format format({taco::Dense, taco::Dense});
-//   int size = 2;
-//   auto X = std::make_shared<Tensor>(size, size, "X", format);
-//   float one = 1.0;
-//   float zero = 0.0;
-//   X->data->insert({0, 0}, zero);
-//   X->data->insert({0, 1}, zero);
-//   X->data->insert({1, 0}, one);
-//   X->data->insert({1, 1}, one);
-//   auto W1 = std::make_shared<Tensor>(size, size, "W1", format);
-//   W1->data->insert({0, 0}, one);
-//   W1->data->insert({0, 1}, one);
-//   W1->data->insert({1, 0}, one);
-//   W1->data->insert({1, 1}, one);
-//   auto W2 = std::make_shared<Tensor>(size, size, "W2", format);
-//   W2->data->insert({0, 0}, one);
-//   W2->data->insert({0, 1}, one);
-//   W2->data->insert({1, 0}, one);
-//   W2->data->insert({1, 1}, one);
-//   auto O1 = std::make_shared<Tensor>(size, size, "O1", format);
-//   auto O2 = std::make_shared<Tensor>(size, size, "O2", format);
-//   auto O2_T = std::make_shared<Tensor>(size, size, "O2_T", format);
-//
-//   auto g = Graph::build_graph({X, W1, W2}, O2_T,
-//                               {std::make_shared<MatMul>(X, W1, O1),
-//                                std::make_shared<MatMul>(O1, W2, O2),
-//                                std::make_shared<Transpose>(O2, O2_T)});
-//
-//   g.compile();
-//   g.compute();
-//   assert(0 == g.output->data->at({0, 0}));
-//   assert(4 == g.output->data->at({0, 1}));
-//   assert(0 == g.output->data->at({1, 0}));
-//   assert(4 == g.output->data->at({1, 1}));
-// }
-//
+
 void test_addition() {
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
