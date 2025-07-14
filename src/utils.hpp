@@ -116,8 +116,8 @@ void print_memory_usage() {
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
 #ifdef __APPLE__
-  std::cout << "Memory used: " << usage.ru_maxrss / (1024.0 * 1024.0)
-            << " MB\n";
+  std::cout << "memory used = " << usage.ru_maxrss / (1024.0 * 1024.0)
+            << std::endl;
 #else
   std::cout << "Memory used: " << usage.ru_maxrss / 1024.0
             << " MB\n"; // ru_maxrss is in kilobytes
