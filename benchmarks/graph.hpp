@@ -1,3 +1,4 @@
+#include "../src/dot.hpp"
 #include "../src/graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
@@ -44,7 +45,7 @@ void run(taco::Format format, bool propagate, float row_sparsity,
       std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O2");
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O4");
+      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O3");
   auto O4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O4");
@@ -140,6 +141,7 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
+  print_dot(g);
 }
 
 int benchmark_graph(int argc, char *argv[]) {

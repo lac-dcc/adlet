@@ -91,8 +91,8 @@ public:
   }
 
   void create_data(taco::Format format) {
-    data = std::make_shared<taco::Tensor<float>>(
-        taco::Tensor<float>(name, sizes, format));
+    this->data = std::make_shared<taco::Tensor<float>>(
+        taco::Tensor<float>(this->name, this->sizes, format));
   }
 
   void initialize_data() {
@@ -419,8 +419,10 @@ public:
     taco::parser::EinsumParser parser(expression, tensors, format,
                                       taco::Datatype::Float32);
     parser.parse();
+    std::string name = output->data->getName();
     output->data =
         std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
+    output->data->setName(name);
   }
 
   void propagate_forward() {
@@ -660,9 +662,9 @@ bool Tensor::input_ops_propagated() {
 }
 
 class Graph {
-  std::vector<OpNodePtr> nodes;
 
 public:
+  std::vector<OpNodePtr> nodes;
   std::vector<TensorPtr> inputs;
   TensorPtr output;
   static Graph build_graph(std::vector<TensorPtr> inputs, TensorPtr out,
