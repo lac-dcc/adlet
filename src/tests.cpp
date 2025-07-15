@@ -7,7 +7,8 @@
 
 void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
   assert(sizes.size() == 2 && "Tensor must be a matrix to call this method");
-  std::vector<std::vector<float>> tmp(sizes[0], std::vector<float>(sizes[1], 0.0));
+  std::vector<std::vector<float>> tmp(sizes[0],
+                                      std::vector<float>(sizes[1], 0.0));
   for (auto entry : tensor) {
     tmp[entry.first[0]][entry.first[1]] = entry.second;
   }
@@ -19,8 +20,8 @@ void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
   }
 }
 
-
-bool is_same(taco::Tensor<float> &a, taco::Tensor<float> &b, std::vector<int> sizes) {
+bool is_same(taco::Tensor<float> &a, taco::Tensor<float> &b,
+             std::vector<int> sizes) {
   int numElements = 1;
   for (int size : sizes)
     numElements *= size;
@@ -112,44 +113,7 @@ void test_propagation() {
          "Values expected to be dense are sparse!");
   std::cout << "test_propagation() OK " << std::endl;
 }
-//
-// void test_compute() {
-//   taco::Format format({taco::Dense, taco::Dense});
-//   int size = 2;
-//   auto X = std::make_shared<Tensor>(size, size, "X", format);
-//   float one = 1.0;
-//   float zero = 0.0;
-//   X->data->insert({0, 0}, zero);
-//   X->data->insert({0, 1}, zero);
-//   X->data->insert({1, 0}, one);
-//   X->data->insert({1, 1}, one);
-//   auto W1 = std::make_shared<Tensor>(size, size, "W1", format);
-//   W1->data->insert({0, 0}, one);
-//   W1->data->insert({0, 1}, one);
-//   W1->data->insert({1, 0}, one);
-//   W1->data->insert({1, 1}, one);
-//   auto W2 = std::make_shared<Tensor>(size, size, "W2", format);
-//   W2->data->insert({0, 0}, one);
-//   W2->data->insert({0, 1}, one);
-//   W2->data->insert({1, 0}, one);
-//   W2->data->insert({1, 1}, one);
-//   auto O1 = std::make_shared<Tensor>(size, size, "O1", format);
-//   auto O2 = std::make_shared<Tensor>(size, size, "O2", format);
-//   auto O2_T = std::make_shared<Tensor>(size, size, "O2_T", format);
-//
-//   auto g = Graph::build_graph({X, W1, W2}, O2_T,
-//                               {std::make_shared<MatMul>(X, W1, O1),
-//                                std::make_shared<MatMul>(O1, W2, O2),
-//                                std::make_shared<Transpose>(O2, O2_T)});
-//
-//   g.compile();
-//   g.compute();
-//   assert(0 == g.output->data->at({0, 0}));
-//   assert(4 == g.output->data->at({0, 1}));
-//   assert(0 == g.output->data->at({1, 0}));
-//   assert(4 == g.output->data->at({1, 1}));
-// }
-//
+
 void test_addition() {
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
@@ -393,23 +357,33 @@ void compare_taco_matmul() {
   bitset X2Vec1 = generate_sparsity_vector(0.5, size);
   bitset X2Vec2 = generate_sparsity_vector(0.5, size);
 
-  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
-  auto W1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "W1");
-  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O1");
-  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size},
+                                     std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
+  auto W1 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "W1");
+  auto O1 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O1");
+  auto matmul1 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
 
-  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
-  auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O2");
-  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X2, O1}, O2, "ik,kj->ij");
+  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size},
+                                     std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
+  auto O2 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O2");
+  auto matmul2 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X2, O1}, O2, "ik,kj->ij");
 
   auto g = Graph::build_graph({X1, W1, X2}, O2, {matmul1, matmul2});
   g.run_propagation();
 
-  X1->create_data({ taco::Sparse, taco::Dense });
-  X2->create_data({ taco::Sparse, taco::Dense });
-  W1->create_data({ taco::Sparse, taco::Dense });
-  O1->create_data({ taco::Sparse, taco::Dense });
-  O2->create_data({ taco::Sparse, taco::Dense });
+  X1->create_data({taco::Sparse, taco::Dense});
+  X2->create_data({taco::Sparse, taco::Dense});
+  W1->create_data({taco::Sparse, taco::Dense});
+  O1->create_data({taco::Sparse, taco::Dense});
+  O2->create_data({taco::Sparse, taco::Dense});
 
   X1->initialize_data();
   X2->initialize_data();
@@ -427,13 +401,14 @@ void compare_taco_matmul() {
   X1Taco = *X1->data;
   X2Taco = *X2->data;
   W1Taco = *W1->data;
-  
+
   taco::IndexVar i, j, k;
   O1Taco(i, j) = X1Taco(i, k) * W1Taco(k, j);
   O2Taco(i, j) = X2Taco(i, k) * O1Taco(k, j);
   O2Taco.evaluate();
 
-  assert(is_same(O2Taco, *O2->data, {size, size}) && "Resulint tensors are different!");
+  assert(is_same(O2Taco, *O2->data, {size, size}) &&
+         "Resulint tensors are different!");
 }
 
 void compare_taco_einsum() {
@@ -446,29 +421,46 @@ void compare_taco_einsum() {
 
   bitset denseVec = generate_sparsity_vector(0, size);
 
-  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
-  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
-  auto W1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "W1");
+  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size},
+                                     std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
+  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size},
+                                     std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
+  auto W1 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "W1");
 
-  auto O1 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O1");
-  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
-  auto O2 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O2");
-  auto O2_T = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O2_T");
-  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
-  auto transpose = std::make_shared<Einsum>(std::vector<TensorPtr>{O2}, O2_T, "ij->ji");
-  auto O3 = std::make_shared<Tensor>(std::vector<int>{size, size}, std::vector<bitset>{denseVec, denseVec}, "O3");
-  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2_T}, O3, "ik,kj->ij");
+  auto O1 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O1");
+  auto matmul1 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
+  auto O2 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O2");
+  auto O2_T =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O2_T");
+  auto matmul2 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
+  auto transpose =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{O2}, O2_T, "ij->ji");
+  auto O3 =
+      std::make_shared<Tensor>(std::vector<int>{size, size},
+                               std::vector<bitset>{denseVec, denseVec}, "O3");
+  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2_T}, O3,
+                                          "ik,kj->ij");
 
-  auto g = Graph::build_graph({X1, X2, W1}, O1, {matmul1, matmul2, transpose, matmul3});
+  auto g = Graph::build_graph({X1, X2, W1}, O1,
+                              {matmul1, matmul2, transpose, matmul3});
   g.run_propagation();
 
-  X1->create_data({ taco::Sparse, taco::Dense });
-  X2->create_data({ taco::Sparse, taco::Dense });
-  W1->create_data({ taco::Sparse, taco::Dense });
-  O1->create_data({ taco::Sparse, taco::Dense });
-  O2->create_data({ taco::Sparse, taco::Dense });
-  O2_T->create_data({{ taco::Sparse, taco::Dense }, {1, 0}});
-  O3->create_data({ taco::Sparse, taco::Dense });
+  X1->create_data({taco::Sparse, taco::Dense});
+  X2->create_data({taco::Sparse, taco::Dense});
+  W1->create_data({taco::Sparse, taco::Dense});
+  O1->create_data({taco::Sparse, taco::Dense});
+  O2->create_data({taco::Sparse, taco::Dense});
+  O2_T->create_data({{taco::Sparse, taco::Dense}, {1, 0}});
+  O3->create_data({taco::Sparse, taco::Dense});
 
   X1->initialize_data();
   X2->initialize_data();
@@ -482,7 +474,8 @@ void compare_taco_einsum() {
   taco::Tensor<float> W1Taco({size, size}, {taco::Sparse, taco::Dense});
   taco::Tensor<float> O1Taco({size, size}, {taco::Sparse, taco::Dense});
   taco::Tensor<float> O2Taco({size, size}, {taco::Sparse, taco::Dense});
-  taco::Tensor<float> O2_TTaco({size, size}, {{taco::Sparse, taco::Dense}, {1, 0}});
+  taco::Tensor<float> O2_TTaco({size, size},
+                               {{taco::Sparse, taco::Dense}, {1, 0}});
   taco::Tensor<float> O3Taco({size, size}, {taco::Sparse, taco::Dense});
   // fill_tensor(X1Taco, {X1Vec1, X1Vec2}, {size, size});
   // fill_tensor(X2Taco, {X2Vec1, X2Vec2}, {size, size});
@@ -497,7 +490,28 @@ void compare_taco_einsum() {
   O3Taco(i, j) = O1Taco(i, k) * O2_TTaco(k, j);
   O3Taco.evaluate();
 
-  assert(is_same(O3Taco, *O3->data, {size, size}) && "Resuling tensors are different!");
+  assert(is_same(O3Taco, *O3->data, {size, size}) &&
+         "Resuling tensors are different!");
+}
+
+void test_get_sparsity_ratio() {
+  // these tests may fail if the global size is less than 10
+  float tolerance = 1e-5;
+  auto rowSparsityVector = bitset("001");
+  auto colSparsityVector = bitset("101");
+  auto tensor = std::make_shared<Tensor>(
+      std::vector<int>{3, 3},
+      std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
+  assert(std::fabs(tensor->get_sparsity_ratio() - 0.777778f) < tolerance);
+
+  rowSparsityVector = bitset("0010101011");
+  colSparsityVector = bitset("1110100100");
+  tensor = std::make_shared<Tensor>(
+      std::vector<int>{10, 10},
+      std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
+  assert(std::fabs(tensor->get_sparsity_ratio() - 0.75f) < tolerance);
+
+  std::cout << "test_get_sparsity_ratio() OK " << std::endl;
 }
 
 int main() {
@@ -512,4 +526,6 @@ int main() {
 
   compare_taco_matmul();
   compare_taco_einsum();
+
+  test_get_sparsity_ratio();
 }

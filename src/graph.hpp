@@ -23,49 +23,6 @@ class OpNode;
 
 using OpNodePtr = std::shared_ptr<OpNode>;
 
-int count_bits(bitset A, int pos) {
-  int high_bits_to_eliminate = (size - 1) - (pos - 1);
-  A <<= (high_bits_to_eliminate & (size - 1));
-  return (A[size - 1] ? ~0ULL : 0) & A.count();
-}
-
-std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
-  int numDims = dimSizes.size();
-  std::vector<int> indices(numDims);
-  std::vector<int> cumulativeSize(numDims);
-  cumulativeSize[0] = 1;
-
-  for (int i = 1; i < numDims; ++i)
-    cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
-
-  for (int i = 0; i < numDims; ++i) {
-    if (numElement < cumulativeSize[numDims - 1 - i])
-      continue;
-    indices[i] = numElement / cumulativeSize[numDims - 1 - i];
-    numElement %= cumulativeSize[numDims - 1 - i];
-  }
-
-  return indices;
-}
-
-
-bitset generate_sparsity_vector(double sparsity, int size) {
-  bitset sparsityVector;
-  sparsityVector.set();
-
-  int numZeros = static_cast<int>(size * sparsity);
-
-  std::vector<int> indices(size);
-  std::iota(indices.begin(), indices.end(), 0);
-  std::shuffle(indices.begin(), indices.end(),
-               std::mt19937{std::random_device{}()});
-
-  for (int i = 0; i < numZeros; ++i)
-    sparsityVector.set(indices[i], 0);
-
-  return sparsityVector;
-}
-
 class Tensor {
 public:
   std::shared_ptr<taco::Tensor<float>> data;
@@ -77,7 +34,7 @@ public:
   bool outputTensor = false;
 
   std::vector<OpNodePtr> inputOps; // ops where this tensor is an input
-  OpNodePtr outputOp; // ops where this tensor is an input
+  OpNodePtr outputOp;              // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
@@ -160,7 +117,6 @@ public:
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
       data->insert(indices, val);
     }
-
     data->pack();
   }
 
@@ -195,11 +151,16 @@ public:
     std::cout << std::endl;
   }
 
-  float get_sparsity_ratio(int ind) {
-    int total = sizes[ind];
-    return (float)(total -
-                   static_cast<float>(count_bits(sparsities[ind], sizes[ind])) /
-                       total);
+  float get_sparsity_ratio() {
+    int total = 1;
+    int nnz = 1;
+    for (int dim = 0; dim < this->numDims; dim++) {
+      int dimSize = this->sizes[dim];
+      total *= dimSize;
+      nnz *= count_bits(this->sparsities[dim], dimSize);
+    }
+    int zero_elements = total - nnz;
+    return static_cast<float>(zero_elements) / total;
   }
 
   int get_nnz() {
@@ -726,7 +687,7 @@ public:
       op->propagate(Direction::FORWARD);
     for (auto &op : nodes)
       op->propagate(Direction::INTRA);
-    std::vector<OpNodePtr> backwardStack { output->outputOp };
+    std::vector<OpNodePtr> backwardStack{output->outputOp};
     while (backwardStack.size() > 0) {
       auto op = backwardStack.back();
       backwardStack.pop_back();
@@ -773,5 +734,19 @@ public:
     for (auto &op : nodes) {
       op->print_sparsity();
     }
+  }
+
+  float get_sparsity_ratio() {
+    int count = 0;
+    float total_ratio = 0;
+    for (auto &ops : this->nodes) {
+      for (auto &input : ops->inputs) {
+        count++;
+        total_ratio += input->get_sparsity_ratio();
+      }
+    }
+    total_ratio += this->output->get_sparsity_ratio();
+    count++;
+    return total_ratio / count;
   }
 };
