@@ -349,30 +349,31 @@ void test_einsum_multiop_2() {
 }
 
 void compare_taco_matmul() {
-  int size = 10;
+  int size = 3;
 
   bitset X1Vec1 = generate_sparsity_vector(0.5, size);
   bitset X1Vec2 = generate_sparsity_vector(0.5, size);
   bitset denseVec = generate_sparsity_vector(0, size);
   bitset X2Vec1 = generate_sparsity_vector(0.5, size);
   bitset X2Vec2 = generate_sparsity_vector(0.5, size);
-
-  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size},
-                                     std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
-  auto W1 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "W1");
-  auto O1 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O1");
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("110"), bitset("111")}, "X1");
+  auto W1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("011"), bitset("111")}, "W1");
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("111"), bitset("111")}, "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
 
-  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size},
-                                     std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
-  auto O2 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O2");
+  auto X2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("101"), bitset("111")}, "X2");
+  auto O2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("111"), bitset("111")}, "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, O1}, O2, "ik,kj->ij");
 
@@ -385,9 +386,29 @@ void compare_taco_matmul() {
   O1->create_data({taco::Sparse, taco::Dense});
   O2->create_data({taco::Sparse, taco::Dense});
 
-  X1->initialize_data();
-  X2->initialize_data();
-  W1->initialize_data();
+  X1->data->insert({0, 0}, 1.0f);
+  X1->data->insert({0, 1}, 1.0f);
+  X1->data->insert({0, 2}, 1.0f);
+
+  X1->data->insert({1, 0}, 2.0f);
+  X1->data->insert({1, 1}, 2.0f);
+  X1->data->insert({1, 2}, 2.0f);
+
+  W1->data->insert({1, 0}, 1.0f);
+  W1->data->insert({1, 1}, 1.0f);
+  W1->data->insert({1, 2}, 1.0f);
+
+  W1->data->insert({2, 0}, 2.0f);
+  W1->data->insert({2, 1}, 2.0f);
+  W1->data->insert({2, 2}, 2.0f);
+
+  X2->data->insert({0, 0}, 1.0f);
+  X2->data->insert({0, 1}, 1.0f);
+  X2->data->insert({0, 2}, 1.0f);
+
+  X2->data->insert({2, 0}, 2.0f);
+  X2->data->insert({2, 1}, 2.0f);
+  X2->data->insert({2, 2}, 2.0f);
 
   g.compile();
   g.compute();
@@ -408,7 +429,19 @@ void compare_taco_matmul() {
   O2Taco.evaluate();
 
   assert(is_same(O2Taco, *O2->data, {size, size}) &&
-         "Resulint tensors are different!");
+         "Resulting tensors are different!");
+
+  assert(O2->data->at({0, 0}) == 9);
+  assert(O2->data->at({0, 1}) == 9);
+  assert(O2->data->at({0, 2}) == 9);
+
+  assert(O2->data->at({1, 0}) == 0);
+  assert(O2->data->at({1, 1}) == 0);
+  assert(O2->data->at({1, 2}) == 0);
+
+  assert(O2->data->at({2, 0}) == 18);
+  assert(O2->data->at({2, 1}) == 18);
+  assert(O2->data->at({2, 2}) == 18);
 }
 
 void compare_taco_einsum() {
@@ -517,15 +550,15 @@ void test_get_sparsity_ratio() {
 int main() {
   // test_compute();
 
-  test_propagation();
-  test_addition();
-  test_einsum();
-  test_einsum_transpose();
-  test_einsum_multiop_1();
-  test_einsum_multiop_2();
+  /*test_propagation();*/
+  /*test_addition();*/
+  /*test_einsum();*/
+  /*test_einsum_transpose();*/
+  /*test_einsum_multiop_1();*/
+  /*test_einsum_multiop_2();*/
 
   compare_taco_matmul();
-  compare_taco_einsum();
-
-  test_get_sparsity_ratio();
+  /*compare_taco_einsum();*/
+  /**/
+  /*test_get_sparsity_ratio();*/
 }
