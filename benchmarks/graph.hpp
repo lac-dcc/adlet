@@ -141,7 +141,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
-  // print_dot(g);
+  //  print_dot(g);
 }
 
 void run(taco::Format format, bool propagate, float row_sparsity,

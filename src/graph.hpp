@@ -219,6 +219,7 @@ public:
   void set_expression() override {
     taco::IndexVar i, j, k;
     (*output->data)(i, j) = (*inputs[0]->data)(i, k) * (*inputs[1]->data)(k, j);
+    this->output->data->compile();
   }
 
   void propagate(Direction dir) override {
@@ -271,6 +272,7 @@ public:
     std::vector<taco::IndexVar> inds(output->numDims);
     for (auto &input : inputs)
       (*output->data)(inds) += (*input->data)(inds);
+    this->output->data->compile();
   }
 
   void propagate(Direction dir) override {
@@ -423,6 +425,7 @@ public:
     output->data =
         std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
     output->data->setName(name);
+    this->output->data->compile();
   }
 
   void propagate_forward() {
@@ -714,10 +717,10 @@ public:
   void compile() {
     assemble_expressions();
     output->data->compile();
-    output->data->assemble();
   }
 
   TensorPtr compute() {
+    output->data->assemble();
     output->data->compute();
     return output;
   }
