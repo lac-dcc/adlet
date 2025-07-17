@@ -13,7 +13,7 @@ std::string getColor(std::shared_ptr<Tensor> tensor) {
   } else if (ratio >= 0.3) {
     color = std::string("darkgreen");
   } else if (ratio >= 0.1) {
-    color = std::string("cian");
+    color = std::string("cyan");
   } else if (ratio == 0.0) {
     color = std::string("black");
   }
