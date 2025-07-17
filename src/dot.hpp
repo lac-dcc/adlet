@@ -1,7 +1,29 @@
 #include "graph.hpp"
 #include <fstream>
+#include <memory>
+#include <string>
 
-void print_dot(const Graph &graph, std::string file_name = "graph.dot") {
+std::string getColor(std::shared_ptr<Tensor> tensor) {
+  std::string color;
+  float ratio = tensor->get_sparsity_ratio();
+  if (ratio >= 0.7) {
+    color = std::string("crimson");
+  } else if (ratio >= 0.5) {
+    color = std::string("blue");
+  } else if (ratio >= 0.3) {
+    color = std::string("darkgreen");
+  } else if (ratio >= 0.1) {
+    color = std::string("cian");
+  } else if (ratio == 0.0) {
+    color = std::string("black");
+  }
+  /*std::cout << tensor->data->getName() << " color = " << color*/
+  /*          << " ratio = " << ratio << std::endl;*/
+  return color;
+}
+
+void print_dot(const Graph &graph, std::string file_name = "graph.dot",
+               bool colors = true) {
   std::ofstream file(file_name);
   file << "digraph G {\n";
   file << "  rankdir=LR;\n";
@@ -18,16 +40,18 @@ void print_dot(const Graph &graph, std::string file_name = "graph.dot") {
   for (const auto &op : graph.nodes) {
     std::string opID = getID(op.get());
     file << "  " << opID << " [label=\"" << op->op_type()
-         << "\", shape=box];\n";
+         << "\", shape=box, penwidth=2];\n";
 
     for (const auto &input : op->inputs) {
       file << "  " << getID(input.get()) << " [label=\""
-           << input->data->getName() << "\", shape=ellipse];\n";
+           << input->data->getName()
+           << "\", shape=ellipse, penwidth=2, color=" << getColor(input)
+           << "];\n";
       file << "  " << getID(input.get()) << " -> " << opID << ";\n";
     }
 
     file << "  " << getID(op->output.get()) << " [label=\""
-         << op->output->data->getName() << "\", shape=ellipse];\n";
+         << op->output->data->getName() << "\", shape=ellipse, penwidth=2];\n";
     file << "  " << opID << " -> " << getID(op->output.get()) << ";\n";
   }
   file << "}\n";

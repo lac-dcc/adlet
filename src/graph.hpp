@@ -709,6 +709,29 @@ public:
     }
   }
 
+  void run_propagation(Direction dir) {
+    if (dir == BACKWARD) {
+      std::vector<OpNodePtr> backwardStack{output->outputOp};
+      while (backwardStack.size() > 0) {
+        auto op = backwardStack.back();
+        backwardStack.pop_back();
+        if (op->doneProp)
+          continue;
+        op->propagate(Direction::BACKWARD);
+        for (auto input : op->inputs) {
+          if (input->input_ops_propagated()) {
+            if (input->outputOp == nullptr)
+              continue;
+            backwardStack.push_back(input->outputOp);
+          }
+        }
+      }
+    } else {
+      for (auto &op : nodes)
+        op->propagate(dir);
+    }
+  }
+
   void assemble_expressions() {
     for (auto &op : nodes)
       op->set_expression();

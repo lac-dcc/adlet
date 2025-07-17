@@ -530,8 +530,8 @@ void compare_taco_einsum() {
 void test_get_sparsity_ratio() {
   // these tests may fail if the global size is less than 10
   float tolerance = 1e-5;
-  auto rowSparsityVector = bitset("001");
-  auto colSparsityVector = bitset("101");
+  auto rowSparsityVector = bitset("101");
+  auto colSparsityVector = bitset("111");
   auto tensor = std::make_shared<Tensor>(
       std::vector<int>{3, 3},
       std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
@@ -548,17 +548,13 @@ void test_get_sparsity_ratio() {
 }
 
 int main() {
-  // test_compute();
-
-  /*test_propagation();*/
-  /*test_addition();*/
-  /*test_einsum();*/
-  /*test_einsum_transpose();*/
-  /*test_einsum_multiop_1();*/
-  /*test_einsum_multiop_2();*/
-
+  test_propagation();
+  test_addition();
+  test_einsum();
+  test_einsum_transpose();
+  test_einsum_multiop_1();
+  test_einsum_multiop_2();
   compare_taco_matmul();
-  /*compare_taco_einsum();*/
-  /**/
-  /*test_get_sparsity_ratio();*/
+  compare_taco_einsum();
+  test_get_sparsity_ratio();
 }
