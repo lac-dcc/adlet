@@ -91,8 +91,8 @@ public:
   }
 
   void create_data(taco::Format format) {
-    data = std::make_shared<taco::Tensor<float>>(
-        taco::Tensor<float>(name, sizes, format));
+    this->data = std::make_shared<taco::Tensor<float>>(
+        taco::Tensor<float>(this->name, this->sizes, format));
   }
 
   void initialize_data() {
@@ -219,6 +219,7 @@ public:
   void set_expression() override {
     taco::IndexVar i, j, k;
     (*output->data)(i, j) = (*inputs[0]->data)(i, k) * (*inputs[1]->data)(k, j);
+    this->output->data->compile();
   }
 
   void propagate(Direction dir) override {
@@ -271,6 +272,7 @@ public:
     std::vector<taco::IndexVar> inds(output->numDims);
     for (auto &input : inputs)
       (*output->data)(inds) += (*input->data)(inds);
+    this->output->data->compile();
   }
 
   void propagate(Direction dir) override {
@@ -419,8 +421,11 @@ public:
     taco::parser::EinsumParser parser(expression, tensors, format,
                                       taco::Datatype::Float32);
     parser.parse();
+    std::string name = output->data->getName();
     output->data =
         std::make_shared<taco::Tensor<float>>(parser.getResultTensor());
+    output->data->setName(name);
+    this->output->data->compile();
   }
 
   void propagate_forward() {
@@ -660,9 +665,9 @@ bool Tensor::input_ops_propagated() {
 }
 
 class Graph {
-  std::vector<OpNodePtr> nodes;
 
 public:
+  std::vector<OpNodePtr> nodes;
   std::vector<TensorPtr> inputs;
   TensorPtr output;
   static Graph build_graph(std::vector<TensorPtr> inputs, TensorPtr out,
@@ -704,6 +709,29 @@ public:
     }
   }
 
+  void run_propagation(Direction dir) {
+    if (dir == BACKWARD) {
+      std::vector<OpNodePtr> backwardStack{output->outputOp};
+      while (backwardStack.size() > 0) {
+        auto op = backwardStack.back();
+        backwardStack.pop_back();
+        if (op->doneProp)
+          continue;
+        op->propagate(Direction::BACKWARD);
+        for (auto input : op->inputs) {
+          if (input->input_ops_propagated()) {
+            if (input->outputOp == nullptr)
+              continue;
+            backwardStack.push_back(input->outputOp);
+          }
+        }
+      }
+    } else {
+      for (auto &op : nodes)
+        op->propagate(dir);
+    }
+  }
+
   void assemble_expressions() {
     for (auto &op : nodes)
       op->set_expression();
@@ -712,10 +740,10 @@ public:
   void compile() {
     assemble_expressions();
     output->data->compile();
-    output->data->assemble();
   }
 
   TensorPtr compute() {
+    output->data->assemble();
     output->data->compute();
     return output;
   }
