@@ -1,6 +1,7 @@
 #pragma once
 #include "taco.h"
 #include <iostream>
+#include <bitset>
 #include <sys/resource.h>
 
 constexpr int size = 2048;

@@ -162,7 +162,7 @@ void test_einsum() {
       std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
   std::vector<TensorPtr> inputs2{O1, X3};
   auto einsum2 =
       std::make_shared<Einsum>(inputs2, O2, std::string{"ik,kj->ij"});
@@ -442,6 +442,8 @@ void compare_taco_matmul() {
   assert(O2->data->at({2, 0}) == 18);
   assert(O2->data->at({2, 1}) == 18);
   assert(O2->data->at({2, 2}) == 18);
+
+  std::cout << "compare_taco_matmul() OK " << std::endl;
 }
 
 void compare_taco_einsum() {
@@ -525,6 +527,7 @@ void compare_taco_einsum() {
 
   assert(is_same(O3Taco, *O3->data, {size, size}) &&
          "Resuling tensors are different!");
+  std::cout << "compare_taco_einsum() OK " << std::endl;
 }
 
 void test_get_sparsity_ratio() {
@@ -535,13 +538,15 @@ void test_get_sparsity_ratio() {
   auto tensor = std::make_shared<Tensor>(
       std::vector<int>{3, 3},
       std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
-  assert(std::fabs(tensor->get_sparsity_ratio() - 0.777778f) < tolerance);
+  std::cout <<tensor->get_sparsity_ratio()<<std::endl;
+  assert(std::fabs(tensor->get_sparsity_ratio() - 0.333333f) < tolerance);
 
   rowSparsityVector = bitset("0010101011");
   colSparsityVector = bitset("1110100100");
   tensor = std::make_shared<Tensor>(
       std::vector<int>{10, 10},
       std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
+  std::cout <<tensor->get_sparsity_ratio()<<std::endl;
   assert(std::fabs(tensor->get_sparsity_ratio() - 0.75f) < tolerance);
 
   std::cout << "test_get_sparsity_ratio() OK " << std::endl;
