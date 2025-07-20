@@ -58,18 +58,18 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
         "O" + std::to_string(i));
   }
 
-  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{W1, input},
+  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{input, W1},
                                           outputs[0], "ik,kj->ij");
-  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{W2, input},
+  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{input, W2},
                                           outputs[1], "ik,kj->ij");
-  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{W3, input},
+  auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{input, W3},
                                           outputs[2], "ik,kj->ij");
 
   auto matmul4 = std::make_shared<Einsum>(
       std::vector<TensorPtr>{outputs[1], outputs[2]}, outputs[3], "ik,kj->ij");
 
   auto matmul5 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{outputs[0], outputs[3]}, outputs[4], "ik,kj->ij");
+      std::vector<TensorPtr>{outputs[3], outputs[0]}, outputs[4], "ik,kj->ij");
 
   auto matmul6 = std::make_shared<Einsum>(
       std::vector<TensorPtr>{outputs[4], W4}, outputs[5], "ik,kj->ij");
@@ -151,8 +151,8 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
   print_dot(g);
-  /*std::cout << count_bits(W1->sparsities[0], size) << std::endl;*/
-  /*std::cout << count_bits(W1->sparsities[1], size) << std::endl;*/
+  std::cout << count_bits(outputs[5]->sparsities[0], size) << std::endl;
+  std::cout << count_bits(outputs[5]->sparsities[1], size) << std::endl;
   /*std::cout << count_bits(W2->sparsities[0], size) << std::endl;*/
   /*std::cout << count_bits(W2->sparsities[1], size) << std::endl;*/
   /*std::cout << count_bits(W3->sparsities[0], size) << std::endl;*/
@@ -320,8 +320,10 @@ int benchmark_graph(int argc, char *argv[]) {
   double col_sparsity = std::stod(argv[++param]);
   std::string format = argv[++param];
   bool propagate = std::stoi(argv[++param]);
-  run(getFormat(format), propagate, row_sparsity, col_sparsity);
-  /*bert(getFormat(format), propagate, row_sparsity, col_sparsity);*/
+  /*run(getFormat(format), propagate, row_sparsity, col_sparsity);*/
+  bert(getFormat(format), propagate, row_sparsity, col_sparsity);
+
+  /*single(getFormat(format), propagate, row_sparsity, col_sparsity);*/
 
   return 0;
 }

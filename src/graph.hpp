@@ -197,6 +197,7 @@ public:
   virtual void print() = 0;
   virtual void print_sparsity() = 0;
   virtual std::string op_type() const = 0;
+  virtual void compute() = 0;
 };
 
 class MatMul : public OpNode {
@@ -253,6 +254,25 @@ public:
     std::cout << " = " << std::endl;
     output->print_full_sparsity();
     std::cout << std::endl;
+  }
+
+  void compute() override {
+    for (auto &input : this->inputs) {
+      std::cout << input->data->getName() << " ";
+    }
+    std::cout << std::endl;
+
+    const auto startAssemble{std::chrono::steady_clock::now()};
+    this->output->data->assemble();
+    const auto startCompilation{std::chrono::steady_clock::now()};
+    this->output->data->compute();
+    const auto startRuntime{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> assembleSecs{startCompilation -
+                                                     startAssemble};
+    const std::chrono::duration<double> runtimeSecs{startRuntime -
+                                                    startCompilation};
+    std::cout << "assemble= " << assembleSecs.count() << std::endl;
+    std::cout << "compute= " << runtimeSecs.count() << std::endl;
   }
 };
 
@@ -312,6 +332,25 @@ public:
     std::cout << std::endl;
   }
   std::string op_type() const override { return "Add"; }
+
+  void compute() override {
+    for (auto &input : this->inputs) {
+      std::cout << input->data->getName() << " ";
+    }
+    std::cout << std::endl;
+
+    const auto startAssemble{std::chrono::steady_clock::now()};
+    this->output->data->assemble();
+    const auto startCompilation{std::chrono::steady_clock::now()};
+    this->output->data->compute();
+    const auto startRuntime{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> assembleSecs{startCompilation -
+                                                     startAssemble};
+    const std::chrono::duration<double> runtimeSecs{startRuntime -
+                                                    startCompilation};
+    std::cout << "assemble= " << assembleSecs.count() << std::endl;
+    std::cout << "compute= " << runtimeSecs.count() << std::endl;
+  }
 };
 
 class Einsum : public OpNode {
@@ -529,7 +568,8 @@ public:
 
     for (auto op : inputs[inputInd]->inputOps) {
       auto opPtr = op.get();
-      inputBitset |= compute_multiop_sparsity(opPtr, inputInd, inputDim);;
+      inputBitset |= compute_multiop_sparsity(opPtr, inputInd, inputDim);
+      ;
     }
 
     return inputBitset;
@@ -541,19 +581,21 @@ public:
       for (auto p : kv.second) {
         int inputInd = p.first;  // which of the inputs
         int inputDim = p.second; // which dimension
-        inputs[inputInd]->sparsities[inputDim] &= propagate_intra_dimension(inputInd, inputDim, kv.first);
+        inputs[inputInd]->sparsities[inputDim] &=
+            propagate_intra_dimension(inputInd, inputDim, kv.first);
       }
     }
   }
 
-  bitset compute_multiop_einsum_sparsity(Einsum* opPtr, int inputInd, int inputDim) { 
+  bitset compute_multiop_einsum_sparsity(Einsum *opPtr, int inputInd,
+                                         int inputDim) {
     char indexVar = opPtr->tensorIndicesVector[inputInd][inputDim];
     bitset inputBitset;
 
     if (opPtr->outputDims.find(indexVar) != opPtr->outputDims.end()) {
       int ind = get_tensor_char_ind(opPtr->output, indexVar);
       inputBitset = opPtr->output->sparsities[ind];
-    } else { 
+    } else {
       assert(opPtr->reductionDims.find(indexVar) != opPtr->reductionDims.end());
       auto pairs = opPtr->reductionDims[indexVar];
       inputBitset.set();
@@ -567,18 +609,19 @@ public:
     return inputBitset;
   }
 
-  bitset compute_multiop_add_sparsity(Add* opPtr, int inputInd, int inputDim) { 
-    return opPtr->output->sparsities[inputDim]; // addition can only have output dimension
+  bitset compute_multiop_add_sparsity(Add *opPtr, int inputInd, int inputDim) {
+    return opPtr->output
+        ->sparsities[inputDim]; // addition can only have output dimension
   }
 
   bitset compute_multiop_sparsity(OpNode *opPtr, int inputInd, int inputDim) {
     bitset inputBitset;
-    
+
     if (typeid(*opPtr) == typeid(Add)) {
-      Add* addPtr = dynamic_cast<Add*>(opPtr);
+      Add *addPtr = dynamic_cast<Add *>(opPtr);
       inputBitset = compute_multiop_add_sparsity(addPtr, inputInd, inputDim);
     } else if (typeid(*opPtr) == typeid(Einsum)) {
-      Einsum* einPtr = dynamic_cast<Einsum*>(opPtr);
+      Einsum *einPtr = dynamic_cast<Einsum *>(opPtr);
       inputBitset = compute_multiop_einsum_sparsity(einPtr, inputInd, inputDim);
     }
 
@@ -648,6 +691,29 @@ public:
   }
 
   std::string op_type() const override { return "Einsum"; }
+
+  void compute() override {
+    for (auto &input : this->inputs) {
+      std::cout << input->data->getName() << "(";
+      std::cout << count_bits(input->sparsities[0], size) << ","
+                << count_bits(input->sparsities[1], size) << ")("
+                << input->get_sparsity_ratio() << ")";
+    }
+    std::cout << std::endl;
+
+    const auto startAssemble{std::chrono::steady_clock::now()};
+    this->output->data->assemble();
+    const auto startCompilation{std::chrono::steady_clock::now()};
+    this->output->data->compute();
+    const auto startRuntime{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> assembleSecs{startCompilation -
+                                                     startAssemble};
+    const std::chrono::duration<double> runtimeSecs{startRuntime -
+                                                    startCompilation};
+    std::cout << "assemble= " << assembleSecs.count() << std::endl;
+    std::cout << "compute= " << runtimeSecs.count() << std::endl;
+    std::cout << std::endl;
+  }
 };
 
 class Graph {
@@ -693,7 +759,7 @@ public:
 
           if (!input->outputOp)
             continue;
-          bool allDone { false };
+          bool allDone{false};
           for (auto otherInput : input->outputOp->inputs) {
             for (auto otherOp : otherInput->inputOps)
               allDone |= doneProp[otherOp->output];
@@ -719,8 +785,10 @@ public:
   }
 
   TensorPtr compute() {
-    output->data->assemble();
-    output->data->compute();
+    for (auto &op : nodes)
+      op->compute();
+    /*output->data->assemble();*/
+    /*output->data->compute();*/
     return output;
   }
 
