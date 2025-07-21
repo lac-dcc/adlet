@@ -22,15 +22,21 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W1");
+      std::vector<bitset>{denseSparsityVector,
+                          generate_sparsity_vector(col_sparsity, size)},
+      "W1");
 
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W2");
+      std::vector<bitset>{denseSparsityVector,
+                          generate_sparsity_vector(col_sparsity, size)},
+      "W2");
 
   auto W3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "W3");
+      std::vector<bitset>{denseSparsityVector,
+                          generate_sparsity_vector(col_sparsity, size)},
+      "W3");
 
   auto W4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
@@ -40,14 +46,14 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   auto W5 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
+      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
                           generate_sparsity_vector(col_sparsity, size)},
       "W5");
 
   auto W6 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<bitset>{generate_sparsity_vector(col_sparsity, size),
+                          denseSparsityVector},
       "W6");
 
   auto outputs = std::vector<TensorPtr>(10);
@@ -95,6 +101,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
                                                     startAllocate1};
 
   g.run_propagation(FORWARD);
+  // print_dot(g, "befora.dot");
   std::cout << "ratio before " << g.get_sparsity_ratio() << std::endl;
 
   if (propagate) {
@@ -111,12 +118,12 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   const auto startAllocate2{std::chrono::steady_clock::now()};
 
   input->create_data(format);
-  W1->create_data({taco::Dense, taco::Dense});
-  W2->create_data({taco::Dense, taco::Dense});
-  W3->create_data({taco::Dense, taco::Dense});
-  W4->create_data({taco::Dense, taco::Dense});
-  W5->create_data({taco::Dense, taco::Dense});
-  W6->create_data({taco::Dense, taco::Dense});
+  W1->create_data(format);
+  W2->create_data(format);
+  W3->create_data(format);
+  W4->create_data(format);
+  W5->create_data(format);
+  W6->create_data(format);
 
   for (int i = 0; i < 10; i++) {
     /*outputs[i]->create_data({taco::Dense, taco::Dense});*/
@@ -151,8 +158,8 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
   print_dot(g);
-  std::cout << count_bits(outputs[5]->sparsities[0], size) << std::endl;
-  std::cout << count_bits(outputs[5]->sparsities[1], size) << std::endl;
+  /*std::cout << count_bits(outputs[5]->sparsities[0], size) << std::endl;*/
+  /*std::cout << count_bits(outputs[5]->sparsities[1], size) << std::endl;*/
   /*std::cout << count_bits(W2->sparsities[0], size) << std::endl;*/
   /*std::cout << count_bits(W2->sparsities[1], size) << std::endl;*/
   /*std::cout << count_bits(W3->sparsities[0], size) << std::endl;*/
