@@ -569,7 +569,6 @@ public:
     for (auto op : inputs[inputInd]->inputOps) {
       auto opPtr = op.get();
       inputBitset |= compute_multiop_sparsity(opPtr, inputInd, inputDim);
-      ;
     }
 
     return inputBitset;
