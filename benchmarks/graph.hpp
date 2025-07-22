@@ -329,8 +329,5 @@ int benchmark_graph(int argc, char *argv[]) {
   bool propagate = std::stoi(argv[++param]);
   /*run(getFormat(format), propagate, row_sparsity, col_sparsity);*/
   bert(getFormat(format), propagate, row_sparsity, col_sparsity);
-
-  /*single(getFormat(format), propagate, row_sparsity, col_sparsity);*/
-
   return 0;
 }
