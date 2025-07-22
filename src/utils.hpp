@@ -1,7 +1,7 @@
 #pragma once
 #include "taco.h"
-#include <iostream>
 #include <bitset>
+#include <iostream>
 #include <sys/resource.h>
 
 constexpr int size = 2048;
@@ -120,7 +120,6 @@ void print_memory_usage() {
   std::cout << "memory used = " << usage.ru_maxrss / (1024.0 * 1024.0)
             << std::endl;
 #else
-  std::cout << "Memory used: " << usage.ru_maxrss / 1024.0
-            << " MB\n"; // ru_maxrss is in kilobytes
+  std::cout << "memory used = " << usage.ru_maxrss / 1024.0 << std::endl;
 #endif
 }
