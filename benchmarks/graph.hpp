@@ -8,6 +8,7 @@
 void bert(taco::Format format, bool propagate, float row_sparsity,
           float col_sparsity) {
 
+  std::cout << "running bert-like benchmark" << std::endl;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
   auto rowSparsityVector = generate_sparsity_vector(row_sparsity, size);
@@ -102,7 +103,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   g.run_propagation(FORWARD);
   // print_dot(g, "befora.dot");
-  std::cout << "ratio before " << g.get_sparsity_ratio() << std::endl;
+  std::cout << "ratio before = " << g.get_sparsity_ratio() << std::endl;
 
   if (propagate) {
     const auto startPropagation{std::chrono::steady_clock::now()};
@@ -114,7 +115,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   } else {
     std::cout << "analysis = " << 0 << std::endl;
   }
-  std::cout << "ratio after " << g.get_sparsity_ratio() << std::endl;
+  std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startAllocate2{std::chrono::steady_clock::now()};
 
   input->create_data(format);
@@ -168,6 +169,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
 void run(taco::Format format, bool propagate, float row_sparsity,
          float col_sparsity) {
+  std::cout << "running small-graph benchmark" << std::endl;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
   auto rowSparsityVector = generate_sparsity_vector(row_sparsity, size);
@@ -231,21 +233,8 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   const auto finishAllocate1{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
                                                     startAllocate1};
-
-  /*std::cout << "W1 rows " << count_bits(W1->sparsities[0], size) << " W1
-   * cols
-   * "*/
-  /*          << count_bits(W1->sparsities[1], size) << std::endl;*/
-  /*std::cout << "W2 rows " << count_bits(W2->sparsities[0], size) << " W2
-   * cols
-   * "*/
-  /*          << count_bits(W2->sparsities[1], size) << std::endl;*/
-  /*std::cout << "W3 rows " << count_bits(W3->sparsities[0], size) << " W3
-   * cols
-   * "*/
-  /*          << count_bits(W3->sparsities[1], size) << std::endl;*/
   g.run_propagation(FORWARD);
-  std::cout << "ratio before " << g.get_sparsity_ratio() << std::endl;
+  std::cout << "ratio before = " << g.get_sparsity_ratio() << std::endl;
   if (propagate) {
     const auto startPropagation{std::chrono::steady_clock::now()};
     g.run_propagation();
@@ -256,21 +245,8 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   } else {
     std::cout << "analysis = " << 0 << std::endl;
   }
-  std::cout << "ratio after " << g.get_sparsity_ratio() << std::endl;
+  std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startAllocate2{std::chrono::steady_clock::now()};
-
-  /*std::cout << "W1 rows " << count_bits(W1->sparsities[0], size) << " W1
-   * cols
-   * "*/
-  /*          << count_bits(W1->sparsities[1], size) << std::endl;*/
-  /*std::cout << "W2 rows " << count_bits(W2->sparsities[0], size) << " W2
-   * cols
-   * "*/
-  /*          << count_bits(W2->sparsities[1], size) << std::endl;*/
-  /*std::cout << "W3 rows " << count_bits(W3->sparsities[0], size) << " W3
-   * cols
-   * "*/
-  /*          << count_bits(W3->sparsities[1], size) << std::endl;*/
 
   X->create_data(format);
   W1->create_data(format);
@@ -278,18 +254,10 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   W3->create_data(format);
   W4->create_data(format);
 
-  /*O1->create_data({taco::Dense, taco::Sparse});*/
-  /*O2->create_data({taco::Dense, taco::Sparse});*/
-  /*O3->create_data({taco::Dense, taco::Sparse});*/
-
   O1->create_data(format);
   O2->create_data(format);
   O3->create_data(format);
   O4->create_data(format);
-  /*O1->create_data({taco::Dense, taco::Dense});*/
-  /*O2->create_data({taco::Dense, taco::Dense});*/
-  /*O3->create_data({taco::Dense, taco::Dense});*/
-  /*O4->create_data({taco::Dense, taco::Dense});*/
 
   X->initialize_data();
   W1->initialize_data();
@@ -317,17 +285,23 @@ void run(taco::Format format, bool propagate, float row_sparsity,
 }
 
 int benchmark_graph(int argc, char *argv[]) {
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0]
-              << " graph <row sparsity> <col sparsity> <format> <propagate> \n";
+              << " graph <graph_name> <row sparsity> <col sparsity> <format> "
+                 "<propagate> \n ";
     return 1;
   }
   int param = 1;
+  std::string graph_name = argv[++param];
   double row_sparsity = std::stod(argv[++param]);
   double col_sparsity = std::stod(argv[++param]);
   std::string format = argv[++param];
   bool propagate = std::stoi(argv[++param]);
-  /*run(getFormat(format), propagate, row_sparsity, col_sparsity);*/
-  bert(getFormat(format), propagate, row_sparsity, col_sparsity);
+
+  if (graph_name == "bert") {
+    bert(getFormat(format), propagate, row_sparsity, col_sparsity);
+  } else {
+    run(getFormat(format), propagate, row_sparsity, col_sparsity);
+  }
   return 0;
 }
