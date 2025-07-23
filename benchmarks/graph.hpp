@@ -1,5 +1,6 @@
 #include "../src/dot.hpp"
 #include "../src/graph.hpp"
+#include "../src/utils.hpp"
 #include "taco.h"
 #include "taco/format.h"
 #include <memory>
@@ -284,6 +285,79 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   print_dot(g);
 }
 
+void memtest(taco::Format format, bool propagate, float row_sparsity,
+         float col_sparsity) {
+  std::cout << "running memtest-graph benchmark" << std::endl;
+  const auto startAllocate1{std::chrono::steady_clock::now()};
+
+  auto rowSparsityVector = generate_sparsity_vector(row_sparsity, size);
+  auto colSparsityVector = generate_sparsity_vector(col_sparsity, size);
+  auto denseSparsityVector = generate_sparsity_vector(0.0, size);
+
+  auto X = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
+                          generate_sparsity_vector(col_sparsity, size)},
+      "X");
+  auto W1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{denseSparsityVector,
+                          generate_sparsity_vector(col_sparsity, size)},
+      "W1");
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O1");
+
+  auto matmul1 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X}, O1, "ik,kj->ij");
+
+  auto g =
+      Graph::build_graph({X, W1}, O1, {matmul1});
+
+  const auto finishAllocate1{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
+                                                    startAllocate1};
+  g.run_propagation(FORWARD);
+  std::cout << "ratio before = " << g.get_sparsity_ratio() << std::endl;
+  if (propagate) {
+    const auto startPropagation{std::chrono::steady_clock::now()};
+    g.run_propagation();
+    const auto endPropagation{std::chrono::steady_clock::now()};
+    const std::chrono::duration<double> propagationSecs{endPropagation -
+                                                        startPropagation};
+    std::cout << "analysis = " << propagationSecs.count() << std::endl;
+  } else {
+    std::cout << "analysis = " << 0 << std::endl;
+  }
+  std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
+  const auto startAllocate2{std::chrono::steady_clock::now()};
+
+  X->create_data(format);
+  W1->create_data(format);
+  O1->create_data(format);
+  X->initialize_data();
+  W1->initialize_data();
+
+  const auto finishAllocate2{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> allocate2Secs{finishAllocate2 -
+                                                    startAllocate2};
+
+  std::cout << "load graph = " << allocate2Secs.count() << std::endl;
+  const auto startCompilation{std::chrono::steady_clock::now()};
+  g.compile();
+  const auto startRuntime{std::chrono::steady_clock::now()};
+  auto result = g.compute();
+  const auto finishRuntime{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> compilationSecs{startRuntime -
+                                                      startCompilation};
+  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
+  std::cout << "compilation = " << compilationSecs.count() << std::endl;
+  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
+  print_memory_usage();
+  print_dot(g);
+  write_kernel("memtest.c", *O1->data);
+}
+
 int benchmark_graph(int argc, char *argv[]) {
   if (argc != 7) {
     std::cerr << "Usage: " << argv[0]
@@ -300,6 +374,8 @@ int benchmark_graph(int argc, char *argv[]) {
 
   if (graph_name == "bert") {
     bert(getFormat(format), propagate, row_sparsity, col_sparsity);
+  } else if (graph_name == "mem_test") {
+    memtest(getFormat(format), propagate, row_sparsity, col_sparsity);
   } else {
     run(getFormat(format), propagate, row_sparsity, col_sparsity);
   }

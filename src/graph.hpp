@@ -111,8 +111,10 @@ public:
           break;
         }
       }
-      if (isZero)
+      if (isZero) {
+        data->insert(indices, 0.0f);
         continue;
+      }
 
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
       data->insert(indices, val);

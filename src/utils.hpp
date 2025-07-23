@@ -1,6 +1,7 @@
 #pragma once
 #include "taco.h"
 #include <bitset>
+#include <fstream>
 #include <iostream>
 #include <sys/resource.h>
 
@@ -122,4 +123,11 @@ void print_memory_usage() {
 #else
   std::cout << "memory used = " << usage.ru_maxrss / 1024.0 << std::endl;
 #endif
+}
+
+void write_kernel(const std::string& filename, const taco::Tensor<float> compiledOut) {
+    std::ofstream file;
+    file.open(filename);
+    file << compiledOut.getSource();
+    file.close();
 }
