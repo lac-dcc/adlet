@@ -97,6 +97,7 @@ public:
 
   void initialize_data() {
     // number of dimensions can vary so compute num elements
+    taco::Format dense({taco::Dense, taco::Dense});
     int numElements = 1;
     for (auto size : sizes)
       numElements *= size;
@@ -111,8 +112,12 @@ public:
           break;
         }
       }
-      if (isZero)
+      if (isZero) {
+        if (this->data->getFormat() == dense) {
+          data->insert(indices, 0.0f);
+        }
         continue;
+      }
 
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
       data->insert(indices, val);

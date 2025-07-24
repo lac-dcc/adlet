@@ -139,9 +139,6 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   W5->initialize_data();
   W6->initialize_data();
 
-  for (int i = 0; i < outputs[4]->data->getDependentTensors().size(); i++)
-    std::cout << outputs[4]->data->getDependentTensors()[i] << std::endl;
-
   const auto finishAllocate2{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate2Secs{finishAllocate2 -
                                                     startAllocate2};
@@ -158,13 +155,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
-  print_dot(g);
-  /*std::cout << count_bits(outputs[5]->sparsities[0], size) << std::endl;*/
-  /*std::cout << count_bits(outputs[5]->sparsities[1], size) << std::endl;*/
-  /*std::cout << count_bits(W2->sparsities[0], size) << std::endl;*/
-  /*std::cout << count_bits(W2->sparsities[1], size) << std::endl;*/
-  /*std::cout << count_bits(W3->sparsities[0], size) << std::endl;*/
-  /*std::cout << count_bits(W3->sparsities[1], size) << std::endl;*/
+  // print_dot(g);
 }
 
 void run(taco::Format format, bool propagate, float row_sparsity,
