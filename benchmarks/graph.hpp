@@ -18,10 +18,13 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   auto input = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
-      "input");
-
+      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "input");
+  /*auto input = std::make_shared<Tensor>(*/
+  /*    std::vector<int>{size, size},*/
+  /*    std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),*/
+  /*                        generate_sparsity_vector(col_sparsity, size)},*/
+  /*    "input");*/
+  /**/
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector,
