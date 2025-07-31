@@ -570,6 +570,14 @@ void test_einsum_utils() {
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
+void test_einsum_file_parsing()
+{
+  std::string indicesFile = "indices.txt";
+  std::string einsumStringsFile = "einsum_strings.txt";
+  auto indicesVector = readIndices(indicesFile);
+  auto einsumStringsVector = readContractionStrings(einsumStringsFile);
+}
+
 int main() {
   test_propagation();
   test_addition();
@@ -581,4 +589,5 @@ int main() {
   compare_taco_einsum();
   test_get_sparsity_ratio();
   test_einsum_utils();
+  test_einsum_file_parsing();
 }
