@@ -278,6 +278,8 @@ void run(taco::Format format, bool propagate, float row_sparsity,
 
 void memtest(taco::Format format, bool propagate, float row_sparsity,
          float col_sparsity) {
+  std::cout << "memory usage on start is ";
+  print_memory_usage();
   std::cout << "running memtest-graph benchmark" << std::endl;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
@@ -299,11 +301,20 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O1");
 
+  std::cout << "memory usage after Tensor load is ";
+  print_memory_usage();
+
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X}, O1, "ik,kj->ij");
 
+  std::cout << "memory usage after op load is ";
+  print_memory_usage();
+
   auto g =
       Graph::build_graph({X, W1}, O1, {matmul1});
+
+  std::cout << "memory usage after graph load is ";
+  print_memory_usage();
 
   const auto finishAllocate1{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
@@ -320,6 +331,8 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   } else {
     std::cout << "analysis = " << 0 << std::endl;
   }
+  std::cout << "memory usage after prop is ";
+  print_memory_usage();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startAllocate2{std::chrono::steady_clock::now()};
 
@@ -328,6 +341,9 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   O1->create_data(format);
   X->initialize_data();
   W1->initialize_data();
+
+  std::cout << "memory usage after data init is ";
+  print_memory_usage();
 
   const auto finishAllocate2{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate2Secs{finishAllocate2 -
@@ -345,6 +361,9 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
+  print_tensor_memory_usage(*O1->data, O1->name);
+  print_tensor_memory_usage(*X->data, X->name);
+  print_tensor_memory_usage(*W1->data, W1->name);
   print_dot(g);
   write_kernel("memtest.c", *O1->data);
 }
