@@ -1,38 +1,22 @@
-<<<<<<< HEAD
-=======
-import sys
->>>>>>> c8bf124f677efe90837fc9cea785584c01af2328
 import random
 import statistics
 from datetime import datetime
 import subprocess
 
 #only column sparsity
-<<<<<<< HEAD
-#runs = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"]]
-=======
 runs = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"]]
->>>>>>> c8bf124f677efe90837fc9cea785584c01af2328
 
 #only row sparsity
 #runs = [["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"]]
 
 #row and column sparsity
-<<<<<<< HEAD
 runs = [["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
-=======
-#runs = [["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
->>>>>>> c8bf124f677efe90837fc9cea785584c01af2328
 
 #all
 #runs = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"], ["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"], ["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
 
 repeats = 5
-<<<<<<< HEAD
 binary = "../../build/benchmark"
-=======
-binary = "./benchmark"
->>>>>>> c8bf124f677efe90837fc9cea785584c01af2328
 graph_name = "bert"
 
 def parse_output(output):
@@ -140,21 +124,5 @@ def random_run(list_runs):
         return results
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     run(list_runs=runs, warmup=False)
-=======
-    mode = "batch"
-    warmup = False
-    if len(sys.argv) == 3:
-        mode = sys.argv[1]
-        warmup = bool(sys.argv[2])
-    elif len(sys.argv) == 2:
-        mode = sys.argv[1]
-        warmup = False
-        
-    if sys.argv[1] == "random":
-        random_run(list_runs=runs)
-    else:
-        run(list_runs=runs, warmup=warmup)
->>>>>>> c8bf124f677efe90837fc9cea785584c01af2328
 

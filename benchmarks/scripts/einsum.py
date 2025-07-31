@@ -1,10 +1,9 @@
-import opt_einsum as oe
-import pickle
-import numpy as np
 import os
+import opt_einsum as oe
+import einsum_benchmark
 
 def generate_lists(einsum_string, tensors):
-    path, path_info = oe.contract_path(einsum_string, *tensors)
+    _, path_info = oe.contract_path(einsum_string, *tensors)
     indices = [pi[0] for pi in path_info.contraction_list]
     einsum_strings = [pi[2] for pi in path_info.contraction_list]
     
@@ -18,11 +17,8 @@ def write_benchmark(root, benchmark_name, indices, einsum_strings):
         file.write(str(einsum_strings))
 
 if __name__ == "__main__":
-    with open(
-        "./instances/qc_circuit_n49_m14_s9_e6_pEFGH_simplified.pkl", "rb"
-    ) as file:
-        einsum_string, tensors, path_meta, sum_output = pickle.load(file)
-
+    instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
+    einsum_string = instance.format_string
+    tensors = instance.tensors
     write_benchmark("./", "qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
-    
 

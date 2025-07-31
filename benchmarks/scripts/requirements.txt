@@ -1,0 +1,10 @@
+certifi==2025.7.14
+charset-normalizer==3.4.2
+einsum_benchmark==0.1.7
+idna==3.10
+opt_einsum==3.4.0
+packaging==25.0
+platformdirs==4.3.8
+pooch==1.8.2
+requests==2.32.4
+urllib3==2.5.0
