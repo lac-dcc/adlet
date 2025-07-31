@@ -2,6 +2,7 @@
 
 #include <regex>
 
+#include "dot.hpp"
 #include "graph.hpp"
 #include "taco.h"
 
@@ -116,7 +117,6 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   // construct tensors based on tensorSizes
   int ind = 0;
   for (auto dims : tensorSizes) {
-    auto denseSparsityVector = generate_sparsity_vector(0.0, size);
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
@@ -175,5 +175,4 @@ void readEinsumBenchmark(const std::string &filename) {
   auto contractionStrings = getContractionStrings(contractions);
   auto tensorSizes = getTensorSizes(sizes);
   auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
-  std::cout << g.nodes.size() << std::endl;
 }
