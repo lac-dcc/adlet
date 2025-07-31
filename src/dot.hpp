@@ -3,8 +3,12 @@
 #include <memory>
 #include <string>
 
-std::string getColor(std::shared_ptr<Tensor> tensor) {
-  std::string color;
+std::string getColor(std::shared_ptr<Tensor> tensor, bool shouldColor) {
+  std::string color = std::string("black");
+
+  if (!shouldColor)
+    return color;
+
   float ratio = tensor->get_sparsity_ratio();
   if (ratio >= 0.7) {
     color = std::string("crimson");
@@ -14,11 +18,7 @@ std::string getColor(std::shared_ptr<Tensor> tensor) {
     color = std::string("darkgreen");
   } else if (ratio >= 0.1) {
     color = std::string("cyan");
-  } else if (ratio == 0.0) {
-    color = std::string("black");
   }
-  /*std::cout << tensor->data->getName() << " color = " << color*/
-  /*          << " ratio = " << ratio << std::endl;*/
   return color;
 }
 
@@ -45,7 +45,7 @@ void print_dot(const Graph &graph, std::string file_name = "graph.dot",
     for (const auto &input : op->inputs) {
       file << "  " << getID(input.get()) << " [label=\""
            << input->data->getName()
-           << "\", shape=ellipse, penwidth=2, color=" << getColor(input)
+           << "\", shape=ellipse, penwidth=2, color=" << getColor(input, colors)
            << "];\n";
       file << "  " << getID(input.get()) << " -> " << opID << ";\n";
     }

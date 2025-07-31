@@ -18,10 +18,13 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   auto input = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
-      "input");
-
+      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "input");
+  /*auto input = std::make_shared<Tensor>(*/
+  /*    std::vector<int>{size, size},*/
+  /*    std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),*/
+  /*                        generate_sparsity_vector(col_sparsity, size)},*/
+  /*    "input");*/
+  /**/
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector,
@@ -277,7 +280,7 @@ void run(taco::Format format, bool propagate, float row_sparsity,
 }
 
 void memtest(taco::Format format, bool propagate, float row_sparsity,
-         float col_sparsity) {
+             float col_sparsity) {
   std::cout << "running memtest-graph benchmark" << std::endl;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
@@ -302,8 +305,7 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X}, O1, "ik,kj->ij");
 
-  auto g =
-      Graph::build_graph({X, W1}, O1, {matmul1});
+  auto g = Graph::build_graph({X, W1}, O1, {matmul1});
 
   const auto finishAllocate1{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
