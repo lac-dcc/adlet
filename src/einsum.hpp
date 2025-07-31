@@ -10,6 +10,56 @@
 #include <unordered_map>
 #include "graph.hpp"
 
+std::vector<std::pair<int, int>> readIndices(const std::string& filename) {
+  std::vector<std::pair<int, int>> result;
+  std::ifstream file(filename);
+
+  std::string line;
+  std::getline(file, line);
+  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+      
+  size_t pos = 0;
+  while ((pos = line.find('(', pos)) != std::string::npos) {
+    size_t comma = line.find(',', pos);
+    size_t close = line.find(')', pos);
+    
+    int first = std::stoi(line.substr(pos + 1, comma - pos - 1));
+    int second = std::stoi(line.substr(comma + 1, close - comma - 1));
+    result.emplace_back(first, second);
+    pos = close + 1;
+  }
+
+  for (auto p : result)
+    std::cout << p.first << ", " << p.second << " ";
+  std::cout << std::endl;
+  
+  file.close();
+  return result;
+}
+
+std::vector<std::string> readContractionStrings(const std::string& filename) {
+  std::vector<std::string> result;
+  std::ifstream file(filename);
+
+  std::cout << file.is_open() << std::endl;
+
+  std::string line;
+  std::getline(file, line);
+  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+  std::cout << line << std::endl;
+  size_t pos = 0;
+  while ((pos = line.find('\'', pos)) != std::string::npos) {
+    size_t close = line.find('\'', pos + 1);
+    std::string einsumString = line.substr(pos + 1, close - pos - 1);
+    std::cout << pos << " " << close << " " << einsumString << std::endl;
+    result.emplace_back();
+    pos = close + 1;
+  }
+
+  return result;
+}
+
 std::string extractOutputs(std::string const &einsumString) {
   int arrowPos = einsumString.find("->");
   return einsumString.substr(arrowPos + 2);
