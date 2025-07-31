@@ -1,21 +1,12 @@
 #pragma once
-#include "dot.hpp"
+
+#include <regex>
+
 #include "graph.hpp"
 #include "taco.h"
-#include "taco/format.h"
-#include "utils.hpp"
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
-std::vector<std::pair<int, int>> readIndices(const std::string &filename) {
+std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
-  std::ifstream file(filename);
-
-  std::string line;
-  std::getline(file, line);
-  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 
   size_t pos = 0;
   while ((pos = line.find('(', pos)) != std::string::npos) {
@@ -27,35 +18,43 @@ std::vector<std::pair<int, int>> readIndices(const std::string &filename) {
     result.emplace_back(first, second);
     pos = close + 1;
   }
-
-  for (auto p : result)
-    std::cout << p.first << ", " << p.second << " ";
-  std::cout << std::endl;
-
-  file.close();
   return result;
 }
 
-std::vector<std::string> readContractionStrings(const std::string &filename) {
+std::vector<std::string> getContractionStrings(const std::string &line) {
   std::vector<std::string> result;
-  std::ifstream file(filename);
 
-  std::cout << file.is_open() << std::endl;
-
-  std::string line;
-  std::getline(file, line);
-  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
-
-  std::cout << line << std::endl;
   size_t pos = 0;
   while ((pos = line.find('\'', pos)) != std::string::npos) {
     size_t close = line.find('\'', pos + 1);
     std::string einsumString = line.substr(pos + 1, close - pos - 1);
-    std::cout << pos << " " << close << " " << einsumString << std::endl;
-    result.emplace_back();
+    result.emplace_back(einsumString);
     pos = close + 1;
   }
+  return result;
+}
 
+std::vector<std::vector<int>> getTensorSizes(const std::string &line) {
+  std::vector<std::vector<int>> result;
+  std::regex tupleRegex(R"(\(([^()]*)\))");
+  std::string s = line;
+
+  std::smatch match;
+  while (std::regex_search(s, match, tupleRegex)) {
+    std::string content = match[1].str();
+    std::vector<int> sizes;
+    std::stringstream ss(content);
+    std::string number;
+
+    while (std::getline(ss, number, ',')) {
+      number.erase(remove_if(number.begin(), number.end(), isspace),
+                   number.end());
+      sizes.push_back(std::stoi(number));
+    }
+
+    result.push_back(sizes);
+    s = match.suffix();
+  }
   return result;
 }
 
@@ -107,9 +106,9 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-Graph buildTree(std::vector<std::vector<int>> tensorSizes,
-                std::vector<std::string> const &contractionStrings,
-                std::vector<std::pair<int, int>> const &contractionInds) {
+Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
+                const std::vector<std::string> &contractionStrings,
+                const std::vector<std::pair<int, int>> &contractionInds) {
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
@@ -157,4 +156,24 @@ Graph buildTree(std::vector<std::vector<int>> tensorSizes,
   }
 
   return Graph::build_graph(tensors, tensorStack[0], ops);
+}
+
+void readEinsumBenchmark(const std::string &filename) {
+
+  std::ifstream file(filename);
+  if (!file) {
+    std::cerr << "Failed to open file.\n";
+    return;
+  }
+  std::string path;
+  std::string contractions;
+  std::string sizes;
+  std::getline(file, path);
+  std::getline(file, contractions);
+  std::getline(file, sizes);
+  auto contractionPath = getContractionPath(path);
+  auto contractionStrings = getContractionStrings(contractions);
+  auto tensorSizes = getTensorSizes(sizes);
+  auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
+  std::cout << g.nodes.size() << std::endl;
 }
