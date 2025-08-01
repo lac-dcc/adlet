@@ -1,5 +1,6 @@
-import opt_einsum as oe
+import os
 import einsum_benchmark
+import opt_einsum as oe
 
 def convert_einsum_string(einsum_string):
     char_mapping = {}
@@ -25,7 +26,7 @@ def convert_einsum_string(einsum_string):
     return ''.join(new_string)
 
 def generate_lists(einsum_string, tensors):
-    _, path_info = oe.contract_path(einsum_string, *tensors)
+    _, path_info = oe.contract_path(einsum_string, *tensors, optimize='auto')
     indices = [pi[0] for pi in path_info.contraction_list]
     einsum_strings = [convert_einsum_string(pi[2]) for pi in path_info.contraction_list]
     shape_list = [t.shape for t in tensors]
@@ -39,7 +40,15 @@ def write_benchmark(benchmark_name, indices, einsum_strings, tensor_sizes):
         file.write(str(tensor_sizes) + "\n")
 
 if __name__ == "__main__":
+
     instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
     einsum_string = instance.format_string
     tensors = instance.tensors
-    write_benchmark("qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
+    for instance in einsum_benchmark.instances:
+        if "mc" in instance.name:
+            continue
+        if os.path.isdir('converted/' + instance.name):
+            continue
+
+        write_benchmark("./converted/qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
+
