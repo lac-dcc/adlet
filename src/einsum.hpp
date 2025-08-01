@@ -1,21 +1,15 @@
 #pragma once
+
+#include <regex>
+
 #include "dot.hpp"
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
-#include "utils.hpp"
-#include <string>
 #include <unordered_map>
-#include <utility>
-#include <vector>
 
-std::vector<std::pair<int, int>> readIndices(const std::string &filename) {
+std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
-  std::ifstream file(filename);
-
-  std::string line;
-  std::getline(file, line);
-  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 
   size_t pos = 0;
   while ((pos = line.find('(', pos)) != std::string::npos) {
@@ -27,35 +21,43 @@ std::vector<std::pair<int, int>> readIndices(const std::string &filename) {
     result.emplace_back(first, second);
     pos = close + 1;
   }
-
-  for (auto p : result)
-    std::cout << p.first << ", " << p.second << " ";
-  std::cout << std::endl;
-
-  file.close();
   return result;
 }
 
-std::vector<std::string> readContractionStrings(const std::string &filename) {
+std::vector<std::string> getContractionStrings(const std::string &line) {
   std::vector<std::string> result;
-  std::ifstream file(filename);
 
-  std::cout << file.is_open() << std::endl;
-
-  std::string line;
-  std::getline(file, line);
-  line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
-
-  std::cout << line << std::endl;
   size_t pos = 0;
   while ((pos = line.find('\'', pos)) != std::string::npos) {
     size_t close = line.find('\'', pos + 1);
     std::string einsumString = line.substr(pos + 1, close - pos - 1);
-    std::cout << pos << " " << close << " " << einsumString << std::endl;
-    result.emplace_back();
+    result.emplace_back(einsumString);
     pos = close + 1;
   }
+  return result;
+}
 
+std::vector<std::vector<int>> getTensorSizes(const std::string &line) {
+  std::vector<std::vector<int>> result;
+  std::regex tupleRegex(R"(\(([^()]*)\))");
+  std::string s = line;
+
+  std::smatch match;
+  while (std::regex_search(s, match, tupleRegex)) {
+    std::string content = match[1].str();
+    std::vector<int> sizes;
+    std::stringstream ss(content);
+    std::string number;
+
+    while (std::getline(ss, number, ',')) {
+      number.erase(remove_if(number.begin(), number.end(), isspace),
+                   number.end());
+      sizes.push_back(std::stoi(number));
+    }
+
+    result.push_back(sizes);
+    s = match.suffix();
+  }
   return result;
 }
 
@@ -83,7 +85,7 @@ constructSizeMap(std::vector<std::string> const &inputs,
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
-    for (int j = 0; j < tensorSizes.size(); ++j) {
+    for (int j = 0; j < tensorSizes[i].size(); ++j) {
       auto indVar = inputs[i][j];
       auto dimSize = tensorSizes[i][j];
       sizeMap[indVar] = dimSize;
@@ -107,9 +109,19 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-Graph buildTree(std::vector<std::vector<int>> tensorSizes,
-                std::vector<std::string> const &contractionStrings,
-                std::vector<std::pair<int, int>> const &contractionInds) {
+taco::Format getFormat(const int size) {
+  std::vector<taco::ModeFormat> modes;
+  for (int i = 0; i < size; i++) {
+    modes.push_back(taco::Dense);
+  }
+  const taco::ModeFormatPack modeFormatPack(modes);
+  std::vector<taco::ModeFormatPack> modeFormatPackVector{modeFormatPack};
+  return taco::Format(modeFormatPackVector);
+}
+
+Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
+                const std::vector<std::string> &contractionStrings,
+                const std::vector<std::pair<int, int>> &contractionInds) {
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
@@ -117,13 +129,14 @@ Graph buildTree(std::vector<std::vector<int>> tensorSizes,
   // construct tensors based on tensorSizes
   int ind = 0;
   for (auto dims : tensorSizes) {
-    auto denseSparsityVector = generate_sparsity_vector(0.0, size);
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
     }
     auto newTensor =
         std::make_shared<Tensor>(dims, sparsityVectors, std::to_string(ind++));
+    newTensor->create_data(getFormat(dims.size()));
+    newTensor->initialize_data();
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -146,10 +159,11 @@ Graph buildTree(std::vector<std::vector<int>> tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               std::to_string(ind++));
+    newTensor->create_data(getFormat(outputDims.size()));
 
     tensors.push_back(newTensor);
     ops.push_back(std::make_shared<Einsum>(
-        std::vector<TensorPtr>{tensorStack[ind1], tensorStack[ind2]},
+        std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]},
         tensors.back(), contractionStrings[i]));
     tensorStack.erase(tensorStack.begin() + ind2);
     tensorStack.erase(tensorStack.begin() + ind1);
@@ -157,4 +171,27 @@ Graph buildTree(std::vector<std::vector<int>> tensorSizes,
   }
 
   return Graph::build_graph(tensors, tensorStack[0], ops);
+}
+
+void readEinsumBenchmark(const std::string &filename) {
+
+  std::ifstream file(filename);
+  if (!file) {
+    std::cerr << "Failed to open file.\n";
+    return;
+  }
+  std::string path;
+  std::string contractions;
+  std::string sizes;
+  std::getline(file, path);
+  std::getline(file, contractions);
+  std::getline(file, sizes);
+  auto contractionPath = getContractionPath(path);
+  auto contractionStrings = getContractionStrings(contractions);
+  auto tensorSizes = getTensorSizes(sizes);
+  file.close();
+  auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
+  /*print_dot(g, "teste.dot");*/
+  /*g.compile();*/
+  /*g.compute();*/
 }

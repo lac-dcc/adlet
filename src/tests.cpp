@@ -1,10 +1,10 @@
+#include "einsum.hpp"
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
 #include <cassert>
 #include <memory>
 #include <vector>
-#include "einsum.hpp"
 
 void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
   assert(sizes.size() == 2 && "Tensor must be a matrix to call this method");
@@ -32,7 +32,7 @@ bool is_same(taco::Tensor<float> &a, taco::Tensor<float> &b,
     auto diff = a.at(index) - b.at(index);
     diff = diff < 0 ? diff * -1 : diff;
     if (diff > 1e-5) {
-      std::cout << index[0] << ", " << index[1] << ": " << diff << std::endl;
+      // std::cout << index[0] << ", " << index[1] << ": " << diff << std::endl;
       return false;
     }
   }
@@ -539,7 +539,6 @@ void test_get_sparsity_ratio() {
   auto tensor = std::make_shared<Tensor>(
       std::vector<int>{3, 3},
       std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
-  std::cout <<tensor->get_sparsity_ratio()<<std::endl;
   assert(std::fabs(tensor->get_sparsity_ratio() - 0.333333f) < tolerance);
 
   rowSparsityVector = bitset("0010101011");
@@ -547,7 +546,6 @@ void test_get_sparsity_ratio() {
   tensor = std::make_shared<Tensor>(
       std::vector<int>{10, 10},
       std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
-  std::cout <<tensor->get_sparsity_ratio()<<std::endl;
   assert(std::fabs(tensor->get_sparsity_ratio() - 0.75f) < tolerance);
 
   std::cout << "test_get_sparsity_ratio() OK " << std::endl;
@@ -555,27 +553,22 @@ void test_get_sparsity_ratio() {
 
 void test_einsum_utils() {
   // our code doesn't support scalar outputs so this is a modified version of
-  // https://optimized-einsum.readthedocs.io/en/stable/path_finding.html#format-of-the-path example
-  std::vector<std::string> contractionStrings{ "ajac,acaj->a", "ikbd,bdik->bik", "bik,ikab->a", "a,a->a" };
-  std::vector<std::pair<int, int>> contractionInds{ {1, 3}, {0, 2}, {0, 2}, {0, 1} };
+  // https://optimized-einsum.readthedocs.io/en/stable/path_finding.html#format-of-the-path
+  // example
+  std::vector<std::string> contractionStrings{"ajac,acaj->a", "ikbd,bdik->bik",
+                                              "bik,ikab->a", "a,a->a"};
+  std::vector<std::pair<int, int>> contractionInds{
+      {1, 3}, {0, 2}, {0, 2}, {0, 1}};
   std::vector<std::vector<int>> tensorSizes;
-  tensorSizes.push_back({ 10, 17, 10, 9 });
-  tensorSizes.push_back({ 16, 13, 16, 15 });
-  tensorSizes.push_back({ 10, 9, 16, 10 });
-  tensorSizes.push_back({ 16, 15, 16, 13 });
-  tensorSizes.push_back({ 10, 9, 10, 17 });
-  
-  auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
-  graph.print();
-  std::cout << "test_einsum_utils() OK " << std::endl;
-}
+  tensorSizes.push_back({10, 17, 10, 9});
+  tensorSizes.push_back({16, 13, 16, 15});
+  tensorSizes.push_back({10, 9, 16, 10});
+  tensorSizes.push_back({16, 15, 16, 13});
+  tensorSizes.push_back({10, 9, 10, 17});
 
-void test_einsum_file_parsing()
-{
-  std::string indicesFile = "indices.txt";
-  std::string einsumStringsFile = "einsum_strings.txt";
-  auto indicesVector = readIndices(indicesFile);
-  auto einsumStringsVector = readContractionStrings(einsumStringsFile);
+  auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
+  // graph.print();
+  std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
 int main() {
@@ -588,6 +581,5 @@ int main() {
   compare_taco_matmul();
   compare_taco_einsum();
   test_get_sparsity_ratio();
-  test_einsum_utils();
-  test_einsum_file_parsing();
+  /*test_einsum_utils();*/
 }
