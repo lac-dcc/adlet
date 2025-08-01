@@ -44,11 +44,12 @@ if __name__ == "__main__":
     instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
     einsum_string = instance.format_string
     tensors = instance.tensors
-    for instance in einsum_benchmark.instances:
-        if "mc" in instance.name:
-            continue
-        if os.path.isdir('converted/' + instance.name):
-            continue
-
-        write_benchmark("./converted/qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
+    write_benchmark("qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
+    # for instance in einsum_benchmark.instances:
+    #     if "mc" in instance.name:
+    #         continue
+    #     if os.path.isdir('converted/' + instance.name):
+    #         continue
+    #
+    #     write_benchmark("./converted/qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
 
