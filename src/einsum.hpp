@@ -5,6 +5,7 @@
 #include "dot.hpp"
 #include "graph.hpp"
 #include "taco.h"
+#include "taco/format.h"
 
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
@@ -83,7 +84,7 @@ constructSizeMap(std::vector<std::string> const &inputs,
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
-    for (int j = 0; j < tensorSizes.size(); ++j) {
+    for (int j = 0; j < tensorSizes[i].size(); ++j) {
       auto indVar = inputs[i][j];
       auto dimSize = tensorSizes[i][j];
       sizeMap[indVar] = dimSize;
@@ -107,6 +108,16 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
+taco::Format getFormat(const int size) {
+  std::vector<taco::ModeFormat> modes;
+  for (int i = 0; i < size; i++) {
+    modes.push_back(taco::Dense);
+  }
+  const taco::ModeFormatPack modeFormatPack(modes);
+  std::vector<taco::ModeFormatPack> modeFormatPackVector{modeFormatPack};
+  return taco::Format(modeFormatPackVector);
+}
+
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                 const std::vector<std::string> &contractionStrings,
                 const std::vector<std::pair<int, int>> &contractionInds) {
@@ -123,6 +134,8 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     }
     auto newTensor =
         std::make_shared<Tensor>(dims, sparsityVectors, std::to_string(ind++));
+    newTensor->create_data(getFormat(dims.size()));
+    newTensor->initialize_data();
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -145,10 +158,11 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               std::to_string(ind++));
+    newTensor->create_data(getFormat(outputDims.size()));
 
     tensors.push_back(newTensor);
     ops.push_back(std::make_shared<Einsum>(
-        std::vector<TensorPtr>{tensorStack[ind1], tensorStack[ind2]},
+        std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]},
         tensors.back(), contractionStrings[i]));
     tensorStack.erase(tensorStack.begin() + ind2);
     tensorStack.erase(tensorStack.begin() + ind1);
@@ -174,5 +188,9 @@ void readEinsumBenchmark(const std::string &filename) {
   auto contractionPath = getContractionPath(path);
   auto contractionStrings = getContractionStrings(contractions);
   auto tensorSizes = getTensorSizes(sizes);
+  file.close();
   auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
+  /*print_dot(g, "teste.dot");*/
+  /*g.compile();*/
+  /*g.compute();*/
 }

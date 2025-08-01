@@ -114,10 +114,11 @@ std::bitset<size> generate_sparsity_vector(double sparsity, int length) {
   return sparsityVector;
 }
 
-void print_tensor_memory_usage(const taco::Tensor<float> &tensor, const std::string &name){
+void print_tensor_memory_usage(const taco::Tensor<float> &tensor,
+                               const std::string &name) {
   taco::TensorStorage s = tensor.getStorage();
-  std::cout << name << " memory used = " 
-    << std::fixed << s.getSizeInBytes() / (1024.0 * 1024.0) << "MB" << std::endl;
+  std::cout << name << " memory used = " << std::fixed
+            << s.getSizeInBytes() / (1024.0 * 1024.0) << "MB" << std::endl;
 }
 
 void print_memory_usage() {
@@ -131,9 +132,10 @@ void print_memory_usage() {
 #endif
 }
 
-void write_kernel(const std::string& filename, const taco::Tensor<float> &compiledOut) {
-    std::ofstream file;
-    file.open(filename);
-    file << compiledOut.getSource();
-    file.close();
+void write_kernel(const std::string &filename,
+                  const taco::Tensor<float> &compiledOut) {
+  std::ofstream file;
+  file.open(filename);
+  file << compiledOut.getSource();
+  file.close();
 }
