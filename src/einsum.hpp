@@ -133,8 +133,8 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     for (auto dim : dims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
     }
-    auto newTensor =
-        std::make_shared<Tensor>(dims, sparsityVectors, std::to_string(ind++));
+    auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
+                                              "T" + std::to_string(ind++));
     newTensor->create_data(getFormat(dims.size()));
     newTensor->initialize_data();
     tensors.push_back(newTensor);
@@ -158,7 +158,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
-                                              std::to_string(ind++));
+                                              "O" + std::to_string(ind++));
     newTensor->create_data(getFormat(outputDims.size()));
 
     tensors.push_back(newTensor);
