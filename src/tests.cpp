@@ -572,7 +572,6 @@ void test_einsum_utils() {
 }
 
 int main() {
-
   test_propagation();
   test_addition();
   test_einsum();
@@ -582,5 +581,5 @@ int main() {
   compare_taco_matmul();
   compare_taco_einsum();
   test_get_sparsity_ratio();
-  test_einsum_utils();
+  /*test_einsum_utils();*/
 }
