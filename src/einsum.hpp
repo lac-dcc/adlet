@@ -6,6 +6,7 @@
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
+#include <unordered_map>
 
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
