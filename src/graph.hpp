@@ -104,7 +104,8 @@ public:
 
     int p = 0;
     for (int i = 0; i < numElements; i++) {
-      this->data->insert(coordinate, 1.0f);
+      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      this->data->insert(coordinate, val);
       for (int s = this->numDims - 1; s >= 0; s--) {
         if (++coordinate[s] < this->sizes[s])
           break;

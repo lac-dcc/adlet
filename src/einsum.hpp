@@ -7,7 +7,6 @@
 #include "taco.h"
 #include "taco/format.h"
 #include "utils.hpp"
-#include <unordered_map>
 
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
@@ -110,25 +109,43 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-/*taco::Format getFormat(const int size) {*/
-/*  std::vector<taco::ModeFormat> modes;*/
-/*  for (int i = 0; i < size; i++) {*/
-/*    modes.push_back(taco::Dense);*/
-/*  }*/
-/*  const taco::ModeFormatPack modeFormatPack(modes);*/
-/*  std::vector<taco::ModeFormatPack> modeFormatPackVector{modeFormatPack};*/
-/*  return taco::Format(modeFormatPackVector);*/
-/*}*/
+taco::Format getFormat2(const int dims_size) {
+  std::vector<taco::ModeFormat> formatVec;
+  for (int i = 0; i < dims_size; ++i) {
+    formatVec.push_back(taco::Dense);
+  }
+  return taco::Format{formatVec};
+}
 
-inline taco::Format getFormat(const int size) {
-  if (size == 1) {
+inline taco::Format getFormat(const int dims_size) {
+  if (dims_size == 1) {
     return taco::Format({taco::Dense});
-  } else if (size == 2) {
+  } else if (dims_size == 2) {
     return taco::Format({taco::Dense, taco::Dense});
-  } else if (size == 3) {
+  } else if (dims_size == 3) {
     return taco::Format({taco::Dense, taco::Dense, taco::Dense});
-  } else {
+  } else if (dims_size == 4) {
     return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense});
+  } else if (dims_size == 5) {
+    return taco::Format(
+        {taco::Dense, taco::Dense, taco::Dense, taco::Dense, taco::Dense});
+  } else if (dims_size == 6) {
+    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense});
+  } else if (dims_size == 7) {
+    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense, taco::Dense});
+  } else if (dims_size == 8) {
+    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense, taco::Dense, taco::Dense});
+  } else if (dims_size == 9) {
+    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense});
+  } else {
+    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense, taco::Dense, taco::Dense,
+                         taco::Dense, taco::Dense});
   }
 }
 
@@ -148,7 +165,8 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
     newTensor->create_data(getFormat(dims.size()));
-    newTensor->initialize_data();
+    /*newTensor->initialize_data();*/
+    newTensor->initialize_data_2();
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -204,17 +222,15 @@ void readEinsumBenchmark(const std::string &filename) {
   auto tensorSizes = getTensorSizes(sizes);
   auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
   /*print_dot(g, "teste.dot");*/
-  /*std::cout << "here" << std::endl;*/
-  /*const auto startCompilation{std::chrono::steady_clock::now()};*/
-  /*g.compile();*/
-  /*std::cout << "here" << std::endl;*/
-  /*const auto startRuntime{std::chrono::steady_clock::now()};*/
-  /*auto result = g.compute();*/
-  /*const auto finishRuntime{std::chrono::steady_clock::now()};*/
-  /*const std::chrono::duration<double> compilationSecs{startRuntime -*/
-  /*                                                    startCompilation};*/
-  /*const std::chrono::duration<double> runtimeSecs{finishRuntime -
-   * startRuntime};*/
-  /*std::cout << "compilation = " << compilationSecs.count() << std::endl;*/
-  /*std::cout << "runtime = " << runtimeSecs.count() << std::endl;*/
+  const auto startCompilation{std::chrono::steady_clock::now()};
+  g.compile();
+  const auto startRuntime{std::chrono::steady_clock::now()};
+  auto result = g.compute();
+  const auto finishRuntime{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> compilationSecs{startRuntime -
+                                                      startCompilation};
+  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
+  std::cout << "compilation = " << compilationSecs.count() << std::endl;
+  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
+  std::cout << *(g.output->data) << std::endl;
 }
