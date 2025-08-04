@@ -109,44 +109,11 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-taco::Format getFormat2(const int dims_size) {
-  std::vector<taco::ModeFormat> formatVec;
-  for (int i = 0; i < dims_size; ++i) {
-    formatVec.push_back(taco::Dense);
-  }
-  return taco::Format{formatVec};
-}
-
-inline taco::Format getFormat(const int dims_size) {
-  if (dims_size == 1) {
-    return taco::Format({taco::Dense});
-  } else if (dims_size == 2) {
-    return taco::Format({taco::Dense, taco::Dense});
-  } else if (dims_size == 3) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense});
-  } else if (dims_size == 4) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense});
-  } else if (dims_size == 5) {
-    return taco::Format(
-        {taco::Dense, taco::Dense, taco::Dense, taco::Dense, taco::Dense});
-  } else if (dims_size == 6) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense});
-  } else if (dims_size == 7) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense, taco::Dense});
-  } else if (dims_size == 8) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense, taco::Dense, taco::Dense});
-  } else if (dims_size == 9) {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense});
-  } else {
-    return taco::Format({taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense, taco::Dense, taco::Dense,
-                         taco::Dense, taco::Dense});
-  }
+taco::Format getFormat(const int size) {
+  std::vector<taco::ModeFormat> modes;
+  for (int i = 0; i < size; i++)
+    modes.push_back(taco::Dense);
+  return taco::Format{modes};
 }
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
