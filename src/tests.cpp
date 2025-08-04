@@ -571,6 +571,39 @@ void test_einsum_utils() {
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
+std::vector<taco::ModeFormatPack> generateModes(int order) {
+ std::vector<taco::ModeFormatPack> modes;
+    for (int j = 0; j < order; ++j) {
+      modes.push_back(taco::Dense);
+    }
+  return modes;
+}
+
+void test_init_data() {
+  std::vector<std::vector<int>> sizes = {
+    {13, 9}, {13, 5, 46}, {9, 27, 7}, {5, 17, 19}, {27, 10, 68}, 
+    {17, 17, 3}, {10, 79, 3}, {46, 7, 15, 25}, {15, 6, 26}, 
+    {25, 24, 9}, {19, 6, 68, 22}, {68, 5, 7}, {22, 22, 11, 56}, 
+    {26, 24, 22, 7}, {7, 8, 7, 48}, {9, 68, 8, 6}, {6, 4, 11}, 
+    {17, 5, 9}, {7, 11, 9}, {56, 7, 9}, {48, 4, 9}, {11, 20, 9}, 
+    {20, 5}, {5, 6, 9}, {6, 25}, {25, 79, 9}
+  };
+
+  for (auto s : sizes) {
+    std::vector<bitset> bitVectors;
+    int totalElements = 1;
+    for (auto dim : s) {
+      totalElements *= dim;
+      bitVectors.push_back(generate_sparsity_vector(0.0, dim));
+    }
+
+    auto tmpVec = std::make_shared<Tensor>(s, bitVectors);
+    tmpVec->create_data(generateModes(s.size()));
+    tmpVec->initialize_data();
+  }
+  std::cout << "test_init_data() OK " << std::endl;
+}
+
 int main() {
   test_propagation();
   test_addition();
@@ -581,5 +614,6 @@ int main() {
   compare_taco_matmul();
   compare_taco_einsum();
   test_get_sparsity_ratio();
-  /*test_einsum_utils();*/
+  test_init_data();
+  test_einsum_utils();
 }

@@ -111,12 +111,9 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
 
 taco::Format getFormat(const int size) {
   std::vector<taco::ModeFormat> modes;
-  for (int i = 0; i < size; i++) {
+  for (int i = 0; i < size; i++)
     modes.push_back(taco::Dense);
-  }
-  const taco::ModeFormatPack modeFormatPack(modes);
-  std::vector<taco::ModeFormatPack> modeFormatPackVector{modeFormatPack};
-  return taco::Format(modeFormatPackVector);
+  return taco::Format{ modes };
 }
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,

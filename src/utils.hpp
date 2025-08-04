@@ -82,19 +82,11 @@ int count_bits(std::bitset<size> A, int pos) {
 std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
   int numDims = dimSizes.size();
   std::vector<int> indices(numDims);
-  std::vector<int> cumulativeSize(numDims);
-  cumulativeSize[0] = 1;
-
-  for (int i = 1; i < numDims; ++i)
-    cumulativeSize[i] = cumulativeSize[i - 1] * dimSizes[i - 1];
-
-  for (int i = 0; i < numDims; ++i) {
-    if (numElement < cumulativeSize[numDims - 1 - i])
-      continue;
-    indices[i] = numElement / cumulativeSize[numDims - 1 - i];
-    numElement %= cumulativeSize[numDims - 1 - i];
+  int tmp = numElement;
+  for (int j = numDims - 1; j >= 0; --j) {
+    indices[j] = tmp % dimSizes[j];
+    tmp /= dimSizes[j];
   }
-
   return indices;
 }
 
