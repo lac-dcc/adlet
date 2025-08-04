@@ -79,7 +79,7 @@ int count_bits(std::bitset<size> A, int pos) {
   return (A & mask).count();
 }
 
-std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+std::vector<int> get_indices(std::vector<int> dimSizes, int numElement) {
   int numDims = dimSizes.size();
   std::vector<int> indices(numDims);
   std::vector<int> cumulativeSize(numDims);

@@ -1,4 +1,3 @@
-import os
 import einsum_benchmark
 import opt_einsum as oe
 
@@ -41,10 +40,10 @@ def write_benchmark(benchmark_name, indices, einsum_strings, tensor_sizes):
 
 if __name__ == "__main__":
 
-    instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
+    instance = einsum_benchmark.instances["str_nw_mera_open_26"]
     einsum_string = instance.format_string
     tensors = instance.tensors
-    write_benchmark("qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
+    write_benchmark("str_nw_mera_open_26", *generate_lists(einsum_string, tensors))
     # for instance in einsum_benchmark.instances:
     #     if "mc" in instance.name:
     #         continue

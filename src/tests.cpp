@@ -568,18 +568,24 @@ void test_einsum_utils() {
 
   auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
   // graph.print();
+  assert(graph.inputs.size() == 9);
+  assert(graph.nodes.size() == 4);
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
 int main() {
-  test_propagation();
-  test_addition();
-  test_einsum();
-  test_einsum_transpose();
-  test_einsum_multiop_1();
-  test_einsum_multiop_2();
-  compare_taco_matmul();
-  compare_taco_einsum();
-  test_get_sparsity_ratio();
+
+  readEinsumBenchmark("../benchmarks/scripts/str_nw_mera_open_26.txt");
+  /*readEinsumBenchmark(*/
+  /*    "../benchmarks/scripts/qc_circuit_n49_m14_s9_e6_pEFGH_simplified.txt");*/
+  /*test_propagation();*/
+  /*test_addition();*/
+  /*test_einsum();*/
+  /*test_einsum_transpose();*/
+  /*test_einsum_multiop_1();*/
+  /*test_einsum_multiop_2();*/
+  /*compare_taco_matmul();*/
+  /*compare_taco_einsum();*/
+  /*test_get_sparsity_ratio();*/
   /*test_einsum_utils();*/
 }
