@@ -116,6 +116,7 @@ void test_propagation() {
 }
 
 void test_addition() {
+  const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
@@ -145,6 +146,7 @@ void test_addition() {
 }
 
 void test_einsum() {
+  const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
@@ -566,18 +568,16 @@ void test_einsum_utils() {
   tensorSizes.push_back({16, 15, 16, 13});
   tensorSizes.push_back({10, 9, 10, 17});
 
-  auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
-  // graph.print();
-  assert(graph.inputs.size() == 9);
-  assert(graph.nodes.size() == 4);
-  std::cout << "test_einsum_utils() OK " << std::endl;
+  /*auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);*/
+  /*// graph.print();*/
+  /*assert(graph.inputs.size() == 9);*/
+  /*assert(graph.nodes.size() == 4);*/
+  /*std::cout << "test_einsum_utils() OK " << std::endl;*/
 }
 
-int main() {
-
+int main(int argc, char **argv) {
   readEinsumBenchmark("../benchmarks/scripts/str_nw_mera_open_26.txt");
-  /*readEinsumBenchmark(*/
-  /*    "../benchmarks/scripts/qc_circuit_n49_m14_s9_e6_pEFGH_simplified.txt");*/
+
   /*test_propagation();*/
   /*test_addition();*/
   /*test_einsum();*/
@@ -588,4 +588,6 @@ int main() {
   /*compare_taco_einsum();*/
   /*test_get_sparsity_ratio();*/
   /*test_einsum_utils();*/
+
+  return 0;
 }

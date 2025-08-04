@@ -9,6 +9,7 @@
 void bert(taco::Format format, bool propagate, float row_sparsity,
           float col_sparsity) {
 
+  const int size = 2048;
   std::cout << "running bert-like benchmark" << std::endl;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
@@ -165,6 +166,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 void run(taco::Format format, bool propagate, float row_sparsity,
          float col_sparsity) {
   std::cout << "running small-graph benchmark" << std::endl;
+  const int size = 2048;
   const auto startAllocate1{std::chrono::steady_clock::now()};
 
   auto rowSparsityVector = generate_sparsity_vector(row_sparsity, size);
@@ -280,7 +282,8 @@ void run(taco::Format format, bool propagate, float row_sparsity,
 }
 
 void memtest(taco::Format format, bool propagate, float row_sparsity,
-         float col_sparsity) {
+             float col_sparsity) {
+  const int size = 2048;
   std::cout << "memory usage on start is ";
   print_memory_usage();
   std::cout << "running memtest-graph benchmark" << std::endl;
@@ -313,8 +316,7 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "memory usage after op load is ";
   print_memory_usage();
 
-  auto g =
-      Graph::build_graph({X, W1}, O1, {matmul1});
+  auto g = Graph::build_graph({X, W1}, O1, {matmul1});
 
   std::cout << "memory usage after graph load is ";
   print_memory_usage();
