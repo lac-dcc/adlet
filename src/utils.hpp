@@ -131,3 +131,15 @@ void write_kernel(const std::string &filename,
   file << compiledOut.getSource();
   file.close();
 }
+
+inline std::chrono::time_point<std::chrono::high_resolution_clock> begin() {
+  return std::chrono::high_resolution_clock::now();
+}
+
+inline void
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+    const std::string &message) {
+  auto stop = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double> duration{stop - start};
+  std::cout << message << duration.count() << std::endl;
+}

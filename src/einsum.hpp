@@ -8,6 +8,12 @@
 #include "taco/format.h"
 #include "utils.hpp"
 
+struct EinsumBenchmark {
+  std::vector<std::pair<int, int>> path;
+  std::vector<std::string> strings;
+  std::vector<std::vector<int>> sizes;
+};
+
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
 
@@ -109,11 +115,24 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generateModes(int order) {
+std::vector<taco::ModeFormatPack> generateDenseModes(int order) {
   std::vector<taco::ModeFormatPack> modes;
-  for (int j = 0; j < order; ++j) {
+
+  modes.push_back(taco::Sparse);
+  for (int j = 1; j < order - 1; ++j)
     modes.push_back(taco::Dense);
-  }
+
+  modes.push_back(taco::Dense);
+  return modes;
+}
+
+std::vector<taco::ModeFormatPack> generateModes(int order,
+                                                std::vector<int> sparseDims) {
+  std::vector<taco::ModeFormatPack> modes;
+  modes.push_back(taco::Dense);
+  for (int j = 1; j < order - 1; ++j)
+    modes.push_back(taco::Sparse);
+  modes.push_back(taco::Dense);
   return modes;
 }
 
@@ -132,7 +151,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     }
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
-    newTensor->create_data(generateModes(dims.size()));
+    newTensor->create_data(generateDenseModes(dims.size()));
     newTensor->initialize_data();
     /*newTensor->initialize_dense();*/
     tensors.push_back(newTensor);
@@ -157,26 +176,27 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(generateModes(outputDims.size()));
-
+    newTensor->create_data(generateDenseModes(outputDims.size()));
     tensors.push_back(newTensor);
+
     ops.push_back(std::make_shared<Einsum>(
         std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]}, newTensor,
         contractionStrings[i]));
     tensorStack.erase(tensorStack.begin() + ind2);
     tensorStack.erase(tensorStack.begin() + ind1);
-    tensorStack.push_back(tensors.back());
+    tensorStack.push_back(newTensor);
   }
 
   return Graph::build_graph(tensors, tensorStack[0], ops);
 }
 
-void readEinsumBenchmark(const std::string &filename) {
+EinsumBenchmark readEinsumBenchmark(const std::string &filename) {
 
+  EinsumBenchmark result;
   std::ifstream file(filename);
   if (!file) {
     std::cerr << "Failed to open file.\n";
-    return;
+    return result;
   }
   std::string path;
   std::string contractions;
@@ -188,18 +208,8 @@ void readEinsumBenchmark(const std::string &filename) {
   auto contractionPath = getContractionPath(path);
   auto contractionStrings = getContractionStrings(contractions);
   auto tensorSizes = getTensorSizes(sizes);
-  auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
-  /*print_dot(g, "teste.dot");*/
-  const auto startCompilation{std::chrono::steady_clock::now()};
-  g.compile();
-  g.run_propagation();
-  const auto startRuntime{std::chrono::steady_clock::now()};
-  auto result = g.compute();
-  const auto finishRuntime{std::chrono::steady_clock::now()};
-  const std::chrono::duration<double> compilationSecs{startRuntime -
-                                                      startCompilation};
-  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
-  std::cout << "compilation = " << compilationSecs.count() << std::endl;
-  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
-  /*std::cout << *(g.output->data) << std::endl;*/
+  result.sizes = tensorSizes;
+  result.path = contractionPath;
+  result.strings = contractionStrings;
+  return result;
 }
