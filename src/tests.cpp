@@ -568,19 +568,10 @@ void test_einsum_utils() {
   tensorSizes.push_back({16, 15, 16, 13});
   tensorSizes.push_back({10, 9, 10, 17});
 
-  /*auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);*/
-  /*// graph.print();*/
-  /*assert(graph.inputs.size() == 9);*/
-  /*assert(graph.nodes.size() == 4);*/
-  /*std::cout << "test_einsum_utils() OK " << std::endl;*/
-}
-
-std::vector<taco::ModeFormatPack> generateModes(int order) {
-  std::vector<taco::ModeFormatPack> modes;
-  for (int j = 0; j < order; ++j) {
-    modes.push_back(taco::Dense);
-  }
-  return modes;
+  auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
+  assert(graph.inputs.size() == 9);
+  assert(graph.nodes.size() == 4);
+  std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
 void test_init_data() {

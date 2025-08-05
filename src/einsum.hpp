@@ -109,11 +109,12 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-taco::Format getFormat(const int size) {
-  std::vector<taco::ModeFormat> modes;
-  for (int i = 0; i < size; i++)
+std::vector<taco::ModeFormatPack> generateModes(int order) {
+  std::vector<taco::ModeFormatPack> modes;
+  for (int j = 0; j < order; ++j) {
     modes.push_back(taco::Dense);
-  return taco::Format{modes};
+  }
+  return modes;
 }
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
@@ -127,13 +128,13 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   for (auto dims : tensorSizes) {
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
-      sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
+      sparsityVectors.push_back(generate_sparsity_vector(0.5, dim));
     }
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
-    newTensor->create_data(getFormat(dims.size()));
-    /*newTensor->initialize_data();*/
-    newTensor->initialize_data_2();
+    newTensor->create_data(generateModes(dims.size()));
+    newTensor->initialize_data();
+    /*newTensor->initialize_dense();*/
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -156,7 +157,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(getFormat(outputDims.size()));
+    newTensor->create_data(generateModes(outputDims.size()));
 
     tensors.push_back(newTensor);
     ops.push_back(std::make_shared<Einsum>(
@@ -191,6 +192,7 @@ void readEinsumBenchmark(const std::string &filename) {
   /*print_dot(g, "teste.dot");*/
   const auto startCompilation{std::chrono::steady_clock::now()};
   g.compile();
+  g.run_propagation();
   const auto startRuntime{std::chrono::steady_clock::now()};
   auto result = g.compute();
   const auto finishRuntime{std::chrono::steady_clock::now()};
@@ -199,5 +201,5 @@ void readEinsumBenchmark(const std::string &filename) {
   const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
-  std::cout << *(g.output->data) << std::endl;
+  /*std::cout << *(g.output->data) << std::endl;*/
 }

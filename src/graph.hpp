@@ -95,7 +95,7 @@ public:
         taco::Tensor<float>(this->name, this->sizes, format));
   }
 
-  void initialize_data_2() {
+  void initialize_dense() {
     std::vector<int> coordinate(this->numDims, 0);
 
     int numElements = 1;
