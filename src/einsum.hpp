@@ -6,7 +6,7 @@
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
-#include <unordered_map>
+#include "utils.hpp"
 
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
@@ -85,7 +85,7 @@ constructSizeMap(std::vector<std::string> const &inputs,
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
-    for (int j = 0; j < tensorSizes[i].size(); ++j) {
+    for (int j = 0; j < tensorSizes.size(); ++j) {
       auto indVar = inputs[i][j];
       auto dimSize = tensorSizes[i][j];
       sizeMap[indVar] = dimSize;
@@ -109,11 +109,12 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-taco::Format getFormat(const int size) {
-  std::vector<taco::ModeFormat> modes;
-  for (int i = 0; i < size; i++)
+std::vector<taco::ModeFormatPack> generateModes(int order) {
+  std::vector<taco::ModeFormatPack> modes;
+  for (int j = 0; j < order; ++j) {
     modes.push_back(taco::Dense);
-  return taco::Format{ modes };
+  }
+  return modes;
 }
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
@@ -122,18 +123,18 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
-
   // construct tensors based on tensorSizes
   int ind = 0;
   for (auto dims : tensorSizes) {
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
-      sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
+      sparsityVectors.push_back(generate_sparsity_vector(0.5, dim));
     }
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
-    newTensor->create_data(getFormat(dims.size()));
+    newTensor->create_data(generateModes(dims.size()));
     newTensor->initialize_data();
+    /*newTensor->initialize_dense();*/
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -156,12 +157,12 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(getFormat(outputDims.size()));
+    newTensor->create_data(generateModes(outputDims.size()));
 
     tensors.push_back(newTensor);
     ops.push_back(std::make_shared<Einsum>(
-        std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]},
-        tensors.back(), contractionStrings[i]));
+        std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]}, newTensor,
+        contractionStrings[i]));
     tensorStack.erase(tensorStack.begin() + ind2);
     tensorStack.erase(tensorStack.begin() + ind1);
     tensorStack.push_back(tensors.back());
@@ -183,12 +184,22 @@ void readEinsumBenchmark(const std::string &filename) {
   std::getline(file, path);
   std::getline(file, contractions);
   std::getline(file, sizes);
+  file.close();
   auto contractionPath = getContractionPath(path);
   auto contractionStrings = getContractionStrings(contractions);
   auto tensorSizes = getTensorSizes(sizes);
-  file.close();
   auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
   /*print_dot(g, "teste.dot");*/
-  /*g.compile();*/
-  /*g.compute();*/
+  const auto startCompilation{std::chrono::steady_clock::now()};
+  g.compile();
+  g.run_propagation();
+  const auto startRuntime{std::chrono::steady_clock::now()};
+  auto result = g.compute();
+  const auto finishRuntime{std::chrono::steady_clock::now()};
+  const std::chrono::duration<double> compilationSecs{startRuntime -
+                                                      startCompilation};
+  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
+  std::cout << "compilation = " << compilationSecs.count() << std::endl;
+  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
+  /*std::cout << *(g.output->data) << std::endl;*/
 }

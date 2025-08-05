@@ -116,6 +116,7 @@ void test_propagation() {
 }
 
 void test_addition() {
+  const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
@@ -145,6 +146,7 @@ void test_addition() {
 }
 
 void test_einsum() {
+  const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
@@ -567,27 +569,20 @@ void test_einsum_utils() {
   tensorSizes.push_back({10, 9, 10, 17});
 
   auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
-  // graph.print();
+  assert(graph.inputs.size() == 9);
+  assert(graph.nodes.size() == 4);
   std::cout << "test_einsum_utils() OK " << std::endl;
-}
-
-std::vector<taco::ModeFormatPack> generateModes(int order) {
- std::vector<taco::ModeFormatPack> modes;
-    for (int j = 0; j < order; ++j) {
-      modes.push_back(taco::Dense);
-    }
-  return modes;
 }
 
 void test_init_data() {
   std::vector<std::vector<int>> sizes = {
-    {13, 9}, {13, 5, 46}, {9, 27, 7}, {5, 17, 19}, {27, 10, 68}, 
-    {17, 17, 3}, {10, 79, 3}, {46, 7, 15, 25}, {15, 6, 26}, 
-    {25, 24, 9}, {19, 6, 68, 22}, {68, 5, 7}, {22, 22, 11, 56}, 
-    {26, 24, 22, 7}, {7, 8, 7, 48}, {9, 68, 8, 6}, {6, 4, 11}, 
-    {17, 5, 9}, {7, 11, 9}, {56, 7, 9}, {48, 4, 9}, {11, 20, 9}, 
-    {20, 5}, {5, 6, 9}, {6, 25}, {25, 79, 9}
-  };
+      {13, 9},          {13, 5, 46},     {9, 27, 7},      {5, 17, 19},
+      {27, 10, 68},     {17, 17, 3},     {10, 79, 3},     {46, 7, 15, 25},
+      {15, 6, 26},      {25, 24, 9},     {19, 6, 68, 22}, {68, 5, 7},
+      {22, 22, 11, 56}, {26, 24, 22, 7}, {7, 8, 7, 48},   {9, 68, 8, 6},
+      {6, 4, 11},       {17, 5, 9},      {7, 11, 9},      {56, 7, 9},
+      {48, 4, 9},       {11, 20, 9},     {20, 5},         {5, 6, 9},
+      {6, 25},          {25, 79, 9}};
 
   for (auto s : sizes) {
     std::vector<bitset> bitVectors;
@@ -604,7 +599,7 @@ void test_init_data() {
   std::cout << "test_init_data() OK " << std::endl;
 }
 
-int main() {
+int main(int argc, char **argv) {
   test_propagation();
   test_addition();
   test_einsum();

@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-using bitset = std::bitset<size>;
+using bitset = std::bitset<MAX_SIZE>;
 
 enum Direction { FORWARD, INTRA, BACKWARD };
 
@@ -93,6 +93,26 @@ public:
   void create_data(taco::Format format) {
     this->data = std::make_shared<taco::Tensor<float>>(
         taco::Tensor<float>(this->name, this->sizes, format));
+  }
+
+  void initialize_dense() {
+    std::vector<int> coordinate(this->numDims, 0);
+
+    int numElements = 1;
+    for (auto size : this->sizes)
+      numElements *= size;
+
+    int p = 0;
+    for (int i = 0; i < numElements; i++) {
+      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      this->data->insert(coordinate, val);
+      for (int s = this->numDims - 1; s >= 0; s--) {
+        if (++coordinate[s] < this->sizes[s])
+          break;
+        coordinate[s] = 0;
+      }
+    }
+    this->data->pack();
   }
 
   void initialize_data() {
@@ -697,14 +717,6 @@ public:
   std::string op_type() const override { return "Einsum"; }
 
   void compute() override {
-    for (auto &input : this->inputs) {
-      std::cout << input->data->getName() << "(";
-      std::cout << count_bits(input->sparsities[0], size) << ","
-                << count_bits(input->sparsities[1], size) << ")("
-                << input->get_sparsity_ratio() << ")";
-    }
-    std::cout << std::endl;
-
     const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
     const auto startCompilation{std::chrono::steady_clock::now()};

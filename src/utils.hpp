@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sys/resource.h>
 
-constexpr int size = 2048;
+constexpr int MAX_SIZE = 2048;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -13,8 +13,8 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   int zeroRowCount = static_cast<int>(rows * rowSparsityRatio);
   int zeroColCount = static_cast<int>(cols * colSparsityRatio);
 
-  std::bitset<size> rowSparsity;
-  std::bitset<size> colSparsity;
+  std::bitset<MAX_SIZE> rowSparsity;
+  std::bitset<MAX_SIZE> colSparsity;
   rowSparsity.set();
   colSparsity.set();
 
@@ -69,17 +69,17 @@ taco::Format getFormat(const std::string format) {
   return outFormat;
 }
 
-int count_bits(std::bitset<size> A, int pos) {
+int count_bits(std::bitset<MAX_SIZE> A, int pos) {
   if (pos < 0)
     return 0;
-  if (pos == size)
+  if (pos == MAX_SIZE)
     return A.count();
 
-  std::bitset<size> mask((1ULL << pos) - 1);
+  std::bitset<MAX_SIZE> mask((1ULL << pos) - 1);
   return (A & mask).count();
 }
 
-std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
+std::vector<int> get_indices(std::vector<int> dimSizes, int numElement) {
   int numDims = dimSizes.size();
   std::vector<int> indices(numDims);
   int tmp = numElement;
@@ -90,8 +90,8 @@ std::vector<int> get_indices(std::vector<int> &dimSizes, int numElement) {
   return indices;
 }
 
-std::bitset<size> generate_sparsity_vector(double sparsity, int length) {
-  std::bitset<size> sparsityVector;
+std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
+  std::bitset<MAX_SIZE> sparsityVector;
   sparsityVector.set();
 
   int numZeros = static_cast<int>(length * sparsity);
