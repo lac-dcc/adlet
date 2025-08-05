@@ -200,6 +200,11 @@ void test_einsum() {
   assert(O2->sparsities[0][1] == 0 && "Forward propagation failed!");
   assert(O2->data->at({1, 0}) == 0 && O1->data->at({1, 1}) == 0 &&
          "Computation not sparse!");
+  assert(O1->outputTensor == true);
+  assert(O2->outputTensor == true);
+  assert(X1->outputTensor == false);
+  assert(X2->outputTensor == false);
+  assert(X3->outputTensor == false);
 
   g.compile();
   g.compute();
@@ -593,7 +598,7 @@ void test_init_data() {
     }
 
     auto tmpVec = std::make_shared<Tensor>(s, bitVectors);
-    tmpVec->create_data(generateModes(s.size()));
+    tmpVec->create_data(generateDenseModes(s.size()));
     tmpVec->initialize_data();
   }
   std::cout << "test_init_data() OK " << std::endl;

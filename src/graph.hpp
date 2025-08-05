@@ -306,6 +306,7 @@ public:
   Add(std::vector<TensorPtr> inputs, TensorPtr &Out) {
     this->inputs = inputs;
     this->output = Out;
+    this->output->outputTensor = true;
     for (auto &input : inputs)
       input->numOps++;
   }
@@ -391,7 +392,8 @@ public:
     for (auto &input : inputs)
       input->numOps++;
     this->expression = expression;
-    output = Out;
+    this->output = Out;
+    this->output->outputTensor = true;
 
     int arrowPos = expression.find("->");
     std::string lhs = expression.substr(0, arrowPos);
