@@ -1,6 +1,7 @@
 #include "../src/dot.hpp"
 #include "../src/einsum.hpp"
 #include "taco/format.h"
+#include "../src/utils.hpp"
 
 void run(const std::string &file_path, const bool propagate,
          const double sparsity, const double chanceToPrune) {
@@ -50,10 +51,10 @@ void run(const std::string &file_path, const bool propagate,
 }
 
 int benchmark_einsum(int argc, char *argv[]) {
-  if (argc != 6) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0]
               << " einsum <file_path> <sparsity> <chance_to_prune> "
-                 "<propagate> \n ";
+                 "<propagate> <random_seed>\n ";
     return 1;
   }
   int param = 1;
@@ -61,6 +62,7 @@ int benchmark_einsum(int argc, char *argv[]) {
   double sparsity = std::stod(argv[++param]);
   double chanceToPrune = std::stod(argv[++param]);
   bool propagate = std::stoi(argv[++param]);
+  SEED = std::stoi(argv[++param]);
   run(file_path, propagate, sparsity, chanceToPrune);
 
   return 0;

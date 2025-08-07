@@ -71,7 +71,7 @@ public:
       std::vector<int> indices(sizes[i]);
       std::iota(indices.begin(), indices.end(), 0);
       std::shuffle(indices.begin(), indices.end(),
-                   std::mt19937{std::random_device{}()});
+                   std::mt19937{SEED});
 
       for (int j = 0; j < zeroCount; ++j)
         sparsities[i].set(indices[j], 0);

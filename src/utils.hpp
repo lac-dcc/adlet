@@ -6,6 +6,7 @@
 #include <sys/resource.h>
 
 constexpr int MAX_SIZE = 32768;
+unsigned int SEED;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -23,9 +24,9 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   std::iota(colIndices.begin(), colIndices.end(), 0);
 
   std::shuffle(rowIndices.begin(), rowIndices.end(),
-               std::mt19937{std::random_device{}()});
+               std::mt19937{SEED});
   std::shuffle(colIndices.begin(), colIndices.end(),
-               std::mt19937{std::random_device{}()});
+               std::mt19937{SEED});
 
   for (int i = 0; i < zeroRowCount; ++i)
     rowSparsity.set(rowIndices[i], 0);
@@ -98,7 +99,7 @@ std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
   std::vector<int> indices(length);
   std::iota(indices.begin(), indices.end(), 0);
   std::shuffle(indices.begin(), indices.end(),
-               std::mt19937{std::random_device{}()});
+               std::mt19937{SEED});
   for (int i = 0; i < numZeros; ++i)
     sparsityVector.set(indices[i], 0);
 
@@ -144,8 +145,7 @@ end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
 }
 
 bool randomBool(double probability = 0.5) {
-  static std::random_device rd;
-  static std::mt19937 gen(rd()); // Mersenne Twister
+  static std::mt19937 gen(SEED); // Mersenne Twister
   std::bernoulli_distribution dist(probability);
   return dist(gen);
 }
