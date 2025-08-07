@@ -1,7 +1,9 @@
 #include "../src/dot.hpp"
 #include "../src/einsum.hpp"
+#include "taco/format.h"
 
-void run(const bool propagate, const std::string &file_path) {
+void run(const std::string &file_path, const bool propagate,
+         const double sparsity, const double chanceToPrune) {
 
   auto benchmark = readEinsumBenchmark(file_path);
 
@@ -11,10 +13,10 @@ void run(const bool propagate, const std::string &file_path) {
     return;
   }
   const auto buildStart = begin();
-  auto g = buildTree(benchmark.sizes, benchmark.strings, benchmark.path);
+  auto g = buildTree(benchmark.sizes, benchmark.strings, benchmark.path,
+                     sparsity, chanceToPrune);
   end(buildStart, "create graph = ");
 
-  print_memory_usage();
   g.run_propagation(FORWARD);
   std::cout << "ratio before = " << g.get_sparsity_ratio() << std::endl;
   if (propagate) {
@@ -25,9 +27,19 @@ void run(const bool propagate, const std::string &file_path) {
     std::cout << "analysis = " << 0 << std::endl;
   }
 
+  for (auto t : g.inputs) {
+    if (!t->outputTensor) {
+      t->create_data(taco::Format({taco::Sparse, taco::Dense}));
+      t->initialize_data();
+    } else
+      t->create_data(taco::Format({taco::Sparse, taco::Dense}));
+  }
+
+  print_memory_usage();
+  g.get_tensor_sizes();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startComp = begin();
-  g.compile();
+  /*g.compile();*/
   end(startComp, "compilation = ");
   const auto startRun = begin();
   /*auto result = g.compute();*/
@@ -38,16 +50,16 @@ void run(const bool propagate, const std::string &file_path) {
 int benchmark_einsum(int argc, char *argv[]) {
   if (argc != 6) {
     std::cerr << "Usage: " << argv[0]
-              << " einsum <file_path> <sparsity> <format> "
+              << " einsum <file_path> <sparsity> <chance_to_prune> "
                  "<propagate> \n ";
     return 1;
   }
   int param = 1;
   const std::string file_path = argv[++param];
   double sparsity = std::stod(argv[++param]);
-  std::string format = argv[++param];
+  double chanceToPrune = std::stod(argv[++param]);
   bool propagate = std::stoi(argv[++param]);
-  run(propagate, file_path);
+  run(file_path, propagate, sparsity, chanceToPrune);
 
   return 0;
 }

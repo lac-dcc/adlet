@@ -2,9 +2,8 @@
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
+#include "utils.hpp"
 #include <cassert>
-#include <memory>
-#include <vector>
 
 void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
   assert(sizes.size() == 2 && "Tensor must be a matrix to call this method");
@@ -604,6 +603,12 @@ void test_init_data() {
   std::cout << "test_init_data() OK " << std::endl;
 }
 
+void test_count_bits() {
+  bitset sparsity = generate_sparsity_vector(0.5, 200);
+  assert(count_bits(sparsity, 200) == 100);
+  std::cout << "test_count_bits() OK " << std::endl;
+}
+
 int main(int argc, char **argv) {
   test_propagation();
   test_addition();
@@ -616,4 +621,5 @@ int main(int argc, char **argv) {
   test_get_sparsity_ratio();
   test_init_data();
   test_einsum_utils();
+  test_count_bits();
 }

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sys/resource.h>
 
-constexpr int MAX_SIZE = 2048;
+constexpr int MAX_SIZE = 32768;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -69,14 +69,13 @@ taco::Format getFormat(const std::string format) {
   return outFormat;
 }
 
-int count_bits(std::bitset<MAX_SIZE> A, int pos) {
-  if (pos < 0)
-    return 0;
-  if (pos == MAX_SIZE)
-    return A.count();
-
-  std::bitset<MAX_SIZE> mask((1ULL << pos) - 1);
-  return (A & mask).count();
+size_t count_bits(std::bitset<MAX_SIZE> A, int pos) {
+  assert(pos > 0 && pos <= MAX_SIZE && "pos out of bounds");
+  size_t bits = 0;
+  for (size_t i = 0; i < pos; i++)
+    if (A.test(i))
+      bits++;
+  return bits;
 }
 
 std::vector<int> get_indices(std::vector<int> dimSizes, int numElement) {
@@ -142,4 +141,11 @@ end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
   auto stop = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double> duration{stop - start};
   std::cout << message << duration.count() << std::endl;
+}
+
+bool randomBool(double probability = 0.5) {
+  static std::random_device rd;
+  static std::mt19937 gen(rd()); // Mersenne Twister
+  std::bernoulli_distribution dist(probability);
+  return dist(gen);
 }

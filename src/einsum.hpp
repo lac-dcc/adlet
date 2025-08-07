@@ -2,7 +2,6 @@
 
 #include <regex>
 
-#include "dot.hpp"
 #include "graph.hpp"
 #include "taco/format.h"
 #include "utils.hpp"
@@ -131,22 +130,27 @@ std::vector<taco::ModeFormatPack> generateModes(int order,
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                 const std::vector<std::string> &contractionStrings,
-                const std::vector<std::pair<int, int>> &contractionInds) {
+                const std::vector<std::pair<int, int>> &contractionInds,
+                const double sparsity = 0.5, const double chance = 1.0) {
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
+  double finalSparsity = 0.0;
   // construct tensors based on tensorSizes
   int ind = 0;
   for (auto dims : tensorSizes) {
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
-      sparsityVectors.push_back(generate_sparsity_vector(0.1, dim));
+      // prune based on a probability
+      if (!randomBool(chance))
+        finalSparsity = 0.0;
+      else
+        finalSparsity = sparsity;
+
+      sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
     }
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
-    newTensor->create_data(generateModes(dims.size(), true));
-    newTensor->initialize_data();
-    /*newTensor->initialize_dense();*/
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -170,7 +174,6 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(generateModes(outputDims.size()));
     tensors.push_back(newTensor);
 
     ops.push_back(std::make_shared<Einsum>(

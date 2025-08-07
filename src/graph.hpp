@@ -839,4 +839,12 @@ public:
     count++;
     return total_ratio / count;
   }
+
+  void get_tensor_sizes() {
+    size_t total_size = 0;
+    for (auto t : this->inputs)
+      total_size += t->data->getStorage().getSizeInBytes();
+    std::cout << "tensors size = " << total_size / (1024.0 * 1024.0)
+              << std::endl;
+  }
 };
