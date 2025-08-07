@@ -1,5 +1,8 @@
 #pragma once
 
+#include <signal.h>
+#include <fstream>
+#include <unistd.h>
 #include "taco.h"
 #include "taco/format.h"
 #include "taco/parser/einsum_parser.h"
@@ -14,7 +17,16 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <papi.h>
+#include <stdio.h>
+#include <stdlib.h>
 
+void handle_error (int retval)
+{
+    printf("PAPI error %d: %s\n", retval, PAPI_strerror(retval));
+    exit(1);
+}
+	
 using bitset = std::bitset<MAX_SIZE>;
 
 enum Direction { FORWARD, INTRA, BACKWARD };
@@ -81,7 +93,7 @@ public:
       std::vector<int> indices(sizes[i]);
       std::iota(indices.begin(), indices.end(), 0);
       std::shuffle(indices.begin(), indices.end(),
-                   std::mt19937{std::random_device{}()});
+                   std::mt19937{7});
 
       for (int j = 0; j < zeroCount; ++j)
         sparsities[i].set(indices[j], 0);
@@ -105,7 +117,7 @@ public:
     int p = 0;
     for (int i = 0; i < numElements; i++) {
       float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      this->data->insert(coordinate, val);
+      this->data->insert(coordinate , val);
       for (int s = this->numDims - 1; s >= 0; s--) {
         if (++coordinate[s] < this->sizes[s])
           break;
@@ -796,15 +808,46 @@ public:
   }
 
   void compile() {
+    int retval;
+
+    retval = PAPI_hl_region_begin("assemble_expressions");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
     assemble_expressions();
+    retval = PAPI_hl_region_end("assemble_expressions");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
+
+    retval = PAPI_hl_region_begin("compile");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
     output->data->compile();
+    retval = PAPI_hl_region_end("compile");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
   }
 
   TensorPtr compute() {
-    /*for (auto &op : nodes)*/
-    /*  op->compute();*/
+    int retval;
+
+    retval = PAPI_hl_region_begin("assemble");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
     output->data->assemble();
+    retval = PAPI_hl_region_end("assemble");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
+			
+    retval = PAPI_hl_region_begin("compute");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
+
     output->data->compute();
+
+    retval = PAPI_hl_region_end("compute");
+    if ( retval != PAPI_OK )
+        handle_error(retval);
+
     return output;
   }
 

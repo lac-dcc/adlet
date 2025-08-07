@@ -19,13 +19,22 @@ add_executable(benchmark benchmarks/main.cpp src/graph.hpp)
 
 target_link_directories(benchmark PRIVATE ../taco/build/lib)
 target_include_directories(benchmark PRIVATE ../taco/include)
+target_link_directories(benchmark PRIVATE ../papi/src/install/lib)
+target_include_directories(benchmark PRIVATE ../papi/src/install/include)
 
 target_link_directories(adlet PRIVATE ../taco/build/lib)
 target_include_directories(adlet PRIVATE ../taco/include)
+target_link_directories(adlet PRIVATE ../papi/src/install/lib)
+target_include_directories(adlet PRIVATE ../papi/src/install/include)
 
 target_link_directories(tests PRIVATE ../taco/build/lib)
 target_include_directories(tests PRIVATE ../taco/include)
+target_link_directories(tests PRIVATE ../papi/src/install/lib)
+target_include_directories(tests PRIVATE ../papi/src/install/include)
 
 target_link_libraries(adlet taco)
 target_link_libraries(tests taco)
 target_link_libraries(benchmark taco)
+target_link_libraries(adlet papi)
+target_link_libraries(tests papi)
+target_link_libraries(benchmark papi)

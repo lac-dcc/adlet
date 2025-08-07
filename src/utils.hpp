@@ -99,7 +99,7 @@ std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
   std::vector<int> indices(length);
   std::iota(indices.begin(), indices.end(), 0);
   std::shuffle(indices.begin(), indices.end(),
-               std::mt19937{std::random_device{}()});
+               std::mt19937{7});
   for (int i = 0; i < numZeros; ++i)
     sparsityVector.set(indices[i], 0);
 
