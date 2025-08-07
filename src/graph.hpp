@@ -180,7 +180,9 @@ public:
     for (int dim = 0; dim < this->numDims; dim++) {
       int dimSize = this->sizes[dim];
       total *= dimSize;
-      nnz *= count_bits(this->sparsities[dim], dimSize);
+      int bits = count_bits(this->sparsities[dim], dimSize);
+      if (bits > 0)
+        nnz *= bits;
     }
     int zero_elements = total - nnz;
     return static_cast<float>(zero_elements) / total;

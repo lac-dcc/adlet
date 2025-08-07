@@ -4,7 +4,6 @@
 
 #include "dot.hpp"
 #include "graph.hpp"
-#include "taco.h"
 #include "taco/format.h"
 #include "utils.hpp"
 
@@ -91,7 +90,7 @@ constructSizeMap(std::vector<std::string> const &inputs,
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
-    for (int j = 0; j < tensorSizes.size(); ++j) {
+    for (int j = 0; j < tensorSizes[i].size(); ++j) {
       auto indVar = inputs[i][j];
       auto dimSize = tensorSizes[i][j];
       sizeMap[indVar] = dimSize;
@@ -106,7 +105,7 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   std::string output = extractOutputs(einsumString);
   std::vector<std::string> inputs = extractInputs(einsumString);
   std::unordered_map<char, int> sizeMap =
-      constructSizeMap(inputs, {sizes1, sizes2});
+      constructSizeMap(inputs, {sizes2, sizes1});
   std::vector<int> outputSizes;
 
   for (auto indVar : output)
@@ -115,24 +114,18 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generateDenseModes(int order) {
-  std::vector<taco::ModeFormatPack> modes;
-
-  modes.push_back(taco::Sparse);
-  for (int j = 1; j < order - 1; ++j)
-    modes.push_back(taco::Dense);
-
-  modes.push_back(taco::Dense);
-  return modes;
-}
-
 std::vector<taco::ModeFormatPack> generateModes(int order,
-                                                std::vector<int> sparseDims) {
+                                                bool sparse = false) {
+
+  taco::ModeFormat format;
+  if (sparse)
+    format = taco::Sparse;
+  else
+    format = taco::Dense;
+
   std::vector<taco::ModeFormatPack> modes;
-  modes.push_back(taco::Dense);
-  for (int j = 1; j < order - 1; ++j)
-    modes.push_back(taco::Sparse);
-  modes.push_back(taco::Dense);
+  for (int j = 0; j < order; ++j)
+    modes.push_back(format);
   return modes;
 }
 
@@ -147,11 +140,11 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   for (auto dims : tensorSizes) {
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
-      sparsityVectors.push_back(generate_sparsity_vector(0.5, dim));
+      sparsityVectors.push_back(generate_sparsity_vector(0.1, dim));
     }
     auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
                                               "T" + std::to_string(ind++));
-    newTensor->create_data(generateDenseModes(dims.size()));
+    newTensor->create_data(generateModes(dims.size(), true));
     newTensor->initialize_data();
     /*newTensor->initialize_dense();*/
     tensors.push_back(newTensor);
@@ -171,12 +164,13 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                          tensorStack[ind2]->sizes);
 
     std::vector<bitset> sparsityVectors;
-    for (auto dim : outputDims)
+    for (auto dim : outputDims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
+    }
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(generateDenseModes(outputDims.size()));
+    newTensor->create_data(generateModes(outputDims.size()));
     tensors.push_back(newTensor);
 
     ops.push_back(std::make_shared<Einsum>(
