@@ -27,6 +27,7 @@ void run(const std::string &file_path, const bool propagate,
     std::cout << "analysis = " << 0 << std::endl;
   }
 
+  auto startLoad = begin();
   for (auto t : g.inputs) {
     if (!t->outputTensor) {
       t->create_data(taco::Format({taco::Sparse, taco::Dense}));
@@ -34,6 +35,7 @@ void run(const std::string &file_path, const bool propagate,
     } else
       t->create_data(taco::Format({taco::Sparse, taco::Dense}));
   }
+  end(startLoad, "load graph = ");
 
   print_memory_usage();
   g.get_tensor_sizes();
