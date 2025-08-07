@@ -4,16 +4,6 @@
 #include "taco/format.h"
 #include "taco/parser/einsum_parser.h"
 #include "utils.hpp"
-#include <bitset>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <ostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 using bitset = std::bitset<MAX_SIZE>;
 
@@ -175,8 +165,8 @@ public:
   }
 
   float get_sparsity_ratio() {
-    int total = 1;
-    int nnz = 1;
+    size_t total = 1;
+    size_t nnz = 1;
     for (int dim = 0; dim < this->numDims; dim++) {
       int dimSize = this->sizes[dim];
       total *= dimSize;
@@ -188,10 +178,10 @@ public:
     return static_cast<float>(zero_elements) / total;
   }
 
-  int get_nnz() {
-    int nnz = 0;
+  size_t get_nnz() {
+    size_t nnz = 0;
 
-    int numElements = 1;
+    size_t numElements = 1;
     for (auto size : sizes)
       numElements *= size;
 
@@ -210,6 +200,14 @@ public:
       nnz++; // not sparse so increment
     }
     return nnz;
+  }
+
+  void print_shape() {
+    int size = this->sizes.size();
+    std::cout << "(";
+    for (int i = 0; i < size - 1; i++)
+      std::cout << this->sizes[i] << ", ";
+    std::cout << this->sizes[size] << ")" << std::endl;
   }
 };
 
@@ -829,7 +827,7 @@ public:
   }
 
   float get_sparsity_ratio() {
-    int count = 0;
+    size_t count = 0;
     float total_ratio = 0;
     for (auto &ops : this->nodes) {
       for (auto &input : ops->inputs) {

@@ -598,7 +598,7 @@ void test_init_data() {
     }
 
     auto tmpVec = std::make_shared<Tensor>(s, bitVectors);
-    tmpVec->create_data(generateDenseModes(s.size()));
+    tmpVec->create_data(generateModes(s.size()));
     tmpVec->initialize_data();
   }
   std::cout << "test_init_data() OK " << std::endl;
