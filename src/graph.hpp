@@ -70,8 +70,7 @@ public:
 
       std::vector<int> indices(sizes[i]);
       std::iota(indices.begin(), indices.end(), 0);
-      std::shuffle(indices.begin(), indices.end(),
-                   std::mt19937{SEED});
+      std::shuffle(indices.begin(), indices.end(), std::mt19937{SEED});
 
       for (int j = 0; j < zeroCount; ++j)
         sparsities[i].set(indices[j], 0);
@@ -80,29 +79,27 @@ public:
     initialize_data();
   }
 
+  void create_data(const double threshold = 0.5) {
+    taco::ModeFormat sparse = taco::Sparse;
+    taco::ModeFormat dense = taco::Dense;
+    std::vector<taco::ModeFormatPack> modes;
+    for (size_t dim = 0; dim < this->numDims; dim++) {
+      int dimSize = this->sizes[dim];
+      size_t bits = count_bits(this->sparsities[dim], dimSize);
+      if (static_cast<float>(static_cast<float>(dimSize - bits) / dimSize) >
+          threshold)
+        modes.push_back(sparse);
+      else {
+        modes.push_back(dense);
+      }
+    }
+    this->data = std::make_shared<taco::Tensor<float>>(
+        taco::Tensor<float>(this->name, this->sizes, modes));
+  }
+
   void create_data(taco::Format format) {
     this->data = std::make_shared<taco::Tensor<float>>(
         taco::Tensor<float>(this->name, this->sizes, format));
-  }
-
-  void initialize_dense() {
-    std::vector<int> coordinate(this->numDims, 0);
-
-    int numElements = 1;
-    for (auto size : this->sizes)
-      numElements *= size;
-
-    int p = 0;
-    for (int i = 0; i < numElements; i++) {
-      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      this->data->insert(coordinate, val);
-      for (int s = this->numDims - 1; s >= 0; s--) {
-        if (++coordinate[s] < this->sizes[s])
-          break;
-        coordinate[s] = 0;
-      }
-    }
-    this->data->pack();
   }
 
   void initialize_data() {

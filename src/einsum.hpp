@@ -139,13 +139,13 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   // construct tensors based on tensorSizes
   int ind = 0;
   for (auto dims : tensorSizes) {
+    if (!randomBool(chance))
+      finalSparsity = 0.0;
+    else
+      finalSparsity = sparsity;
     std::vector<bitset> sparsityVectors;
     for (auto dim : dims) {
       // prune based on a probability
-      if (!randomBool(chance))
-        finalSparsity = 0.0;
-      else
-        finalSparsity = sparsity;
 
       sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
     }

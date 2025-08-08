@@ -1,7 +1,7 @@
 #include "../src/dot.hpp"
 #include "../src/einsum.hpp"
-#include "taco/format.h"
 #include "../src/utils.hpp"
+#include "taco/format.h"
 
 void run(const std::string &file_path, const bool propagate,
          const double sparsity, const double chanceToPrune) {
@@ -31,10 +31,12 @@ void run(const std::string &file_path, const bool propagate,
   auto startLoad = begin();
   for (auto t : g.inputs) {
     if (!t->outputTensor) {
-      t->create_data(taco::Format({taco::Sparse, taco::Dense}));
+      /*t->create_data(taco::Format({taco::Sparse, taco::Sparse}));*/
+      t->create_data(generateModes(t->numDims, true));
       t->initialize_data();
     } else
-      t->create_data(taco::Format({taco::Sparse, taco::Dense}));
+      t->create_data(0.5);
+    /*t->create_data(taco::Format({taco::Sparse, taco::Sparse}));*/
   }
   end(startLoad, "load graph = ");
 
@@ -42,12 +44,13 @@ void run(const std::string &file_path, const bool propagate,
   g.get_tensor_sizes();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startComp = begin();
-  /*g.compile();*/
+  g.compile();
   end(startComp, "compilation = ");
   const auto startRun = begin();
-  /*auto result = g.compute();*/
+  auto result = g.compute();
+  /*std::cout << *(result->data) << std::endl;*/
   end(startRun, "runtime = ");
-  print_dot(g, "teste.dot");
+  /*print_dot(g, "teste.dot");*/
 }
 
 int benchmark_einsum(int argc, char *argv[]) {
