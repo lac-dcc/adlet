@@ -32,7 +32,6 @@ def parse_output(output):
 
 def run(benchmark_dir: str):
     files = os.listdir(benchmark_dir)
-    files = ["str_nw_ftps_open_28.txt"]
     with open("result.txt", "wt") as result_file:
         result_file.write('file_name,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
 
@@ -41,8 +40,9 @@ def run(benchmark_dir: str):
             file_path = f"./sub100/{file}"
             for propagate in [0, 1]:
                 cmd = ["./benchmark", "einsum", file_path, str(SPARSITY), str(PROB_TO_PRUNE), str(propagate), str(SEED)]
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                mean_metrics = parse_output(result.stdout)
+                process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                process.wait()
+                mean_metrics = parse_output(process.stdout)
 
                 result_line = f'{file},{SPARSITY}, {PROB_TO_PRUNE}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
                 result_file.write(result_line + "\n")
