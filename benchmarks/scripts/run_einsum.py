@@ -40,12 +40,16 @@ def run(benchmark_dir: str):
             file_path = f"./sub100/{file}"
             for propagate in [0, 1]:
                 cmd = ["./benchmark", "einsum", file_path, str(SPARSITY), str(PROB_TO_PRUNE), str(propagate), str(SEED)]
-                process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                process.wait()
-                mean_metrics = parse_output(process.stdout)
+                try:
+                    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    process.wait()
+                    #result = subprocess.run(cmd, capture_output=True, text=True)
+                    mean_metrics = parse_output(process.stdout.read())
 
-                result_line = f'{file},{SPARSITY}, {PROB_TO_PRUNE}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
-                result_file.write(result_line + "\n")
+                    result_line = f'{file},{SPARSITY}, {PROB_TO_PRUNE}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
+                    result_file.write(result_line + "\n")
+                except:
+                    print(f"Error running {file_path}")
 
 
 
