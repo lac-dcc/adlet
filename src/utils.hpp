@@ -5,7 +5,8 @@
 #include <iostream>
 #include <sys/resource.h>
 
-constexpr int MAX_SIZE = 32768;
+constexpr int MAX_SIZE = 2048;
+
 unsigned int SEED;
 
 // should be used for creating non-adlet tensors for comparison
@@ -23,10 +24,8 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   std::iota(rowIndices.begin(), rowIndices.end(), 0);
   std::iota(colIndices.begin(), colIndices.end(), 0);
 
-  std::shuffle(rowIndices.begin(), rowIndices.end(),
-               std::mt19937{SEED});
-  std::shuffle(colIndices.begin(), colIndices.end(),
-               std::mt19937{SEED});
+  std::shuffle(rowIndices.begin(), rowIndices.end(), std::mt19937{SEED});
+  std::shuffle(colIndices.begin(), colIndices.end(), std::mt19937{SEED});
 
   for (int i = 0; i < zeroRowCount; ++i)
     rowSparsity.set(rowIndices[i], 0);
@@ -98,8 +97,7 @@ std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
 
   std::vector<int> indices(length);
   std::iota(indices.begin(), indices.end(), 0);
-  std::shuffle(indices.begin(), indices.end(),
-               std::mt19937{SEED});
+  std::shuffle(indices.begin(), indices.end(), std::mt19937{SEED});
   for (int i = 0; i < numZeros; ++i)
     sparsityVector.set(indices[i], 0);
 

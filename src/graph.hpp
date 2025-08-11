@@ -279,22 +279,8 @@ public:
   }
 
   void compute() override {
-    for (auto &input : this->inputs) {
-      std::cout << input->data->getName() << " ";
-    }
-    std::cout << std::endl;
-
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
   }
 };
 
@@ -357,22 +343,8 @@ public:
   std::string op_type() const override { return "Add"; }
 
   void compute() override {
-    for (auto &input : this->inputs) {
-      std::cout << input->data->getName() << " ";
-    }
-    std::cout << std::endl;
-
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
   }
 };
 
@@ -716,18 +688,8 @@ public:
   std::string op_type() const override { return "Einsum"; }
 
   void compute() override {
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
-    std::cout << std::endl;
   }
 };
 
