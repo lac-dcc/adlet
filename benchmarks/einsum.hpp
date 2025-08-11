@@ -69,7 +69,6 @@ int benchmark_einsum(int argc, char *argv[]) {
   const double chanceToPrune = std::stod(argv[++param]);
   const bool propagate = std::stoi(argv[++param]);
   SEED = std::stoi(argv[++param]);
-  std::cout << sparse << std::endl;
   run(file_path, propagate, sparsity, chanceToPrune, sparse);
 
   return 0;
