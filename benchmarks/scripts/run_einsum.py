@@ -28,6 +28,7 @@ def parse_output(output):
 
 def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
+    errors = []
     with open(f"result{sparsity}{prob_to_prune}{seed}{n}.txt", "wt") as result_file:
         result_file.write('file_name,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
         for file in files:
@@ -49,7 +50,12 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
                     result_line = f'{file},{sparsity}, {prob_to_prune}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
                     result_file.write(result_line + "\n")
                 except Exception as e:
+                    errors.append(file)
                     print(f"Error running {file_path}: {str(e)}")
+
+    with open("errors.txt", "wt") as error_file:
+        error_file.write("\n".join(errors))
+
 
 
 if __name__ == "__main__":
