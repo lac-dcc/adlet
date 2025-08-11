@@ -31,8 +31,7 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
     errors = []
     with open(f"result{sparsity}{prob_to_prune}{seed}{n}.txt", "wt") as result_file:
         result_file.write('file_name,format,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
-        for file in files:
-            print(f"running {file}")
+        for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}{file}"
             for format_str in ["sparse", "dense"]:
                 for propagate in [0, 1]:
@@ -40,6 +39,7 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
                         continue
                     cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
                     times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
+                    print(f"[running {idx}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
                         for i in range(n):
                             print(f"iteration {i}/{n}",  end="\r")
