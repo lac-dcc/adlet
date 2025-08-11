@@ -30,28 +30,31 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
     files = os.listdir(benchmark_dir)
     errors = []
     with open(f"result{sparsity}{prob_to_prune}{seed}{n}.txt", "wt") as result_file:
-        result_file.write('file_name,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
+        result_file.write('file_name,format,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
         for file in files:
             print(f"running {file}")
             file_path = f"{benchmark_dir}{file}"
-            for propagate in [0, 1]:
-                cmd = ["./benchmark", "einsum", file_path, str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
-                times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
-                try:
-                    for i in range(n):
-                        print(f"iteration {i}/{n}",  end="\r")
-                        process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                        process.wait()
-                        metrics = parse_output(process.stdout.read())
-                        for k in times:
-                            times[k].append(metrics.get(k, 0.0))
+            for format_str in ["sparse", "dense"]:
+                for propagate in [0, 1]:
+                    if format_str == "dense" and propagate == 1:
+                        continue
+                    cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
+                    times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
+                    try:
+                        for i in range(n):
+                            print(f"iteration {i}/{n}",  end="\r")
+                            process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            process.wait()
+                            metrics = parse_output(process.stdout.read())
+                            for k in times:
+                                times[k].append(metrics.get(k, 0.0))
 
-                    mean_metrics = {k: statistics.mean(times[k]) for k in times}
-                    result_line = f'{file},{sparsity}, {prob_to_prune}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
-                    result_file.write(result_line + "\n")
-                except Exception as e:
-                    errors.append(file)
-                    print(f"Error running {file_path}: {str(e)}")
+                        mean_metrics = {k: statistics.mean(times[k]) for k in times}
+                        result_line = f'{file},{format_str},{sparsity}, {prob_to_prune}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
+                        result_file.write(result_line + "\n")
+                    except Exception as e:
+                        errors.append(file)
+                        print(f"Error running {file_path}: {str(e)}")
 
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
