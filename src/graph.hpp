@@ -762,8 +762,8 @@ public:
   }
 
   TensorPtr compute() {
-    /*for (auto &op : nodes)*/
-    /*  op->compute();*/
+    for (auto &op : nodes)
+      op->compute();
     output->data->assemble();
     output->data->compute();
     return output;

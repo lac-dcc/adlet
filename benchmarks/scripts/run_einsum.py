@@ -59,7 +59,37 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
+def run_with_timeout(benchmark_dir:str, sparsity: float, prob_to_prune:float, seed: int, timeout_seconds: int):
+    print("Testing benchmarks...")
+    files = os.listdir(benchmark_dir)
+    timed_out = []
+    errors = []
+    below_timeout = []
+    propagate = 0
+    for idx, file in enumerate(files):
+        print(f"[running]: {file}")
+        print(f"{idx}/{len(files)}", end="\r")
+        file_path = f"{benchmark_dir}{file}"
+        cmd = ["./benchmark", "einsum", file_path, "dense", str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
+            metrics = parse_output(result.stdout)
+            below_timeout.append(file)
+        except subprocess.TimeoutExpired:
+            print(f"{file} timeout!")
+            timed_out.append(file)
+        except Exception as e:
+            print(f"{file} error: {str(e)}")
+            errors.append(file)
 
+    with open("time_out.txt", "wt") as t_file:
+        t_file.write("\n".join(timed_out))
+
+    with open("errors.txt", "wt") as e_file:
+        e_file.write("\n".join(errors))
+
+    with open("working.txt", "wt") as b_file:
+        b_file.write("\n".join(below_timeout))
 
 if __name__ == "__main__":
     benchmark_dir = sys.argv[1]
@@ -68,4 +98,5 @@ if __name__ == "__main__":
     seed = int(sys.argv[4])
     repeats = int(sys.argv[5])
     run(benchmark_dir, sparsity, prob_to_prune, seed, repeats)
+    # run_with_timeout(benchmark_dir, sparsity, prob_to_prune, seed, 60)
 
