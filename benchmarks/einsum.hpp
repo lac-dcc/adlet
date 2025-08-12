@@ -44,13 +44,13 @@ void run(const std::string &file_path, const bool propagate,
   print_memory_usage();
   g.get_tensor_sizes();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
-  const auto startComp = begin();
-  g.compile();
-  end(startComp, "compilation = ");
-  const auto startRun = begin();
-  auto result = g.compute();
+  // const auto startComp = begin();
+  // g.compile();
+  // end(startComp, "compilation = ");
+  // const auto startRun = begin();
+  // auto result = g.compute();
   /*std::cout << *(result->data) << std::endl;*/
-  end(startRun, "runtime = ");
+  // end(startRun, "runtime = ");
   /*print_dot(g, "teste.dot");*/
 }
 

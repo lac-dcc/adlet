@@ -104,6 +104,7 @@ public:
 
   void initialize_data() {
     // number of dimensions can vary so compute num elements
+    assert(numDims > 0);
     taco::Format dense({taco::Dense, taco::Dense});
     int numElements = 1;
     for (auto size : sizes)
@@ -460,6 +461,8 @@ public:
   }
 
   void propagate_forward() {
+    if (output->numDims == 0)
+      return;
     for (int i = 0; i < outputInds.length(); ++i) {
       bitset inputBitset;
       inputBitset.set();
@@ -644,6 +647,8 @@ public:
   }
 
   void propagate_backward() {
+    if (output->numDims == 0)
+      return;
     for (int i = 0; i < outputInds.length(); ++i) {
       propagate_backward_dimension(i);
     }

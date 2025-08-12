@@ -578,6 +578,69 @@ void test_einsum_utils() {
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
 
+void test_scalar_computation() {
+  int size = 2;
+
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+  auto X2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto W1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto matmul1 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
+  auto O2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+  auto matmul2 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
+
+  auto O3 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+  auto matmul3 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
+
+  auto O4 = std::make_shared<Tensor>(
+      std::vector<int>{},
+      std::vector<bitset>{}, "O4");
+  auto reduction =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{O3}, O4, "ij->");
+  auto g = Graph::build_graph({X1, X2, W1}, O4, {matmul1, matmul2, matmul3, reduction});
+  g.run_propagation();
+
+  X1->create_data({taco::Sparse, taco::Dense});
+  X2->create_data({taco::Sparse, taco::Dense});
+  W1->create_data({taco::Sparse, taco::Dense});
+  O1->create_data({taco::Sparse, taco::Dense});
+  O2->create_data({taco::Sparse, taco::Dense});
+  O3->create_data({taco::Sparse, taco::Dense});
+  O4->create_data({});
+
+  X1->initialize_data();
+  X2->initialize_data();
+  W1->initialize_data();
+
+  g.compile();
+  g.compute();
+
+  assert(X2->data->at({0, 0}) != 0 && X2->data->at({0, 1}) != 0 &&
+         X2->data->at({1, 0}) != 0 && X2->data->at({1, 1}) != 0);
+  assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) == 0 &&
+         O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0);
+  float* raw_data = static_cast<float*>(O4->data->getStorage().getValues().getData());
+  assert(O4->data->getStorage().getValues().getSize() == 1);
+  assert(raw_data[0] != 0);
+  std::cout << "test_scalar_compuatation() OK " << std::endl;
+}
+
 void test_init_data() {
   std::vector<std::vector<int>> sizes = {
       {13, 9},          {13, 5, 46},     {9, 27, 7},      {5, 17, 19},
@@ -622,4 +685,5 @@ int main(int argc, char **argv) {
   test_init_data();
   test_einsum_utils();
   test_count_bits();
+  test_scalar_computation();
 }
