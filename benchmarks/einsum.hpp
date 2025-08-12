@@ -37,20 +37,19 @@ void run(const std::string &file_path, const bool propagate,
       t->initialize_data();
     } else
       t->create_data(0.5);
-    /*t->create_data(taco::Format({taco::Sparse, taco::Sparse}));*/
   }
   end(startLoad, "load graph = ");
 
   print_memory_usage();
   g.get_tensor_sizes();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
-  // const auto startComp = begin();
-  // g.compile();
-  // end(startComp, "compilation = ");
-  // const auto startRun = begin();
-  // auto result = g.compute();
-  /*std::cout << *(result->data) << std::endl;*/
-  // end(startRun, "runtime = ");
+  const auto startComp = begin();
+  g.compile();
+  end(startComp, "compilation = ");
+  const auto startRun = begin();
+  auto result = g.compute();
+  /*std::cout << result->data->at({0, 0}) << std::endl;*/
+  end(startRun, "runtime = ");
   /*print_dot(g, "teste.dot");*/
 }
 

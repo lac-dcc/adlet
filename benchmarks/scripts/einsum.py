@@ -67,7 +67,7 @@ def get_small_benchmarks(threshold: int = 100):
 
 
 if __name__ == "__main__":
-    get_small_benchmarks()
+    get_small_benchmarks(1000)
     # instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
     # einsum_string = instance.format_string
     # tensors = instance.tensors
