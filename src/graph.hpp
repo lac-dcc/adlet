@@ -808,6 +808,8 @@ public:
     size_t total_size = 0;
     for (auto t : this->inputs)
       total_size += t->data->getStorage().getSizeInBytes();
+    for (auto &op : nodes)
+      total_size += op->output->data->getStorage().getSizeInBytes();
     total_size += output->data->getStorage().getSizeInBytes();
     std::cout << "tensors size = " << total_size / (1024.0 * 1024.0)
               << std::endl;
