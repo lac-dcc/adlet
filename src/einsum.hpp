@@ -137,20 +137,10 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   std::vector<OpNodePtr> ops;
   double finalSparsity = 0.0;
   // construct tensors based on tensorSizes
-  int ind = 0;
+  int ind = 1;
   for (auto dims : tensorSizes) {
-    if (!randomBool(chance))
-      finalSparsity = 0.0;
-    else
-      finalSparsity = sparsity;
-    std::vector<bitset> sparsityVectors;
-    for (auto dim : dims) {
-      // prune based on a probability
-
-      sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
-    }
-    auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
-                                              "T" + std::to_string(ind++));
+    auto newTensor =
+        std::make_shared<Tensor>(dims, "T" + std::to_string(ind++));
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -163,6 +153,24 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     int ind2 = contractionInds[i].first > contractionInds[i].second
                    ? contractionInds[i].first
                    : contractionInds[i].second;
+    auto t1 = tensorStack[ind1];
+    auto t2 = tensorStack[ind2];
+    bool prune = false;
+    if (!t1->outputTensor) {
+      std::vector<bitset> sparsityVectors;
+      for (auto dim : t1->sizes) {
+        sparsityVectors.push_back(generate_sparsity_vector(sparsity, dim));
+      }
+      t1->sparsities = sparsityVectors;
+      prune = true;
+    } else if (!t2->outputTensor && !prune) {
+      std::vector<bitset> sparsityVectors;
+      for (auto dim : t2->sizes) {
+        sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
+      }
+      t2->sparsities = sparsityVectors;
+    }
+
     std::vector<int> outputDims =
         deduceOutputDims(contractionStrings[i], tensorStack[ind1]->sizes,
                          tensorStack[ind2]->sizes);

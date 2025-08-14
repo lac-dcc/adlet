@@ -36,7 +36,7 @@ void run(const std::string &file_path, const bool propagate,
       t->create_data(generateModes(t->numDims, sparse));
       t->initialize_data();
     } else
-      t->create_data(0.5);
+      t->create_data(generateModes(t->numDims, false));
   }
   end(startLoad, "load graph = ");
 
@@ -48,9 +48,8 @@ void run(const std::string &file_path, const bool propagate,
   end(startComp, "compilation = ");
   const auto startRun = begin();
   auto result = g.compute();
-  /*std::cout << result->data->at({0, 0}) << std::endl;*/
   end(startRun, "runtime = ");
-  /*print_dot(g, "teste.dot");*/
+  print_dot(g, "teste.dot");
 }
 
 int benchmark_einsum(int argc, char *argv[]) {
