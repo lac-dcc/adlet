@@ -155,6 +155,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                    : contractionInds[i].second;
     auto t1 = tensorStack[ind1];
     auto t2 = tensorStack[ind2];
+
     bool prune = false;
     if (!t1->outputTensor) {
       std::vector<bitset> sparsityVectors;

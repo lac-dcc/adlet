@@ -201,11 +201,11 @@ public:
   }
 
   void print_shape() {
-    int size = this->sizes.size();
     std::cout << "(";
-    for (int i = 0; i < size - 1; i++)
-      std::cout << this->sizes[i] << ", ";
-    std::cout << this->sizes[size] << ")" << std::endl;
+    for (auto size : this->sizes) {
+      std::cout << size << ", ";
+    }
+    std::cout << ")" << std::endl;
   }
 };
 

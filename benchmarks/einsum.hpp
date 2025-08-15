@@ -32,7 +32,6 @@ void run(const std::string &file_path, const bool propagate,
   auto startLoad = begin();
   for (auto t : g.inputs) {
     if (!t->outputTensor) {
-      /*t->create_data(taco::Format({taco::Sparse, taco::Sparse}));*/
       t->create_data(generateModes(t->numDims, sparse));
       t->initialize_data();
     } else
