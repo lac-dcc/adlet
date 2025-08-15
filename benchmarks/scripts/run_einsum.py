@@ -26,18 +26,18 @@ def parse_output(output):
             metrics["tensors-size"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n: int):
+def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
-    with open(f"result{sparsity}{prob_to_prune}{seed}{n}.txt", "wt") as result_file:
-        result_file.write('file_name,format,sparsity,prob_to_prune,propagate,ratio_before,after,analysis,load_time,compilation_time,run_time, overall_memory, tensors-size\n')
+    with open(f"result{sparsity}{seed}{n}.txt", "wt") as result_file:
+        result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}{file}"
             for format_str in ["sparse", "dense"]:
                 for propagate in [0, 1]:
                     if format_str == "dense" and propagate == 1:
                         continue
-                    cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
+                    cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed)]
                     times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
                     print(f"[running {idx}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
@@ -50,7 +50,7 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
                                 times[k].append(metrics.get(k, 0.0))
 
                         mean_metrics = {k: statistics.mean(times[k]) for k in times}
-                        result_line = f'{file},{format_str},{sparsity}, {prob_to_prune}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
+                        result_line = f'{file},{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
                         result_file.write(result_line + "\n")
                     except Exception as e:
                         errors.append(file)
@@ -59,7 +59,12 @@ def run(benchmark_dir: str, sparsity: float, prob_to_prune: float, seed: int, n:
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def run_with_timeout(benchmark_dir:str, sparsity: float, prob_to_prune:float, seed: int, timeout_seconds: int):
+def run_for_sparsties(benchmark_dir: str, seed: int, n: int):
+    sparsities = [0.9, 0.7, 0.5, 0,3]
+    for sparsity in sparsities:
+        run(benchmark_dir, sparsity, seed, n)
+
+def run_with_timeout(benchmark_dir:str, sparsity: float, seed: int, timeout_seconds: int):
     print("Testing benchmarks...")
     files = os.listdir(benchmark_dir)
     propagate = 0
@@ -67,7 +72,7 @@ def run_with_timeout(benchmark_dir:str, sparsity: float, prob_to_prune:float, se
         for idx, file in enumerate(files):
             print(f"{idx}/{len(files)}", end="\r")
             file_path = f"{benchmark_dir}{file}"
-            cmd = ["./benchmark", "einsum", file_path, "dense", str(sparsity), str(prob_to_prune), str(propagate), str(seed)]
+            cmd = ["./benchmark", "einsum", file_path, "dense", str(sparsity), str(propagate), str(seed)]
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
                 metrics = parse_output(result.stdout)
@@ -86,9 +91,9 @@ def run_with_timeout(benchmark_dir:str, sparsity: float, prob_to_prune:float, se
 if __name__ == "__main__":
     benchmark_dir = sys.argv[1]
     sparsity = float(sys.argv[2])
-    prob_to_prune = float(sys.argv[3])
-    seed = int(sys.argv[4])
-    repeats = int(sys.argv[5])
-    run(benchmark_dir, sparsity, prob_to_prune, seed, repeats)
-    #run_with_timeout(benchmark_dir, sparsity, prob_to_prune, seed, 900)
+    seed = int(sys.argv[3])
+    repeats = int(sys.argv[4])
+    #run(benchmark_dir, sparsity, seed, repeats)
+    #run_with_timeout(benchmark_dir, sparsity, seed, 900)
+    run_for_sparsties(benchmark_dir, seed, repeats)
 

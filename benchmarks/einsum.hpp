@@ -4,8 +4,7 @@
 #include "taco/format.h"
 
 void run(const std::string &file_path, const bool propagate,
-         const double sparsity, const double chanceToPrune,
-         const bool sparse = true) {
+         const double sparsity, const bool sparse = true) {
 
   auto benchmark = readEinsumBenchmark(file_path);
 
@@ -15,8 +14,8 @@ void run(const std::string &file_path, const bool propagate,
     return;
   }
   const auto buildStart = begin();
-  auto g = buildTree(benchmark.sizes, benchmark.strings, benchmark.path,
-                     sparsity, chanceToPrune);
+  auto g =
+      buildTree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
   end(buildStart, "create graph = ");
 
   g.run_propagation(FORWARD);
@@ -52,21 +51,20 @@ void run(const std::string &file_path, const bool propagate,
 }
 
 int benchmark_einsum(int argc, char *argv[]) {
-  if (argc != 8) {
+  if (argc != 7) {
     std::cerr << "Usage: " << argv[0]
-              << " einsum <file_path> <sparsity> <chance_to_prune> "
-                 "<sparse> <propagate> <random_seed>\n ";
+              << " einsum <file_path> <sparsity> "
+                 "<format> <propagate> <random_seed>\n ";
     return 1;
   }
   int param = 1;
   const std::string file_path = argv[++param];
   const std::string sparseStr = argv[++param];
-  const bool sparse = sparseStr == "sparse";
+  const bool format = sparseStr == "sparse";
   const double sparsity = std::stod(argv[++param]);
-  const double chanceToPrune = std::stod(argv[++param]);
   const bool propagate = std::stoi(argv[++param]);
   SEED = std::stoi(argv[++param]);
-  run(file_path, propagate, sparsity, chanceToPrune, sparse);
+  run(file_path, propagate, sparsity, format);
 
   return 0;
 }

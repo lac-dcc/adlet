@@ -131,7 +131,7 @@ std::vector<taco::ModeFormatPack> generateModes(int order,
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                 const std::vector<std::string> &contractionStrings,
                 const std::vector<std::pair<int, int>> &contractionInds,
-                const double sparsity = 0.5, const double chance = 1.0) {
+                const double sparsity = 0.5) {
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
