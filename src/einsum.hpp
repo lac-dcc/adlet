@@ -2,11 +2,15 @@
 
 #include <regex>
 
-#include "dot.hpp"
 #include "graph.hpp"
-#include "taco.h"
 #include "taco/format.h"
 #include "utils.hpp"
+
+struct EinsumBenchmark {
+  std::vector<std::pair<int, int>> path;
+  std::vector<std::string> strings;
+  std::vector<std::vector<int>> sizes;
+};
 
 std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   std::vector<std::pair<int, int>> result;
@@ -85,7 +89,7 @@ constructSizeMap(std::vector<std::string> const &inputs,
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
-    for (int j = 0; j < tensorSizes.size(); ++j) {
+    for (int j = 0; j < tensorSizes[i].size(); ++j) {
       auto indVar = inputs[i][j];
       auto dimSize = tensorSizes[i][j];
       sizeMap[indVar] = dimSize;
@@ -100,7 +104,7 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   std::string output = extractOutputs(einsumString);
   std::vector<std::string> inputs = extractInputs(einsumString);
   std::unordered_map<char, int> sizeMap =
-      constructSizeMap(inputs, {sizes1, sizes2});
+      constructSizeMap(inputs, {sizes2, sizes1});
   std::vector<int> outputSizes;
 
   for (auto indVar : output)
@@ -109,32 +113,34 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generateModes(int order) {
+std::vector<taco::ModeFormatPack> generateModes(int order,
+                                                bool sparse = false) {
+
+  taco::ModeFormat format;
+  if (sparse)
+    format = taco::Sparse;
+  else
+    format = taco::Dense;
+
   std::vector<taco::ModeFormatPack> modes;
-  for (int j = 0; j < order; ++j) {
-    modes.push_back(taco::Dense);
-  }
+  for (int j = 0; j < order; ++j)
+    modes.push_back(format);
   return modes;
 }
 
 Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                 const std::vector<std::string> &contractionStrings,
-                const std::vector<std::pair<int, int>> &contractionInds) {
+                const std::vector<std::pair<int, int>> &contractionInds,
+                const double sparsity = 0.5) {
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
+  double finalSparsity = 0.0;
   // construct tensors based on tensorSizes
-  int ind = 0;
+  int ind = 1;
   for (auto dims : tensorSizes) {
-    std::vector<bitset> sparsityVectors;
-    for (auto dim : dims) {
-      sparsityVectors.push_back(generate_sparsity_vector(0.5, dim));
-    }
-    auto newTensor = std::make_shared<Tensor>(dims, sparsityVectors,
-                                              "T" + std::to_string(ind++));
-    newTensor->create_data(generateModes(dims.size()));
-    newTensor->initialize_data();
-    /*newTensor->initialize_dense();*/
+    auto newTensor =
+        std::make_shared<Tensor>(dims, "T" + std::to_string(ind++));
     tensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
@@ -147,36 +153,56 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     int ind2 = contractionInds[i].first > contractionInds[i].second
                    ? contractionInds[i].first
                    : contractionInds[i].second;
+    auto t1 = tensorStack[ind1];
+    auto t2 = tensorStack[ind2];
+
+    bool prune = false;
+    if (!t1->outputTensor) {
+      std::vector<bitset> sparsityVectors;
+      for (auto dim : t1->sizes) {
+        sparsityVectors.push_back(generate_sparsity_vector(sparsity, dim));
+      }
+      t1->sparsities = sparsityVectors;
+      prune = true;
+    } else if (!t2->outputTensor && !prune) {
+      std::vector<bitset> sparsityVectors;
+      for (auto dim : t2->sizes) {
+        sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
+      }
+      t2->sparsities = sparsityVectors;
+    }
+
     std::vector<int> outputDims =
         deduceOutputDims(contractionStrings[i], tensorStack[ind1]->sizes,
                          tensorStack[ind2]->sizes);
 
     std::vector<bitset> sparsityVectors;
-    for (auto dim : outputDims)
+    for (auto dim : outputDims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
+    }
 
     auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
                                               "O" + std::to_string(ind++));
-    newTensor->create_data(generateModes(outputDims.size()));
-
     tensors.push_back(newTensor);
+
     ops.push_back(std::make_shared<Einsum>(
         std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]}, newTensor,
         contractionStrings[i]));
     tensorStack.erase(tensorStack.begin() + ind2);
     tensorStack.erase(tensorStack.begin() + ind1);
-    tensorStack.push_back(tensors.back());
+    tensorStack.push_back(newTensor);
   }
 
   return Graph::build_graph(tensors, tensorStack[0], ops);
 }
 
-void readEinsumBenchmark(const std::string &filename) {
+EinsumBenchmark readEinsumBenchmark(const std::string &filename) {
 
+  EinsumBenchmark result;
   std::ifstream file(filename);
   if (!file) {
     std::cerr << "Failed to open file.\n";
-    return;
+    return result;
   }
   std::string path;
   std::string contractions;
@@ -188,18 +214,8 @@ void readEinsumBenchmark(const std::string &filename) {
   auto contractionPath = getContractionPath(path);
   auto contractionStrings = getContractionStrings(contractions);
   auto tensorSizes = getTensorSizes(sizes);
-  auto g = buildTree(tensorSizes, contractionStrings, contractionPath);
-  /*print_dot(g, "teste.dot");*/
-  const auto startCompilation{std::chrono::steady_clock::now()};
-  g.compile();
-  g.run_propagation();
-  const auto startRuntime{std::chrono::steady_clock::now()};
-  auto result = g.compute();
-  const auto finishRuntime{std::chrono::steady_clock::now()};
-  const std::chrono::duration<double> compilationSecs{startRuntime -
-                                                      startCompilation};
-  const std::chrono::duration<double> runtimeSecs{finishRuntime - startRuntime};
-  std::cout << "compilation = " << compilationSecs.count() << std::endl;
-  std::cout << "runtime = " << runtimeSecs.count() << std::endl;
-  /*std::cout << *(g.output->data) << std::endl;*/
+  result.sizes = tensorSizes;
+  result.path = contractionPath;
+  result.strings = contractionStrings;
+  return result;
 }

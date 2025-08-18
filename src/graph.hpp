@@ -4,16 +4,6 @@
 #include "taco/format.h"
 #include "taco/parser/einsum_parser.h"
 #include "utils.hpp"
-#include <bitset>
-#include <cassert>
-#include <iostream>
-#include <memory>
-#include <ostream>
-#include <random>
-#include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 using bitset = std::bitset<MAX_SIZE>;
 
@@ -80,8 +70,7 @@ public:
 
       std::vector<int> indices(sizes[i]);
       std::iota(indices.begin(), indices.end(), 0);
-      std::shuffle(indices.begin(), indices.end(),
-                   std::mt19937{std::random_device{}()});
+      std::shuffle(indices.begin(), indices.end(), std::mt19937{SEED});
 
       for (int j = 0; j < zeroCount; ++j)
         sparsities[i].set(indices[j], 0);
@@ -90,33 +79,32 @@ public:
     initialize_data();
   }
 
+  void create_data(const double threshold = 0.5) {
+    taco::ModeFormat sparse = taco::Sparse;
+    taco::ModeFormat dense = taco::Dense;
+    std::vector<taco::ModeFormatPack> modes;
+    for (size_t dim = 0; dim < this->numDims; dim++) {
+      int dimSize = this->sizes[dim];
+      size_t bits = count_bits(this->sparsities[dim], dimSize);
+      if (static_cast<float>(static_cast<float>(dimSize - bits) / dimSize) >
+          threshold)
+        modes.push_back(sparse);
+      else {
+        modes.push_back(dense);
+      }
+    }
+    this->data = std::make_shared<taco::Tensor<float>>(
+        taco::Tensor<float>(this->name, this->sizes, modes));
+  }
+
   void create_data(taco::Format format) {
     this->data = std::make_shared<taco::Tensor<float>>(
         taco::Tensor<float>(this->name, this->sizes, format));
   }
 
-  void initialize_dense() {
-    std::vector<int> coordinate(this->numDims, 0);
-
-    int numElements = 1;
-    for (auto size : this->sizes)
-      numElements *= size;
-
-    int p = 0;
-    for (int i = 0; i < numElements; i++) {
-      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-      this->data->insert(coordinate, val);
-      for (int s = this->numDims - 1; s >= 0; s--) {
-        if (++coordinate[s] < this->sizes[s])
-          break;
-        coordinate[s] = 0;
-      }
-    }
-    this->data->pack();
-  }
-
   void initialize_data() {
     // number of dimensions can vary so compute num elements
+    assert(numDims > 0);
     taco::Format dense({taco::Dense, taco::Dense});
     int numElements = 1;
     for (auto size : sizes)
@@ -175,21 +163,23 @@ public:
   }
 
   float get_sparsity_ratio() {
-    int total = 1;
-    int nnz = 1;
+    size_t total = 1;
+    size_t nnz = 1;
     for (int dim = 0; dim < this->numDims; dim++) {
       int dimSize = this->sizes[dim];
       total *= dimSize;
-      nnz *= count_bits(this->sparsities[dim], dimSize);
+      int bits = count_bits(this->sparsities[dim], dimSize);
+      if (bits > 0)
+        nnz *= bits;
     }
     int zero_elements = total - nnz;
     return static_cast<float>(zero_elements) / total;
   }
 
-  int get_nnz() {
-    int nnz = 0;
+  size_t get_nnz() {
+    size_t nnz = 0;
 
-    int numElements = 1;
+    size_t numElements = 1;
     for (auto size : sizes)
       numElements *= size;
 
@@ -208,6 +198,14 @@ public:
       nnz++; // not sparse so increment
     }
     return nnz;
+  }
+
+  void print_shape() {
+    std::cout << "(";
+    for (auto size : this->sizes) {
+      std::cout << size << ", ";
+    }
+    std::cout << ")" << std::endl;
   }
 };
 
@@ -282,22 +280,8 @@ public:
   }
 
   void compute() override {
-    for (auto &input : this->inputs) {
-      std::cout << input->data->getName() << " ";
-    }
-    std::cout << std::endl;
-
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
   }
 };
 
@@ -306,6 +290,7 @@ public:
   Add(std::vector<TensorPtr> inputs, TensorPtr &Out) {
     this->inputs = inputs;
     this->output = Out;
+    this->output->outputTensor = true;
     for (auto &input : inputs)
       input->numOps++;
   }
@@ -359,22 +344,8 @@ public:
   std::string op_type() const override { return "Add"; }
 
   void compute() override {
-    for (auto &input : this->inputs) {
-      std::cout << input->data->getName() << " ";
-    }
-    std::cout << std::endl;
-
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
   }
 };
 
@@ -391,7 +362,8 @@ public:
     for (auto &input : inputs)
       input->numOps++;
     this->expression = expression;
-    output = Out;
+    this->output = Out;
+    this->output->outputTensor = true;
 
     int arrowPos = expression.find("->");
     std::string lhs = expression.substr(0, arrowPos);
@@ -489,6 +461,8 @@ public:
   }
 
   void propagate_forward() {
+    if (output->numDims == 0)
+      return;
     for (int i = 0; i < outputInds.length(); ++i) {
       bitset inputBitset;
       inputBitset.set();
@@ -673,6 +647,8 @@ public:
   }
 
   void propagate_backward() {
+    if (output->numDims == 0)
+      return;
     for (int i = 0; i < outputInds.length(); ++i) {
       propagate_backward_dimension(i);
     }
@@ -717,18 +693,8 @@ public:
   std::string op_type() const override { return "Einsum"; }
 
   void compute() override {
-    const auto startAssemble{std::chrono::steady_clock::now()};
     this->output->data->assemble();
-    const auto startCompilation{std::chrono::steady_clock::now()};
     this->output->data->compute();
-    const auto startRuntime{std::chrono::steady_clock::now()};
-    const std::chrono::duration<double> assembleSecs{startCompilation -
-                                                     startAssemble};
-    const std::chrono::duration<double> runtimeSecs{startRuntime -
-                                                    startCompilation};
-    std::cout << "assemble= " << assembleSecs.count() << std::endl;
-    std::cout << "compute= " << runtimeSecs.count() << std::endl;
-    std::cout << std::endl;
   }
 };
 
@@ -801,8 +767,8 @@ public:
   }
 
   TensorPtr compute() {
-    /*for (auto &op : nodes)*/
-    /*  op->compute();*/
+    for (auto &op : nodes)
+      op->compute();
     output->data->assemble();
     output->data->compute();
     return output;
@@ -825,7 +791,7 @@ public:
   }
 
   float get_sparsity_ratio() {
-    int count = 0;
+    size_t count = 0;
     float total_ratio = 0;
     for (auto &ops : this->nodes) {
       for (auto &input : ops->inputs) {
@@ -836,5 +802,16 @@ public:
     total_ratio += this->output->get_sparsity_ratio();
     count++;
     return total_ratio / count;
+  }
+
+  void get_tensor_sizes() {
+    size_t total_size = 0;
+    for (auto t : this->inputs)
+      total_size += t->data->getStorage().getSizeInBytes();
+    for (auto &op : nodes)
+      total_size += op->output->data->getStorage().getSizeInBytes();
+    total_size += output->data->getStorage().getSizeInBytes();
+    std::cout << "tensors size = " << total_size / (1024.0 * 1024.0)
+              << std::endl;
   }
 };

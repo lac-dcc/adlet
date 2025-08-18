@@ -7,6 +7,8 @@
 
 constexpr int MAX_SIZE = 2048;
 
+unsigned int SEED;
+
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
                  double colSparsityRatio, int rows, int cols) {
@@ -22,10 +24,8 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   std::iota(rowIndices.begin(), rowIndices.end(), 0);
   std::iota(colIndices.begin(), colIndices.end(), 0);
 
-  std::shuffle(rowIndices.begin(), rowIndices.end(),
-               std::mt19937{std::random_device{}()});
-  std::shuffle(colIndices.begin(), colIndices.end(),
-               std::mt19937{std::random_device{}()});
+  std::shuffle(rowIndices.begin(), rowIndices.end(), std::mt19937{SEED});
+  std::shuffle(colIndices.begin(), colIndices.end(), std::mt19937{SEED});
 
   for (int i = 0; i < zeroRowCount; ++i)
     rowSparsity.set(rowIndices[i], 0);
@@ -69,14 +69,13 @@ taco::Format getFormat(const std::string format) {
   return outFormat;
 }
 
-int count_bits(std::bitset<MAX_SIZE> A, int pos) {
-  if (pos < 0)
-    return 0;
-  if (pos == MAX_SIZE)
-    return A.count();
-
-  std::bitset<MAX_SIZE> mask((1ULL << pos) - 1);
-  return (A & mask).count();
+size_t count_bits(std::bitset<MAX_SIZE> A, int pos) {
+  assert(pos > 0 && pos <= MAX_SIZE && "pos out of bounds");
+  size_t bits = 0;
+  for (size_t i = 0; i < pos; i++)
+    if (A.test(i))
+      bits++;
+  return bits;
 }
 
 std::vector<int> get_indices(std::vector<int> dimSizes, int numElement) {
@@ -98,8 +97,7 @@ std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
 
   std::vector<int> indices(length);
   std::iota(indices.begin(), indices.end(), 0);
-  std::shuffle(indices.begin(), indices.end(),
-               std::mt19937{std::random_device{}()});
+  std::shuffle(indices.begin(), indices.end(), std::mt19937{SEED});
   for (int i = 0; i < numZeros; ++i)
     sparsityVector.set(indices[i], 0);
 
@@ -130,4 +128,22 @@ void write_kernel(const std::string &filename,
   file.open(filename);
   file << compiledOut.getSource();
   file.close();
+}
+
+inline std::chrono::time_point<std::chrono::high_resolution_clock> begin() {
+  return std::chrono::high_resolution_clock::now();
+}
+
+inline void
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+    const std::string &message) {
+  auto stop = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double> duration{stop - start};
+  std::cout << message << duration.count() << std::endl;
+}
+
+bool randomBool(double probability = 0.5) {
+  static std::mt19937 gen(SEED); // Mersenne Twister
+  std::bernoulli_distribution dist(probability);
+  return dist(gen);
 }

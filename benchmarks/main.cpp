@@ -1,3 +1,4 @@
+#include "einsum.hpp"
 #include "format.hpp"
 #include "graph.hpp"
 #include <iostream>
@@ -15,6 +16,8 @@ int main(int argc, char *argv[]) {
     return benchmark_graph(argc, argv);
   } else if (benchmark == "format") {
     return parseArguments(argc, argv);
+  } else if (benchmark == "einsum") {
+    return benchmark_einsum(argc, argv);
   } else {
     std::cerr << "Error: unknown benchmark" << std::endl;
   }

@@ -109,3 +109,6 @@ websocket-client==1.8.0
 widgetsnbextension==4.0.14
 plotly==6.2.0
 plotly-express==0.4.1
+einsum_benchmark==0.1.7
+idna==3.10
+opt_einsum==3.4.0

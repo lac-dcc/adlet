@@ -1,3 +1,4 @@
+import os
 import einsum_benchmark
 import opt_einsum as oe
 
@@ -38,12 +39,39 @@ def write_benchmark(benchmark_name, indices, einsum_strings, tensor_sizes):
         file.write(str(einsum_strings) + "\n")
         file.write(str(tensor_sizes) + "\n")
 
-if __name__ == "__main__":
+def get_small_benchmarks(threshold: int = 100):
+    benchmarks = []
+    sizes = {}
+    for instance in einsum_benchmark.instances:
+        if len(instance.tensors) <= threshold:
+            benchmarks.append(instance)
+            if len(instance.tensors) in sizes:
+                sizes[len(instance.tensors)] +=1
+            else:
+                sizes[len(instance.tensors)] = 1
 
-    instance = einsum_benchmark.instances["str_nw_mera_open_26"]
-    einsum_string = instance.format_string
-    tensors = instance.tensors
-    write_benchmark("str_nw_mera_open_26", *generate_lists(einsum_string, tensors))
+            t = 0
+            for tensor in instance.tensors:
+                for d in tensor.shape:
+                    if d > t:
+                        t = d
+            print(f"max size for {instance.name} is {t}")
+
+    print(sizes)
+
+
+    print(f"saving {len(benchmarks)} benchmarks")
+    os.makedirs(f"./sub{threshold}", exist_ok=True)
+    for instance in benchmarks:
+        write_benchmark(f"sub{threshold}/{instance.name}", *generate_lists(instance.format_string, instance.tensors))
+
+
+if __name__ == "__main__":
+    get_small_benchmarks(1000)
+    # instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
+    # einsum_string = instance.format_string
+    # tensors = instance.tensors
+    # write_benchmark("qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
     # for instance in einsum_benchmark.instances:
     #     if "mc" in instance.name:
     #         continue
