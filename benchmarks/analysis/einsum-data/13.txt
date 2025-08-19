@@ -1,0 +1,13 @@
+lm_batch_likelihood_brackets_3_16d.txt
+lm_batch_likelihood_sentence_3_12d.txt
+str_nw_mera_open_26.txt
+lm_batch_likelihood_sentence_4_8d.txt
+str_nw_ftps_open_30.txt
+str_matrix_chain_multiplication_100.txt
+str_nw_ftps_open_28.txt
+lm_batch_likelihood_sentence_4_4d.txt
+mc_2021_027.txt
+str_mps_varying_inner_product_200.txt
+str_nw_mera_closed_120.txt
+gm_queen5_5_3.wcsp.txt
+str_matrix_chain_multiplication_1000.txt
