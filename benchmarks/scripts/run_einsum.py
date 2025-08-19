@@ -60,7 +60,7 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
         error_file.write("\n".join(errors))
 
 def run_for_sparsties(benchmark_dir: str, seed: int, n: int):
-    sparsities = [0.9, 0.7, 0.5, 0,3]
+    sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
         run(benchmark_dir, sparsity, seed, n)
 
