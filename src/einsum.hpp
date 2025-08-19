@@ -135,7 +135,6 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   std::vector<TensorPtr> tensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
-  double finalSparsity = 0.0;
   // construct tensors based on tensorSizes
   int ind = 1;
   for (auto dims : tensorSizes) {
@@ -167,7 +166,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     } else if (!t2->outputTensor && !prune) {
       std::vector<bitset> sparsityVectors;
       for (auto dim : t2->sizes) {
-        sparsityVectors.push_back(generate_sparsity_vector(finalSparsity, dim));
+        sparsityVectors.push_back(generate_sparsity_vector(sparsity, dim));
       }
       t2->sparsities = sparsityVectors;
     }
