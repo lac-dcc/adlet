@@ -1,3 +1,4 @@
+from typing import List
 import os
 import einsum_benchmark
 import opt_einsum as oe
@@ -65,18 +66,23 @@ def get_small_benchmarks(threshold: int = 100):
     for instance in benchmarks:
         write_benchmark(f"sub{threshold}/{instance.name}", *generate_lists(instance.format_string, instance.tensors))
 
+def get_biggest_dim(names: List[str]) -> int:
+    biggest_instance = 0
+    biggest = 0
+    for name in names:
+        instance = einsum_benchmark.instances[name.split(".txt")[0]]
+        _, path_info = oe.contract_path(instance.format_string, *instance.tensors, optimize='auto')
+        for pi in path_info.contraction_list:
+            lhs, rhs = pi[2].split("->")
+            dim_list = lhs.split(",")
+            dim_list.append(rhs)
+            for s in dim_list:
+                if len(s) > biggest:
+                    biggest = len(s)
+                    biggest_instance = instance
+    print(biggest_instance.name, biggest)
+    return biggest
 
 if __name__ == "__main__":
     get_small_benchmarks(1000)
-    # instance = einsum_benchmark.instances["qc_circuit_n49_m14_s9_e6_pEFGH_simplified"]
-    # einsum_string = instance.format_string
-    # tensors = instance.tensors
-    # write_benchmark("qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
-    # for instance in einsum_benchmark.instances:
-    #     if "mc" in instance.name:
-    #         continue
-    #     if os.path.isdir('converted/' + instance.name):
-    #         continue
-    #
-    #     write_benchmark("./converted/qc_circuit_n49_m14_s9_e6_pEFGH_simplified", *generate_lists(einsum_string, tensors))
 
