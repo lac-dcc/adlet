@@ -7,7 +7,7 @@
 #include <string>
 
 void deepFM(taco::Format format, bool propagate, float row_sparsity,
-          float col_sparsity) {
+            float col_sparsity) {
 
   const int size = 2048;
   std::cout << "running deepfm-like benchmark" << std::endl;
@@ -15,7 +15,9 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{32, 100},
-      std::vector<bitset>{generate_sparsity_vector(0, 32), generate_sparsity_vector(0, 100)}, "X1");
+      std::vector<bitset>{generate_sparsity_vector(0, 32),
+                          generate_sparsity_vector(0, 100)},
+      "X1");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{100, 256},
       std::vector<bitset>{generate_sparsity_vector(0, 100),
@@ -46,13 +48,11 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
                           generate_sparsity_vector(0, 1)},
       "W5");
 
-
   auto W6 = std::make_shared<Tensor>(
       std::vector<int>{256, 128},
       std::vector<bitset>{generate_sparsity_vector(row_sparsity, 256),
                           generate_sparsity_vector(col_sparsity, 128)},
       "W6");
-
 
   auto W7 = std::make_shared<Tensor>(
       std::vector<int>{128, 64},
@@ -60,13 +60,11 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
                           generate_sparsity_vector(col_sparsity, 64)},
       "W7");
 
-
   auto W8 = std::make_shared<Tensor>(
       std::vector<int>{64, 1},
       std::vector<bitset>{generate_sparsity_vector(row_sparsity, 64),
                           generate_sparsity_vector(0, 1)},
       "W8");
-
 
   auto outputs = std::vector<TensorPtr>(11);
   outputs[0] = std::make_shared<Tensor>(
@@ -125,18 +123,18 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
                           generate_sparsity_vector(0, 1)},
       "O11");
 
-  auto linear1 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{X1, W1}, outputs[0], "ik,kj->ij");
-  auto matmul1 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{X1, W2}, outputs[1], "ik,kj->ij");
-  auto matmul2 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{X1, W3}, outputs[2], "ik,kj->ij");
+  auto linear1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1},
+                                          outputs[0], "ik,kj->ij");
+  auto matmul1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W2},
+                                          outputs[1], "ik,kj->ij");
+  auto matmul2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W3},
+                                          outputs[2], "ik,kj->ij");
   auto sub1 = std::make_shared<Add>(
       std::vector<TensorPtr>{outputs[1], outputs[2]}, outputs[3]);
-  auto sum1 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{outputs[3], W4}, outputs[4], "ik,kj->ij");
-  auto linear2 = std::make_shared<Einsum>(
-      std::vector<TensorPtr>{X1, W5}, outputs[5], "ik,kj->ij");
+  auto sum1 = std::make_shared<Einsum>(std::vector<TensorPtr>{outputs[3], W4},
+                                       outputs[4], "ik,kj->ij");
+  auto linear2 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W5},
+                                          outputs[5], "ik,kj->ij");
   auto add1 = std::make_shared<Add>(
       std::vector<TensorPtr>{outputs[4], outputs[5]}, outputs[6]);
   auto linear3 = std::make_shared<Einsum>(
@@ -148,12 +146,13 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
   auto add2 = std::make_shared<Add>(
       std::vector<TensorPtr>{outputs[6], outputs[9]}, outputs[10]);
 
-  /*auto g = Graph::build_graph({X1, W1, W2, W3, W4, W5, W6, W7, W8}, outputs[10],*/
+  /*auto g = Graph::build_graph({X1, W1, W2, W3, W4, W5, W6, W7, W8},
+   * outputs[10],*/
   /*                            {linear1, linear2, linear3, linear4, linear5,*/
   /*                             matmul1, matmul2, sum1, sub1, add1, add2});*/
-  auto g = Graph::build_graph({X1, W1, W2, W3, W4, W5, W6, W7, W8}, outputs[6],
-                              {linear1, linear2, 
-                               matmul1, matmul2, sum1, sub1, add1});
+  auto g = Graph::build_graph(
+      {X1, W1, W2, W3, W4, W5, W6, W7, W8}, outputs[6],
+      {linear1, linear2, matmul1, matmul2, sum1, sub1, add1});
 
   const auto finishAllocate1{std::chrono::steady_clock::now()};
   const std::chrono::duration<double> allocate1Secs{finishAllocate1 -
@@ -233,12 +232,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   auto input = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "input");
-  /*auto input = std::make_shared<Tensor>(*/
-  /*    std::vector<int>{size, size},*/
-  /*    std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),*/
-  /*                        generate_sparsity_vector(col_sparsity, size)},*/
-  /*    "input");*/
-  /**/
+
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
       std::vector<bitset>{denseSparsityVector,
@@ -373,6 +367,7 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
+  g.get_tensor_sizes();
   // print_dot(g);
 }
 
