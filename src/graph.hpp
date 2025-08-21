@@ -626,31 +626,15 @@ public:
     return inputBitset;
   }
 
-  void propagate_backward_dimension(int outputInd) {
-    // char indexChar = outputInds[outputInd];
-    // for (auto p : outputDims[indexChar]) {
-    //   int inputInd = p.first;  // which of the inputs
-    //   int inputDim = p.second; // which dimension
-    //   bitset inputBitset;
-    //   for (auto op : inputs[inputInd]->inputOps) {
-    //     OpNode *opPtr = op.get();
-    //     if (opPtr == this)
-    //       continue;
-    //     // now handle the case where this operand is used in other ops.
-    //     // if any other corresponding reduction or output dims are nonsparse
-    //     // we OR it
-    //     inputBitset |= get_multiop_sparsity(opPtr, inputInd, inputDim);
-    //   }
-    //   inputBitset |= output->sparsities[outputInd];
-    //   inputs[inputInd]->sparsities[inputDim] &= inputBitset;
-    // }
-  }
-
   void propagate_backward() {
-    if (output->numDims == 0)
-      return;
-    for (int i = 0; i < outputInds.length(); ++i) {
-      propagate_backward_dimension(i);
+    for (auto kv : outputDims) { // iterate over character: pair(inputInd,
+                                    // inputDim) map.
+      for (auto p : kv.second) {
+        int inputInd = p.first;  // which of the inputs
+        int inputDim = p.second; // which dimension
+        inputs[inputInd]->sparsities[inputDim] &=
+            propagate_intra_dimension(inputInd, inputDim, kv.first);
+      }
     }
   }
 
@@ -724,8 +708,7 @@ public:
   void run_propagation() {
     run_propagation(Direction::FORWARD);
     run_propagation(Direction::INTRA);
-    run_propagation(Direction::INTRA);
-    // run_propagation(Direction::BACKWARD);
+    run_propagation(Direction::BACKWARD);
   }
 
   void run_propagation(Direction dir) {
