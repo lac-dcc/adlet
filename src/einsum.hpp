@@ -113,6 +113,19 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
+std::vector<taco::ModeFormatPack> generateModes(int order, std::vector<int> sizes, std::vector<bitset> sparsities, bool sparse = false) {
+  std::vector<taco::ModeFormatPack> modes;
+  for (int j = 0; j < order; ++j) {
+    if (!sparse)
+      modes.push_back(taco::Dense);
+    else {
+      modes.push_back(count_bits(sparsities[j], sizes[j]) != sizes[j] ? taco::Dense : taco::Sparse);
+    }
+  }
+  return modes;
+}
+
+
 std::vector<taco::ModeFormatPack> generateModes(int order,
                                                 bool sparse = false) {
 

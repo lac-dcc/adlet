@@ -24,6 +24,12 @@ def parse_output(output):
             metrics["after"] = float(line.split("=")[-1].strip())
         elif "tensors" in line:
             metrics["tensors-size"] = float(line.split("=")[-1].strip())
+        elif "fw_ratio" in line:
+            metrics["fw_ratio"] = float(line.split("=")[-1].strip())
+        elif "lat_ratio" in line:
+            metrics["lat_ratio"] = float(line.split("=")[-1].strip())
+        elif "bw_ratio" in line:
+            metrics["bw_ratio"] = float(line.split("=")[-1].strip())
     return metrics
 
 def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
@@ -37,11 +43,11 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
                 for propagate in [0, 1]:
                     if format_str == "dense" and propagate == 1:
                         continue
-                    cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed)]
                     times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
                     print(f"[running {idx}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
                         for i in range(n):
+                            cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
                             print(f"iteration {i}/{n}",  end="\r")
                             process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                             process.wait()
@@ -59,10 +65,47 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
+def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
+    files = os.listdir(benchmark_dir)
+    errors = []
+    run_fw = 1
+    with open(f"result_prop{sparsity}{seed}{n}.txt", "wt") as result_file:
+        result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,fw_ratio,lat_ratio,bw_ratio\n')
+        for idx, file in enumerate(files):
+            file_path = f"{benchmark_dir}{file}"
+            for run_lat in [0, 1]:
+                for run_bw in [0, 1]:
+                    data = {"fw_ratio":[], "lat_ratio": [], "bw_ratio": []}
+                    print(f"[running {idx}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
+                    try:
+                        for i in range(n):
+                            cmd = ["./benchmark", "einsum", "prop", file_path, str(sparsity), str(run_fw), str(run_lat), str(run_bw), str(seed + i)]
+                            print(f"iteration {i}/{n}",  end="\r")
+                            process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            process.wait()
+                            metrics = parse_output(process.stdout.read())
+                            for k in data:
+                                data[k].append(metrics.get(k, 0.0))
+
+                        mean_metrics = {k: statistics.mean(data[k]) for k in data}
+                        result_line = f'{file},{sparsity},{run_fw},{run_lat},{run_bw},{mean_metrics["fw_ratio"]},{mean_metrics["lat_ratio"]},{mean_metrics["bw_ratio"]}'
+                        result_file.write(result_line + "\n")
+                    except Exception as e:
+                        errors.append(file)
+                        print(f"Error running {file_path}: {str(e)}")
+
+    with open("errors.txt", "wt") as error_file:
+        error_file.write("\n".join(errors))
+
 def run_for_sparsties(benchmark_dir: str, seed: int, n: int):
     sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
         run(benchmark_dir, sparsity, seed, n)
+
+def run_prop_for_sparsities(benchmark_dir: str, seed: int, n: int):
+    sparsities = [0.9, 0.7, 0.5, 0.3]
+    for sparsity in sparsities:
+        run_prop(benchmark_dir, sparsity, seed, n)
 
 def run_with_timeout(benchmark_dir:str, sparsity: float, seed: int, timeout_seconds: int):
     print("Testing benchmarks...")
@@ -96,4 +139,5 @@ if __name__ == "__main__":
     #run(benchmark_dir, sparsity, seed, repeats)
     #run_with_timeout(benchmark_dir, sparsity, seed, 900)
     run_for_sparsties(benchmark_dir, seed, repeats)
+    # run_prop_for_sparsities(benchmark_dir, seed, repeats)
 
