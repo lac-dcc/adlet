@@ -16,7 +16,7 @@ run3 = [["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], 
 run4 = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"], ["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"], ["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
 
 seed = "1"
-repeats = 5
+repeats = 10
 binary = "./benchmark"
 graph_name = "bert"
 
@@ -38,6 +38,8 @@ def parse_output(output):
             metrics["before"] = float(line.split("=")[-1].strip())
         elif "after" in line:
             metrics["after"] = float(line.split("=")[-1].strip())
+        elif "tensors" in line:
+            metrics["tensors-size"] = float(line.split("=")[-1].strip())
     return metrics
 
 def run(list_runs, warmup=False):
@@ -46,13 +48,13 @@ def run(list_runs, warmup=False):
     iter_count = 0
     file_name = f"{graph_name}-{datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}-random-{str(warmup).lower()}.out"
     with open(file_name, "wt") as file:
-        file.write("model, row, col, format, prop, before, after, analysis, load, comp, run, memory\n")
+        file.write("model, row, col, format, prop, before, after, analysis, load, comp, run, memory, tensors\n")
         for params in list_runs:
             left_sparsity, right_sparsity = params[0], params[1]
             fmt = params[2]
             opt = params[3]
             config_name = f"{left_sparsity},{right_sparsity},{fmt},opt={opt}"
-            times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": []}
+            times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size": []}
             cmd = [binary, "graph", graph_name, left_sparsity, right_sparsity, fmt, opt, seed]
 
             if warmup:
@@ -70,9 +72,10 @@ def run(list_runs, warmup=False):
         
             mean_metrics = {k: statistics.mean(times[k]) for k in times}
             mean_metrics["config"] = config_name
-            result_line = f'{graph_name},{left_sparsity}, {right_sparsity}, {fmt}, {opt}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}'
+            result_line = f'{graph_name},{left_sparsity}, {right_sparsity}, {fmt}, {opt}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
             
             file.write(f'{result_line}\n')
+            file.flush()
             results.append(mean_metrics)
     return results
 
@@ -131,5 +134,6 @@ def run_all():
 
 
 if __name__ == "__main__":
-    run(list_runs=runs, warmup=False)
+    run_all()
+    #run(list_runs=run1, warmup=False)
 

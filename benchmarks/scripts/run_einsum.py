@@ -98,7 +98,7 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def run_for_sparsties(benchmark_dir: str, seed: int, n: int):
+def run_for_sparsities(benchmark_dir: str, seed: int, n: int):
     sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
         run(benchmark_dir, sparsity, seed, n)
@@ -139,6 +139,6 @@ if __name__ == "__main__":
     repeats = int(sys.argv[4])
     #run(benchmark_dir, sparsity, seed, repeats)
     #run_with_timeout(benchmark_dir, sparsity, seed, 900)
-    run_for_sparsties(benchmark_dir, seed, repeats)
+    run_for_sparsities(benchmark_dir, seed, repeats)
     # run_prop_for_sparsities(benchmark_dir, seed, repeats)
 
