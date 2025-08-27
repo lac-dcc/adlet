@@ -598,9 +598,6 @@ void test_get_sparsity_ratio() {
 }
 
 void test_einsum_utils() {
-  // our code doesn't support scalar outputs so this is a modified version of
-  // https://optimized-einsum.readthedocs.io/en/stable/path_finding.html#format-of-the-path
-  // example
   std::vector<std::string> contractionStrings{"ajac,acaj->a", "ikbd,bdik->bik",
                                               "bik,ikab->a", "a,a->a"};
   std::vector<std::pair<int, int>> contractionInds{
@@ -613,7 +610,7 @@ void test_einsum_utils() {
   tensorSizes.push_back({10, 9, 10, 17});
 
   auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
-  assert(graph.inputs.size() == 9);
+  assert(graph.inputs.size() == tensorSizes.size());
   assert(graph.nodes.size() == 4);
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
