@@ -1,7 +1,10 @@
+#include "dot.hpp"
 #include "einsum.hpp"
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
+#include "taco/index_notation/index_notation.h"
+#include "taco/tensor.h"
 #include "utils.hpp"
 #include <cassert>
 
@@ -142,6 +145,43 @@ void test_addition() {
   assert(O1->sparsities[1][0] == 1 && "Add: Forward propagation failed!");
   assert(O1->sparsities[1][1] == 1 && "Add: Forward propagation failed!");
   std::cout << "test_addition() OK " << std::endl;
+}
+
+void test_backward_prop() {
+  const int size = 2;
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X1");
+  auto X2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto X3 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X3");
+  auto O2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("10"), bitset("01")}, "O2");
+  std::vector<TensorPtr> inputs1{X1, X2};
+  auto einsum1 =
+      std::make_shared<Einsum>(inputs1, O1, std::string{"ik,kj->ij"});
+  auto einsum2 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, X3}, O2,
+                                          std::string{"ik,kj->ij"});
+
+  auto g = Graph::build_graph({X1, X2, X3}, O2, {einsum1, einsum2});
+  g.run_propagation(BACKWARD);
+  X1->print_full_sparsity();
+  X2->print_full_sparsity();
+  std::cout << std::endl;
+  X3->print_full_sparsity();
+  O1->print_full_sparsity();
+  assert(X1->sparsities[0][1] == 1 && "Einsum: Backward propagation failed!");
+  assert(X1->sparsities[0][0] == 0 && "Einsum: Backward propagation failed!");
+  // assert(X2->sparsities[1][0] == 1 && "Einsum: Backward propagation
+  // failed!"); assert(X2->sparsities[1][1] == 0 && "Einsum: Backward
+  // propagation failed!");
 }
 
 void test_einsum() {
@@ -558,9 +598,6 @@ void test_get_sparsity_ratio() {
 }
 
 void test_einsum_utils() {
-  // our code doesn't support scalar outputs so this is a modified version of
-  // https://optimized-einsum.readthedocs.io/en/stable/path_finding.html#format-of-the-path
-  // example
   std::vector<std::string> contractionStrings{"ajac,acaj->a", "ikbd,bdik->bik",
                                               "bik,ikab->a", "a,a->a"};
   std::vector<std::pair<int, int>> contractionInds{
@@ -573,7 +610,7 @@ void test_einsum_utils() {
   tensorSizes.push_back({10, 9, 10, 17});
 
   auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
-  assert(graph.inputs.size() == 9);
+  assert(graph.inputs.size() == tensorSizes.size());
   assert(graph.nodes.size() == 4);
   std::cout << "test_einsum_utils() OK " << std::endl;
 }
@@ -608,12 +645,12 @@ void test_scalar_computation() {
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
-  auto O4 = std::make_shared<Tensor>(
-      std::vector<int>{},
-      std::vector<bitset>{}, "O4");
+  auto O4 =
+      std::make_shared<Tensor>(std::vector<int>{}, std::vector<bitset>{}, "O4");
   auto reduction =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O3}, O4, "ij->");
-  auto g = Graph::build_graph({X1, X2, W1}, O4, {matmul1, matmul2, matmul3, reduction});
+  auto g = Graph::build_graph({X1, X2, W1}, O4,
+                              {matmul1, matmul2, matmul3, reduction});
   g.run_propagation();
 
   X1->create_data({taco::Sparse, taco::Dense});
@@ -635,7 +672,8 @@ void test_scalar_computation() {
          X2->data->at({1, 0}) != 0 && X2->data->at({1, 1}) != 0);
   assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) == 0 &&
          O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0);
-  float* raw_data = static_cast<float*>(O4->data->getStorage().getValues().getData());
+  float *raw_data =
+      static_cast<float *>(O4->data->getStorage().getValues().getData());
   assert(O4->data->getStorage().getValues().getSize() == 1);
   assert(raw_data[0] != 0);
   std::cout << "test_scalar_compuatation() OK " << std::endl;
@@ -675,6 +713,7 @@ void test_count_bits() {
 int main(int argc, char **argv) {
   test_propagation();
   test_addition();
+  test_backward_prop();
   test_einsum();
   test_einsum_transpose();
   test_einsum_multiop_1();

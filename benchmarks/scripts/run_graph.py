@@ -4,16 +4,16 @@ from datetime import datetime
 import subprocess
 
 #only column sparsity
-runs = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"]]
+run1 = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"]]
 
 #only row sparsity
-#runs = [["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"]]
+run2 = [["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"]]
 
 #row and column sparsity
-#runs = [["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
+run3 = [["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
 
 #all
-#runs = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"], ["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"], ["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
+run4 = [["0.0", "0.1", "SparseDense", "0"], ["0.0", "0.3", "SparseDense", "0"], ["0.0", "0.5", "SparseDense", "0"], ["0.0", "0.7", "SparseDense", "0"], ["0.0", "0.9", "SparseDense", "0"], ["0.0", "0.1", "SparseDense", "1"], ["0.0", "0.3", "SparseDense", "1"], ["0.0", "0.5", "SparseDense", "1"], ["0.0", "0.7", "SparseDense", "1"], ["0.0", "0.9", "SparseDense", "1"], ["0.0", "0.1", "DD", "0"], ["0.0", "0.3", "DD", "0"], ["0.0", "0.5", "DD", "0"], ["0.0", "0.7", "DD", "0"], ["0.0", "0.9", "DD", "0"], ["0.1", "0.0", "SparseDense", "0"], ["0.3", "0.0", "SparseDense", "0"], ["0.5", "0.0", "SparseDense", "0"], ["0.7", "0.0", "SparseDense", "0"], ["0.9", "0.0", "SparseDense", "0"], ["0.1", "0.0", "SparseDense", "1"], ["0.3", "0.0", "SparseDense", "1"], ["0.5", "0.0", "SparseDense", "1"], ["0.7", "0.0", "SparseDense", "1"], ["0.9", "0.0", "SparseDense", "1"], ["0.1", "0.0", "DD", "0"], ["0.3", "0.0", "DD", "0"], ["0.5", "0.0", "DD", "0"], ["0.7", "0.0", "DD", "0"], ["0.9", "0.0", "DD", "0"], ["0.1", "0.1", "SparseDense", "0"], ["0.3", "0.3", "SparseDense", "0"], ["0.5", "0.5", "SparseDense", "0"], ["0.7", "0.7", "SparseDense", "0"], ["0.9", "0.9", "SparseDense", "0"], ["0.1", "0.1", "SparseDense", "1"], ["0.3", "0.3", "SparseDense", "1"], ["0.5", "0.5", "SparseDense", "1"], ["0.7", "0.7", "SparseDense", "1"], ["0.9", "0.9", "SparseDense", "1"], ["0.1", "0.1", "DD", "0"], ["0.3", "0.3", "DD", "0"], ["0.5", "0.5", "DD", "0"], ["0.7", "0.7", "DD", "0"], ["0.9", "0.9", "DD", "0"]]
 
 seed = "1"
 repeats = 5
@@ -123,6 +123,12 @@ def random_run(list_runs):
             file.write(f'{result_line}\n')
             results.append(mean_metrics)
         return results
+
+def run_all():
+    run(run1, False)
+    run(run2, False)
+    run(run3, False)
+
 
 if __name__ == "__main__":
     run(list_runs=runs, warmup=False)
