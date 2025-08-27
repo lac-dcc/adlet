@@ -30,19 +30,15 @@ void run(const std::string &file_path, const bool propagate,
 
   auto startLoad = begin();
   for (auto t : g.inputs) {
-    if (!t->outputTensor) {
-      t->create_data(generateModes(t->numDims, sparse));
-      t->initialize_data();
-    } else {
-      /*t->create_data(generateModes(t->numDims, t->sizes, t->sparsities, true));*/
-      /*t->initialize_data();*/
-      t->create_data(generateModes(t->numDims, false));
-    }
+    t->create_data(generateModes(t->numDims, sparse));
+    t->initialize_data();
   }
+
+  for (auto node : g.nodes)
+    node->output->create_data(generateModes(node->output->numDims, false));
+
   end(startLoad, "load graph = ");
 
-  print_memory_usage();
-  g.get_tensor_sizes();
   std::cout << "ratio after = " << g.get_sparsity_ratio() << std::endl;
   const auto startComp = begin();
   g.compile();
@@ -50,11 +46,13 @@ void run(const std::string &file_path, const bool propagate,
   const auto startRun = begin();
   auto result = g.compute();
   end(startRun, "runtime = ");
-  print_dot(g, "teste.dot");
+  print_memory_usage();
+  g.get_tensor_sizes();
+  // print_dot(g, "test.dot");
 }
 
-void run_prop(const std::string &file_path, const double sparsity,
-        bool run_fw, bool run_lat, bool run_bw) {
+void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
+              bool run_lat, bool run_bw) {
   auto benchmark = readEinsumBenchmark(file_path);
 
   if (benchmark.path.empty() || benchmark.strings.empty() ||
@@ -70,11 +68,11 @@ void run_prop(const std::string &file_path, const double sparsity,
   if (run_fw) {
     g.run_propagation(FORWARD);
     std::cout << "fw_ratio = " << g.get_sparsity_ratio() << std::endl;
-  } 
+  }
   if (run_lat) {
     g.run_propagation(INTRA);
     std::cout << "lat_ratio = " << g.get_sparsity_ratio() << std::endl;
-  } 
+  }
   if (run_bw) {
     g.run_propagation(BACKWARD);
     std::cout << "bw_ratio = " << g.get_sparsity_ratio() << std::endl;
@@ -91,7 +89,7 @@ int benchmark_einsum(int argc, char *argv[]) {
                  "<run_fw> <run_lat> <run_bw> <random_seed>\n ";
     return 1;
   }
-  
+
   int param = 1;
   if (argc == 7) {
     const std::string file_path = argv[++param];

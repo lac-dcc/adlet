@@ -113,18 +113,22 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generateModes(int order, std::vector<int> sizes, std::vector<bitset> sparsities, bool sparse = false) {
+std::vector<taco::ModeFormatPack> generateModes(int order,
+                                                std::vector<int> sizes,
+                                                std::vector<bitset> sparsities,
+                                                bool sparse = false) {
   std::vector<taco::ModeFormatPack> modes;
   for (int j = 0; j < order; ++j) {
     if (!sparse)
       modes.push_back(taco::Dense);
     else {
-      modes.push_back(count_bits(sparsities[j], sizes[j]) != sizes[j] ? taco::Dense : taco::Sparse);
+      modes.push_back(count_bits(sparsities[j], sizes[j]) != sizes[j]
+                          ? taco::Dense
+                          : taco::Sparse);
     }
   }
   return modes;
 }
-
 
 std::vector<taco::ModeFormatPack> generateModes(int order,
                                                 bool sparse = false) {
@@ -145,7 +149,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
                 const std::vector<std::string> &contractionStrings,
                 const std::vector<std::pair<int, int>> &contractionInds,
                 const double sparsity = 0.5) {
-  std::vector<TensorPtr> tensors;
+  std::vector<TensorPtr> inputTensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
   // construct tensors based on tensorSizes
@@ -153,7 +157,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   for (auto dims : tensorSizes) {
     auto newTensor =
         std::make_shared<Tensor>(dims, "T" + std::to_string(ind++));
-    tensors.push_back(newTensor);
+    inputTensors.push_back(newTensor);
     tensorStack.push_back(newTensor);
   }
 
@@ -193,9 +197,8 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
     }
 
-    auto newTensor = std::make_shared<Tensor>(outputDims, sparsityVectors,
-                                              "O" + std::to_string(ind++));
-    tensors.push_back(newTensor);
+    auto newTensor = std::make_shared<Tensor>(
+        outputDims, sparsityVectors, "O" + std::to_string(ind++), true);
 
     ops.push_back(std::make_shared<Einsum>(
         std::vector<TensorPtr>{tensorStack[ind2], tensorStack[ind1]}, newTensor,
@@ -205,7 +208,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
     tensorStack.push_back(newTensor);
   }
 
-  return Graph::build_graph(tensors, tensorStack[0], ops);
+  return Graph::build_graph(inputTensors, tensorStack[0], ops);
 }
 
 EinsumBenchmark readEinsumBenchmark(const std::string &filename) {

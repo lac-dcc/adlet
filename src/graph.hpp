@@ -28,9 +28,10 @@ public:
 
   // constructor from sparsity vector (doesn't initialize tensor)
   Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
-         const std::string &n = "")
+         const std::string &n = "", const bool outputTensor = false)
       : name(n), sizes(sizes), sparsities(sparsities) {
     numDims = sizes.size();
+    this->outputTensor = outputTensor;
   }
   // constructor for empty output tensors
   Tensor(std::vector<int> sizes, const std::string &n = "")
@@ -628,7 +629,7 @@ public:
 
   void propagate_backward() {
     for (auto kv : outputDims) { // iterate over character: pair(inputInd,
-                                    // inputDim) map.
+                                 // inputDim) map.
       for (auto p : kv.second) {
         int inputInd = p.first;  // which of the inputs
         int inputDim = p.second; // which dimension

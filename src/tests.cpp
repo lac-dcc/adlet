@@ -1,7 +1,10 @@
+#include "dot.hpp"
 #include "einsum.hpp"
 #include "graph.hpp"
 #include "taco.h"
 #include "taco/format.h"
+#include "taco/index_notation/index_notation.h"
+#include "taco/tensor.h"
 #include "utils.hpp"
 #include <cassert>
 
@@ -164,10 +167,10 @@ void test_backward_prop() {
   std::vector<TensorPtr> inputs1{X1, X2};
   auto einsum1 =
       std::make_shared<Einsum>(inputs1, O1, std::string{"ik,kj->ij"});
-  auto einsum2 =
-      std::make_shared<Einsum>(std::vector<TensorPtr>{O1, X3}, O2, std::string{"ik,kj->ij"});
+  auto einsum2 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, X3}, O2,
+                                          std::string{"ik,kj->ij"});
 
-  auto g = Graph::build_graph({X1, X2,X3}, O2, {einsum1, einsum2});
+  auto g = Graph::build_graph({X1, X2, X3}, O2, {einsum1, einsum2});
   g.run_propagation(BACKWARD);
   X1->print_full_sparsity();
   X2->print_full_sparsity();
@@ -176,8 +179,9 @@ void test_backward_prop() {
   O1->print_full_sparsity();
   assert(X1->sparsities[0][1] == 1 && "Einsum: Backward propagation failed!");
   assert(X1->sparsities[0][0] == 0 && "Einsum: Backward propagation failed!");
-  // assert(X2->sparsities[1][0] == 1 && "Einsum: Backward propagation failed!");
-  // assert(X2->sparsities[1][1] == 0 && "Einsum: Backward propagation failed!");
+  // assert(X2->sparsities[1][0] == 1 && "Einsum: Backward propagation
+  // failed!"); assert(X2->sparsities[1][1] == 0 && "Einsum: Backward
+  // propagation failed!");
 }
 
 void test_einsum() {
@@ -644,12 +648,12 @@ void test_scalar_computation() {
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
-  auto O4 = std::make_shared<Tensor>(
-      std::vector<int>{},
-      std::vector<bitset>{}, "O4");
+  auto O4 =
+      std::make_shared<Tensor>(std::vector<int>{}, std::vector<bitset>{}, "O4");
   auto reduction =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O3}, O4, "ij->");
-  auto g = Graph::build_graph({X1, X2, W1}, O4, {matmul1, matmul2, matmul3, reduction});
+  auto g = Graph::build_graph({X1, X2, W1}, O4,
+                              {matmul1, matmul2, matmul3, reduction});
   g.run_propagation();
 
   X1->create_data({taco::Sparse, taco::Dense});
@@ -671,7 +675,8 @@ void test_scalar_computation() {
          X2->data->at({1, 0}) != 0 && X2->data->at({1, 1}) != 0);
   assert(O3->data->at({0, 0}) != 0 && O3->data->at({0, 1}) == 0 &&
          O3->data->at({1, 0}) == 0 && O3->data->at({1, 1}) == 0);
-  float* raw_data = static_cast<float*>(O4->data->getStorage().getValues().getData());
+  float *raw_data =
+      static_cast<float *>(O4->data->getStorage().getValues().getData());
   assert(O4->data->getStorage().getValues().getSize() == 1);
   assert(raw_data[0] != 0);
   std::cout << "test_scalar_compuatation() OK " << std::endl;
