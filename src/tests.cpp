@@ -144,6 +144,42 @@ void test_addition() {
   std::cout << "test_addition() OK " << std::endl;
 }
 
+void test_backward_prop() {
+  const int size = 2;
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X1");
+  auto X2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+  auto X3 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("11"), bitset("11")}, "X3");
+  auto O2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<bitset>{bitset("10"), bitset("01")}, "O2");
+  std::vector<TensorPtr> inputs1{X1, X2};
+  auto einsum1 =
+      std::make_shared<Einsum>(inputs1, O1, std::string{"ik,kj->ij"});
+  auto einsum2 =
+      std::make_shared<Einsum>(std::vector<TensorPtr>{O1, X3}, O2, std::string{"ik,kj->ij"});
+
+  auto g = Graph::build_graph({X1, X2,X3}, O2, {einsum1, einsum2});
+  g.run_propagation(BACKWARD);
+  X1->print_full_sparsity();
+  X2->print_full_sparsity();
+  std::cout << std::endl;
+  X3->print_full_sparsity();
+  O1->print_full_sparsity();
+  assert(X1->sparsities[0][1] == 1 && "Einsum: Backward propagation failed!");
+  assert(X1->sparsities[0][0] == 0 && "Einsum: Backward propagation failed!");
+  // assert(X2->sparsities[1][0] == 1 && "Einsum: Backward propagation failed!");
+  // assert(X2->sparsities[1][1] == 0 && "Einsum: Backward propagation failed!");
+}
+
 void test_einsum() {
   const int size = 2;
   auto X1 = std::make_shared<Tensor>(
@@ -675,6 +711,7 @@ void test_count_bits() {
 int main(int argc, char **argv) {
   test_propagation();
   test_addition();
+  test_backward_prop();
   test_einsum();
   test_einsum_transpose();
   test_einsum_multiop_1();
