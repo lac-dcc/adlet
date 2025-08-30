@@ -48,7 +48,7 @@ void run(const std::string &file_path, const bool propagate,
   end(startRun, "runtime = ");
   print_memory_usage();
   g.get_tensor_sizes();
-  // print_dot(g, "test.dot");
+  /*print_dot(g, "test.dot");*/
 }
 
 void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
@@ -65,6 +65,7 @@ void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
       buildTree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
   end(buildStart, "create graph = ");
 
+  std::cout << "initial_ratio = " << g.get_sparsity_ratio() << std::endl;
   if (run_fw) {
     g.run_propagation(FORWARD);
     std::cout << "fw_ratio = " << g.get_sparsity_ratio() << std::endl;
