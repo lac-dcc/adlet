@@ -1,9 +1,5 @@
-#include "../src/utils.hpp"
-#include "taco.h"
-#include "taco/format.h"
-#include <chrono>
-#include <iostream>
-#include <string>
+#include "benchmark_format.hpp"
+#include "../include/utils.hpp"
 
 double compute(taco::Tensor<float> &A, const taco::Tensor<float> &B,
                const taco::Tensor<float> &C) {
@@ -33,9 +29,9 @@ void run(const int rows, const int cols, const std::string out_format,
          const std::string left_format, const std::string right_format,
          double left_row_sparsity, double left_col_sparsity,
          double right_row_sparsity, double right_col_sparsity) {
-  taco::Format taco_left_format = getFormat(left_format);
-  taco::Format taco_right_format = getFormat(right_format);
-  taco::Format taco_out_format = getFormat(out_format);
+  taco::Format taco_left_format = get_format(left_format);
+  taco::Format taco_right_format = get_format(right_format);
+  taco::Format taco_out_format = get_format(out_format);
   auto A = taco::Tensor<float>({rows, cols}, taco_out_format);
   auto B = assembleTensor(rows, cols, left_row_sparsity, left_col_sparsity,
                           taco_left_format);

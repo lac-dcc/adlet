@@ -1,6 +1,7 @@
-#include "../src/dot.hpp"
-#include "../src/graph.hpp"
-#include "../src/utils.hpp"
+#include "benchmark_graph.hpp"
+#include "../include/graph.hpp"
+#include "../include/node.hpp"
+#include "../include/tensor.hpp"
 #include "taco.h"
 #include "taco/format.h"
 #include <memory>
@@ -368,7 +369,6 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
   g.get_tensor_sizes();
-  // print_dot(g);
 }
 
 void run(taco::Format format, bool propagate, float row_sparsity,
@@ -486,7 +486,6 @@ void run(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
-  print_dot(g);
 }
 
 void memtest(taco::Format format, bool propagate, float row_sparsity,
@@ -577,7 +576,6 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
   print_tensor_memory_usage(*O1->data, O1->name);
   print_tensor_memory_usage(*X->data, X->name);
   print_tensor_memory_usage(*W1->data, W1->name);
-  print_dot(g);
   write_kernel("memtest.c", *O1->data);
 }
 
@@ -597,13 +595,13 @@ int benchmark_graph(int argc, char *argv[]) {
   SEED = std::stoi(argv[++param]);
 
   if (graph_name == "bert") {
-    bert(getFormat(format), propagate, row_sparsity, col_sparsity);
+    bert(get_format(format), propagate, row_sparsity, col_sparsity);
   } else if (graph_name == "deepfm") {
-    deepFM(getFormat(format), propagate, row_sparsity, col_sparsity);
+    deepFM(get_format(format), propagate, row_sparsity, col_sparsity);
   } else if (graph_name == "mem_test") {
-    memtest(getFormat(format), propagate, row_sparsity, col_sparsity);
+    memtest(get_format(format), propagate, row_sparsity, col_sparsity);
   } else {
-    run(getFormat(format), propagate, row_sparsity, col_sparsity);
+    run(get_format(format), propagate, row_sparsity, col_sparsity);
   }
   return 0;
 }

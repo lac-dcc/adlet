@@ -1,12 +1,12 @@
-#include "../src/dot.hpp"
-#include "../src/einsum.hpp"
-#include "../src/utils.hpp"
+#include "../include/einsum.hpp"
+#include "../include/utils.hpp"
+
 #include "taco/format.h"
 
 void run(const std::string &file_path, const bool propagate,
-         const double sparsity, const bool sparse = true) {
+         const double sparsity, const bool sparse) {
 
-  auto benchmark = readEinsumBenchmark(file_path);
+  auto benchmark = read_einsum_benchmark(file_path);
 
   if (benchmark.path.empty() || benchmark.strings.empty() ||
       benchmark.sizes.empty()) {
@@ -15,7 +15,7 @@ void run(const std::string &file_path, const bool propagate,
   }
   const auto buildStart = begin();
   auto g =
-      buildTree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
+      build_tree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
   end(buildStart, "create graph = ");
 
   g.run_propagation(FORWARD);
@@ -30,12 +30,12 @@ void run(const std::string &file_path, const bool propagate,
 
   auto startLoad = begin();
   for (auto t : g.inputs) {
-    t->create_data(generateModes(t->numDims, sparse));
+    t->create_data(generate_modes(t->numDims, sparse));
     t->initialize_data();
   }
 
   for (auto node : g.nodes)
-    node->output->create_data(generateModes(node->output->numDims, false));
+    node->output->create_data(generate_modes(node->output->numDims, false));
 
   end(startLoad, "load graph = ");
 
@@ -48,12 +48,11 @@ void run(const std::string &file_path, const bool propagate,
   end(startRun, "runtime = ");
   print_memory_usage();
   g.get_tensor_sizes();
-  /*print_dot(g, "test.dot");*/
 }
 
 void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
               bool run_lat, bool run_bw) {
-  auto benchmark = readEinsumBenchmark(file_path);
+  auto benchmark = read_einsum_benchmark(file_path);
 
   if (benchmark.path.empty() || benchmark.strings.empty() ||
       benchmark.sizes.empty()) {
@@ -62,7 +61,7 @@ void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
   }
   const auto buildStart = begin();
   auto g =
-      buildTree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
+      build_tree(benchmark.sizes, benchmark.strings, benchmark.path, sparsity);
   end(buildStart, "create graph = ");
 
   std::cout << "initial_ratio = " << g.get_sparsity_ratio() << std::endl;

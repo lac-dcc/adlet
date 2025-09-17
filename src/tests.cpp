@@ -710,19 +710,110 @@ void test_count_bits() {
   std::cout << "test_count_bits() OK " << std::endl;
 }
 
+void testSizes() {
+
+  std::vector<int> dimSizes({1024, 1024, 1024});
+  taco::Tensor<float> A(dimSizes, {taco::Dense, taco::Dense, taco::Dense});
+
+  std::vector<float> sparsities({0.0, 0.0, 0.0});
+  /*fillTensor(A, dimSizes, sparsities);*/
+  print_tensor_memory_usage(A, "A");
+}
 int main(int argc, char **argv) {
-  test_propagation();
-  test_addition();
-  test_backward_prop();
-  test_einsum();
-  test_einsum_transpose();
-  test_einsum_multiop_1();
-  test_einsum_multiop_2();
-  compare_taco_matmul();
-  compare_taco_einsum();
-  test_get_sparsity_ratio();
-  test_init_data();
-  test_einsum_utils();
-  test_count_bits();
-  test_scalar_computation();
+  // testSizes();
+
+  /*test_propagation();*/
+  /*test_addition();*/
+  /*test_backward_prop();*/
+  /*test_einsum();*/
+  /*test_einsum_transpose();*/
+  /*test_einsum_multiop_1();*/
+  /*test_einsum_multiop_2();*/
+  /*compare_taco_matmul();*/
+  /*compare_taco_einsum();*/
+  /*test_get_sparsity_ratio();*/
+  /*test_init_data();*/
+  /*test_einsum_utils();*/
+  /*test_count_bits();*/
+  /*test_scalar_computation();*/
+
+  /*taco::Tensor<float> a({3, 3, 3}, taco::COO(3));*/
+  /*a.insert({0, 0, 0}, 1.0f);*/
+  /*a.pack();*/
+  /*taco::Tensor<float> b({3, 3, 3}, taco::COO(3));*/
+  /*b.insert({0, 1, 0}, 1.0f);*/
+  /*b.pack();*/
+  /*taco::Tensor<float> c({3, 3, 3}, taco::COO(3));*/
+  /*c.insert({0, 1, 0}, 1.0f);*/
+  /*c.pack();*/
+  /*taco::Tensor<float> O({3, 3}, taco::COO(2));*/
+  /*taco::IndexVar i, j, k;*/
+  /*O(i, j) = a(i, j, k) + b(i, j, k) + c(i, j, k);*/
+  /*O.evaluate();*/
+  /*std::cout << O.getSource() << std::endl;*/
+  /**/
+  /*taco::IndexVar i, j, k;*/
+  /*taco::Tensor<float> a({1024, 1024}, taco::dense);*/
+  /*taco::Tensor<float> T1({1024, 1024}, taco::Dense);*/
+  /*taco::Tensor<float> B({1024, 1024}, taco::CSR);*/
+  /*taco::Tensor<float> C({1024, 1024}, taco::Dense);*/
+  /*taco::Tensor<float> D({1024, 1024}, taco::Dense);*/
+  /**/
+  /*fill_tensor(B, 0.10, 0.10, 1024, 1024);*/
+  /*fill_tensor(C, 0.00, 0.00, 1024, 1024);*/
+  /*fill_tensor(D, 0.00, 0.00, 1024, 1024);*/
+  /*B.pack();*/
+  /*C.pack();*/
+  /*D.pack();*/
+  /*auto start = begin();*/
+  /*T1(i, j) = B(i, j) * C(i, j);*/
+  /*A(i, j) = T1(i, k) * D(k, j);*/
+  /*A.evaluate();*/
+  /*end(start, "(SD)DMM = ");*/
+
+  /*fill_tensor(B, 0.10, 0.10, 1024, 1024);*/
+  /*fill_tensor(C, 0.00, 0.00, 1024, 1024);*/
+  /*fill_tensor(D, 0.00, 0.00, 1024, 1024);*/
+  /*B.pack();*/
+  /*C.pack();*/
+  /*D.pack();*/
+  /*auto start = begin();*/
+  /*T1(i, j) = C(i, k) * D(k, j);*/
+  /*A(i, j) = B(i, j) * T1(i, j);*/
+  /*A.evaluate();*/
+  /*end(start, "S(DD)MM = ");*/
+
+  /*  fill_tensor(B, 0.1, 0.1, 1024, 1024);*/
+  /*  fill_tensor(C, 0.00, 0.00, 1024, 1024);*/
+  /*  fill_tensor(D, 0.00, 0.00, 1024, 1024);*/
+  /*  B.pack();*/
+  /*  C.pack();*/
+  /*  D.pack();*/
+  /*  auto start = begin();*/
+  /*  A(i, j) = B(i, j) * C(i, k) * D(k, j);*/
+  /*  A.evaluate();*/
+  /*  end(start, "SDDMM = ");*/
+  /*  std::cout << A.getSource() << std::endl;*/
+
+  int N = 256;
+  taco::Tensor<float> A({N, N, N}, {taco::Dense, taco::Dense, taco::Dense});
+  taco::Tensor<float> B({N, N, N}, {taco::Dense, taco::Dense, taco::Dense});
+  taco::Tensor<float> C({N}, {taco::Dense});
+  float ac = 0;
+  for (int i = 0; i < N; i++)
+    for (int j = 0; j < N; j++)
+      for (int k = 0; k < N; k++) {
+        A.insert({i, j, k}, ac);
+        B.insert({i, j, k}, ac);
+        ac += 1.0f;
+      }
+
+  taco::IndexVar i, j, k;
+  C(i) = A(i, j, k) * B(i, j, k);
+  std::cout << "compute" << std::endl;
+  auto start = begin();
+  C.evaluate();
+  end(start, "time = ");
+
+  std::cout << C << std::endl;
 }

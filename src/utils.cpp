@@ -1,13 +1,7 @@
 #pragma once
-#include "taco.h"
-#include <bitset>
+#include "../include/utils.hpp"
 #include <fstream>
-#include <iostream>
 #include <sys/resource.h>
-
-constexpr int MAX_SIZE = 2048;
-
-unsigned int SEED;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -48,7 +42,7 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   tensor.pack();
 }
 
-taco::Format getFormat(const std::string format) {
+taco::Format get_format(const std::string format) {
 
   taco::Format outFormat;
   if (format == "CSR")
@@ -142,7 +136,7 @@ end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
   std::cout << message << duration.count() << std::endl;
 }
 
-bool randomBool(double probability = 0.5) {
+bool randomBool(double probability) {
   static std::mt19937 gen(SEED); // Mersenne Twister
   std::bernoulli_distribution dist(probability);
   return dist(gen);

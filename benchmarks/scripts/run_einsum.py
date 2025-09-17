@@ -40,6 +40,7 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
     with open(f"result{sparsity}{seed}{n}.txt", "wt") as result_file:
         result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
         files = ["lm_batch_likelihood_brackets_3_16d.txt", "lm_batch_likelihood_sentence_3_12d.txt", "str_nw_mera_open_26.txt", "lm_batch_likelihood_sentence_4_8d.txt", "str_nw_ftps_open_30.txt", "str_matrix_chain_multiplication_100.txt", "str_nw_ftps_open_28.txt", "lm_batch_likelihood_sentence_4_4d.txt", "mc_2021_027.txt", "str_mps_varying_inner_product_200.txt", "str_nw_mera_closed_120.txt", "gm_queen5_5_3.wcsp.txt", "str_matrix_chain_multiplication_1000.txt",]
+        files = ["str_nw_ftps_open_30.txt"]
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}{file}"
             for format_str in ["sparse", "dense"]:

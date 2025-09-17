@@ -1,6 +1,6 @@
-#include "einsum.hpp"
-#include "format.hpp"
-#include "graph.hpp"
+#include "benchmark_einsum.hpp"
+#include "benchmark_format.hpp"
+#include "benchmark_graph.hpp"
 #include <iostream>
 
 int main(int argc, char *argv[]) {

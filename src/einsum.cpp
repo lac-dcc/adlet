@@ -1,18 +1,15 @@
 #pragma once
 
+#include "../include/einsum.hpp"
+#include "../include/graph.hpp"
+#include "../include/node.hpp"
+#include "../include/tensor.hpp"
+#include <fstream>
 #include <regex>
 
-#include "graph.hpp"
 #include "taco/format.h"
-#include "utils.hpp"
 
-struct EinsumBenchmark {
-  std::vector<std::pair<int, int>> path;
-  std::vector<std::string> strings;
-  std::vector<std::vector<int>> sizes;
-};
-
-std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
+std::vector<std::pair<int, int>> get_contraction_path(const std::string &line) {
   std::vector<std::pair<int, int>> result;
 
   size_t pos = 0;
@@ -28,7 +25,7 @@ std::vector<std::pair<int, int>> getContractionPath(const std::string &line) {
   return result;
 }
 
-std::vector<std::string> getContractionStrings(const std::string &line) {
+std::vector<std::string> get_contraction_strings(const std::string &line) {
   std::vector<std::string> result;
 
   size_t pos = 0;
@@ -41,7 +38,7 @@ std::vector<std::string> getContractionStrings(const std::string &line) {
   return result;
 }
 
-std::vector<std::vector<int>> getTensorSizes(const std::string &line) {
+std::vector<std::vector<int>> get_tensor_sizes(const std::string &line) {
   std::vector<std::vector<int>> result;
   std::regex tupleRegex(R"(\(([^()]*)\))");
   std::string s = line;
@@ -65,12 +62,12 @@ std::vector<std::vector<int>> getTensorSizes(const std::string &line) {
   return result;
 }
 
-std::string extractOutputs(std::string const &einsumString) {
+std::string extract_outputs(std::string const &einsumString) {
   int arrowPos = einsumString.find("->");
   return einsumString.substr(arrowPos + 2);
 }
 
-std::vector<std::string> extractInputs(std::string const &einsumString) {
+std::vector<std::string> extract_inputs(std::string const &einsumString) {
   std::vector<std::string> inputs;
   int arrowPos = einsumString.find("->");
   std::string lhs = einsumString.substr(0, arrowPos);
@@ -84,8 +81,8 @@ std::vector<std::string> extractInputs(std::string const &einsumString) {
 }
 
 std::unordered_map<char, int>
-constructSizeMap(std::vector<std::string> const &inputs,
-                 std::vector<std::vector<int>> const &tensorSizes) {
+construct_size_map(std::vector<std::string> const &inputs,
+                   std::vector<std::vector<int>> const &tensorSizes) {
   std::unordered_map<char, int> sizeMap;
 
   for (int i = 0; i < tensorSizes.size(); ++i) {
@@ -101,10 +98,10 @@ constructSizeMap(std::vector<std::string> const &inputs,
 std::vector<int> deduceOutputDims(std::string const &einsumString,
                                   std::vector<int> const &sizes1,
                                   std::vector<int> const &sizes2) {
-  std::string output = extractOutputs(einsumString);
-  std::vector<std::string> inputs = extractInputs(einsumString);
+  std::string output = extract_outputs(einsumString);
+  std::vector<std::string> inputs = extract_inputs(einsumString);
   std::unordered_map<char, int> sizeMap =
-      constructSizeMap(inputs, {sizes2, sizes1});
+      construct_size_map(inputs, {sizes2, sizes1});
   std::vector<int> outputSizes;
 
   for (auto indVar : output)
@@ -113,10 +110,10 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generateModes(int order,
-                                                std::vector<int> sizes,
-                                                std::vector<bitset> sparsities,
-                                                bool sparse = false) {
+std::vector<taco::ModeFormatPack> generate_modes(int order,
+                                                 std::vector<int> sizes,
+                                                 std::vector<bitset> sparsities,
+                                                 bool sparse) {
   std::vector<taco::ModeFormatPack> modes;
   for (int j = 0; j < order; ++j) {
     if (!sparse)
@@ -130,8 +127,7 @@ std::vector<taco::ModeFormatPack> generateModes(int order,
   return modes;
 }
 
-std::vector<taco::ModeFormatPack> generateModes(int order,
-                                                bool sparse = false) {
+std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse) {
 
   taco::ModeFormat format;
   if (sparse)
@@ -145,10 +141,10 @@ std::vector<taco::ModeFormatPack> generateModes(int order,
   return modes;
 }
 
-Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
-                const std::vector<std::string> &contractionStrings,
-                const std::vector<std::pair<int, int>> &contractionInds,
-                const double sparsity = 0.5) {
+Graph build_tree(const std::vector<std::vector<int>> &tensorSizes,
+                 const std::vector<std::string> &contractionStrings,
+                 const std::vector<std::pair<int, int>> &contractionInds,
+                 const double sparsity) {
   std::vector<TensorPtr> inputTensors;
   std::vector<TensorPtr> tensorStack;
   std::vector<OpNodePtr> ops;
@@ -211,7 +207,7 @@ Graph buildTree(const std::vector<std::vector<int>> &tensorSizes,
   return Graph::build_graph(inputTensors, tensorStack[0], ops);
 }
 
-EinsumBenchmark readEinsumBenchmark(const std::string &filename) {
+EinsumBenchmark read_einsum_benchmark(const std::string &filename) {
 
   EinsumBenchmark result;
   std::ifstream file(filename);
@@ -226,9 +222,9 @@ EinsumBenchmark readEinsumBenchmark(const std::string &filename) {
   std::getline(file, contractions);
   std::getline(file, sizes);
   file.close();
-  auto contractionPath = getContractionPath(path);
-  auto contractionStrings = getContractionStrings(contractions);
-  auto tensorSizes = getTensorSizes(sizes);
+  auto contractionPath = get_contraction_path(path);
+  auto contractionStrings = get_contraction_strings(contractions);
+  auto tensorSizes = get_tensor_sizes(sizes);
   result.sizes = tensorSizes;
   result.path = contractionPath;
   result.strings = contractionStrings;

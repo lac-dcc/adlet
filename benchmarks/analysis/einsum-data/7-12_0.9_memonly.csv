@@ -1,0 +1,19 @@
+file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size
+lm_batch_likelihood_sentence_4_4d.txt,sparse,0.9, 0, 0.821742, 0.821742, 0.0, 150.0358, 0.0, 0.0, 0.0, 7.37841
+lm_batch_likelihood_sentence_4_4d.txt,sparse,0.9, 1, 0.821742, 0.98922, 0.0009605948, 148.564, 0.0, 0.0, 0.0, 0.571556
+lm_batch_likelihood_sentence_4_4d.txt,dense,0.9, 0, 0.821742, 0.821742, 0.0, 149.4492, 0.0, 0.0, 0.0, 823.776
+str_matrix_chain_multiplication_1000.txt,sparse,0.9, 0, 0.783743, 0.783743, 0.0, 228.5244, 0.0, 0.0, 0.0, 18.1062
+str_matrix_chain_multiplication_1000.txt,sparse,0.9, 1, 0.783743, 0.976249, 0.007911926, 228.012, 0.0, 0.0, 0.0, 1.34521
+str_matrix_chain_multiplication_1000.txt,dense,0.9, 0, 0.783743, 0.783743, 0.0, 205.3784, 0.0, 0.0, 0.0, 29.3666
+str_mps_varying_inner_product_200.txt,sparse,0.9, 0, 0.980323, 0.980323, 0.0, 24.39054, 0.0, 0.0, 0.0, 0.901901
+str_mps_varying_inner_product_200.txt,sparse,0.9, 1, 0.980323, 0.993083, 0.001850146, 24.3663, 0.0, 0.0, 0.0, 0.15937
+str_mps_varying_inner_product_200.txt,dense,0.9, 0, 0.980323, 0.980323, 0.0, 21.50688, 0.0, 0.0, 0.0, 30.776
+gm_queen5_5_3.wcsp.txt,sparse,0.9, 0, 0.73893, 0.73893, 0.0, 1161.414, 0.0, 0.0, 0.0, 0.0228386
+gm_queen5_5_3.wcsp.txt,sparse,0.9, 1, 0.73893, 0.929657, 0.001680194, 1160.854, 0.0, 0.0, 0.0, 0.0136986
+gm_queen5_5_3.wcsp.txt,dense,0.9, 0, 0.73893, 0.73893, 0.0, 1159.468, 0.0, 0.0, 0.0, 3974.53
+str_nw_ftps_open_28.txt,sparse,0.9, 0, 0.77875, 0.77875, 0.0, 758.5882, 0.0, 0.0, 0.0, 0.0402145
+str_nw_ftps_open_28.txt,sparse,0.9, 1, 0.77875, 0.945991, 0.0003876738, 751.8, 0.0, 0.0, 0.0, 0.0316238
+str_nw_ftps_open_28.txt,dense,0.9, 0, 0.77875, 0.77875, 0.0, 420.9052, 0.0, 0.0, 0.0, 1049.67
+str_nw_mera_closed_120.txt,sparse,0.9, 0, 0.7974, 0.7974, 0.0, 109.3544, 0.0, 0.0, 0.0, 4.86769
+str_nw_mera_closed_120.txt,sparse,0.9, 1, 0.7974, 0.979629, 0.001352046, 105.6746, 0.0, 0.0, 0.0, 0.0276222
+str_nw_mera_closed_120.txt,dense,0.9, 0, 0.7974, 0.7974, 0.0, 102.9444, 0.0, 0.0, 0.0, 382.79

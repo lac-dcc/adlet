@@ -1,0 +1,19 @@
+file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size
+str_matrix_chain_multiplication_100.txt,sparse,0.3, 0, 0.337022, 0.337022, 0.0, 32.65948, 0.0, 0.0, 0.0, 48.2357
+str_matrix_chain_multiplication_100.txt,sparse,0.3, 1, 0.337022, 0.456109, 0.0008225564, 32.33158, 0.0, 0.0, 0.0, 38.2192
+str_matrix_chain_multiplication_100.txt,dense,0.3, 0, 0.337022, 0.337022, 0.0, 31.30432, 0.0, 0.0, 0.0, 35.6463
+str_nw_mera_open_26.txt,sparse,0.3, 0, 0.448267, 0.448267, 0.0, 86.09288, 0.0, 0.0, 0.0, 303.31
+str_nw_mera_open_26.txt,sparse,0.3, 1, 0.448267, 0.604826, 0.0003211806, 82.6735, 0.0, 0.0, 0.0, 244.679
+str_nw_mera_open_26.txt,dense,0.3, 0, 0.448267, 0.448267, 0.0, 84.36734, 0.0, 0.0, 0.0, 289.287
+lm_batch_likelihood_sentence_4_8d.txt,sparse,0.3, 0, 0.436689, 0.436689, 0.0, 4291.186, 0.0, 0.0, 0.0, 18167.1
+lm_batch_likelihood_sentence_4_8d.txt,sparse,0.3, 1, 0.436689, 0.638571, 0.0009724223999999999, 3654.948, 0.0, 0.0, 0.0, 5461.11
+lm_batch_likelihood_sentence_4_8d.txt,dense,0.3, 0, 0.436689, 0.436689, 0.0, 4282.822, 0.0, 0.0, 0.0, 17747.7
+str_nw_ftps_open_30.txt,sparse,0.3, 0, 0.192687, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+str_nw_ftps_open_30.txt,sparse,0.3, 1, 0.192687, 0.0, 0.0004153596, 0.0, 0.0, 0.0, 0.0, 0.0
+str_nw_ftps_open_30.txt,dense,0.3, 0, 0.192687, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+lm_batch_likelihood_brackets_3_16d.txt,sparse,0.3, 0, 0.454914, 0.454914, 0.0, 1596.33, 0.0, 0.0, 0.0, 4067.2
+lm_batch_likelihood_brackets_3_16d.txt,sparse,0.3, 1, 0.454914, 0.627428, 0.0004205494, 1524.82, 0.0, 0.0, 0.0, 2821.95
+lm_batch_likelihood_brackets_3_16d.txt,dense,0.3, 0, 0.454914, 0.454914, 0.0, 1580.084, 0.0, 0.0, 0.0, 7561.61
+lm_batch_likelihood_sentence_3_12d.txt,sparse,0.3, 0, 0.458798, 0.458798, 0.0, 157.005, 0.0, 0.0, 0.0, 532.154
+lm_batch_likelihood_sentence_3_12d.txt,sparse,0.3, 1, 0.458798, 0.61347, 0.000410669, 149.482, 0.0, 0.0, 0.0, 370.335
+lm_batch_likelihood_sentence_3_12d.txt,dense,0.3, 0, 0.458798, 0.458798, 0.0, 156.8062, 0.0, 0.0, 0.0, 745.588
