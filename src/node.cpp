@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../include/node.hpp"
-#include "taco.h"
 #include "taco/format.h"
 #include "taco/parser/einsum_parser.h"
 
