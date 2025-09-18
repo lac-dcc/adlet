@@ -11,7 +11,7 @@ public:
   static Graph build_graph(std::vector<TensorPtr> inputs, TensorPtr out,
                            const std::vector<OpNodePtr> &ops);
 
-  ~Graph();
+  ~Graph() = default;
 
   void run_propagation();
   void run_propagation(Direction dir);

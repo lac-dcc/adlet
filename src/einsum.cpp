@@ -1,5 +1,3 @@
-#pragma once
-
 #include "../include/einsum.hpp"
 #include "../include/graph.hpp"
 #include "../include/node.hpp"
@@ -124,20 +122,6 @@ std::vector<taco::ModeFormatPack> generate_modes(int order,
                           : taco::Sparse);
     }
   }
-  return modes;
-}
-
-std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse) {
-
-  taco::ModeFormat format;
-  if (sparse)
-    format = taco::Sparse;
-  else
-    format = taco::Dense;
-
-  std::vector<taco::ModeFormatPack> modes;
-  for (int j = 0; j < order; ++j)
-    modes.push_back(format);
   return modes;
 }
 

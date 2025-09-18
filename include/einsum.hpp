@@ -21,10 +21,6 @@ construct_size_map(std::vector<std::string> const &inputs,
 std::vector<int> deduceOutputDims(std::string const &einsumString,
                                   std::vector<int> const &sizes1,
                                   std::vector<int> const &sizes2);
-std::vector<taco::ModeFormatPack>
-generate_modes(int order, std::vector<int> sizes,
-               std::vector<std::bitset<MAX_SIZE>> sparsities,
-               bool sparse = false);
 std::vector<taco::ModeFormatPack> generate_modes(int order,
                                                  bool sparse = false);
 EinsumBenchmark read_einsum_benchmark(const std::string &filename);

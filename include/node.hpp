@@ -13,6 +13,7 @@ public:
   virtual void print_sparsity() = 0;
   virtual std::string op_type() const = 0;
   virtual void compute() = 0;
+  ~OpNode() = default;
 };
 
 class Add : public OpNode {
@@ -25,6 +26,7 @@ public:
   void print_sparsity() override;
   std::string op_type() const override;
   void compute() override;
+  ~Add() = default;
 };
 
 using OpNodePtr = std::shared_ptr<OpNode>;
@@ -36,6 +38,7 @@ public:
   std::vector<std::string> tensorIndicesVector;
   std::unordered_map<char, std::vector<std::pair<int, int>>> outputDims;
   std::unordered_map<char, std::vector<std::pair<int, int>>> reductionDims;
+  ~Einsum() = default;
 
   Einsum(std::vector<TensorPtr> inputs, TensorPtr Out, std::string expression);
 
@@ -45,7 +48,6 @@ public:
   char get_tensor_ind_var(TensorPtr tensor, int indDimension);
 
   int get_tensor_char_ind(TensorPtr tensor, char indexVar);
-  void propagate_forward();
   bitset or_all_operands_add(Add *op, int inputInd, int inputDim);
 
   bitset and_all_operands_einsum(Einsum *einsumOp, int inputInd, int inputDim);
@@ -55,15 +57,18 @@ public:
   bitset propagate_intra_multiop(OpNodePtr op, int inputInd, int inputDim);
 
   bitset propagate_intra_dimension(int inputInd, int inputDim, char indexChar);
-  void propagate_intra();
   bitset compute_multiop_einsum_sparsity(Einsum *opPtr, int inputInd,
                                          int inputDim);
 
   bitset compute_multiop_add_sparsity(Add *opPtr, int inputInd, int inputDim);
   bitset compute_multiop_sparsity(OpNode *opPtr, int inputInd, int inputDim);
-  void propagate_backward();
-  void set_expression() override;
+
   void propagate(Direction dir) override;
+  void propagate_forward();
+  void propagate_intra();
+  void propagate_backward();
+
+  void set_expression() override;
   void print() override;
   void print_sparsity() override;
   std::string op_type() const override;

@@ -2,8 +2,8 @@
 #include "../include/graph.hpp"
 #include "../include/node.hpp"
 #include "../include/tensor.hpp"
+#include "../include/utils.hpp"
 #include "taco.h"
-#include "taco/format.h"
 #include <memory>
 #include <string>
 
@@ -216,7 +216,6 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
   std::cout << "compilation = " << compilationSecs.count() << std::endl;
   std::cout << "runtime = " << runtimeSecs.count() << std::endl;
   print_memory_usage();
-  // print_dot(g);
 }
 
 void bert(taco::Format format, bool propagate, float row_sparsity,

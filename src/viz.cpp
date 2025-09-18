@@ -1,11 +1,9 @@
-#pragma once
-
-#include "graph.hpp"
+#include "../include/viz.hpp"
 #include <fstream>
 #include <memory>
 #include <string>
 
-std::string getColor(std::shared_ptr<Tensor> tensor, bool shouldColor) {
+std::string get_color(std::shared_ptr<Tensor> tensor, bool shouldColor) {
   std::string color = std::string("black");
 
   if (!shouldColor)
@@ -24,8 +22,7 @@ std::string getColor(std::shared_ptr<Tensor> tensor, bool shouldColor) {
   return color;
 }
 
-void print_dot(const Graph &graph, std::string file_name = "graph.dot",
-               bool colors = true) {
+void write_dot(const Graph &graph, std::string file_name, bool colors) {
   std::ofstream file(file_name);
   file << "digraph G {\n";
   file << "  rankdir=LR;\n";
@@ -46,9 +43,8 @@ void print_dot(const Graph &graph, std::string file_name = "graph.dot",
 
     for (const auto &input : op->inputs) {
       file << "  " << getID(input.get()) << " [label=\""
-           << input->data->getName()
-           << "\", shape=ellipse, penwidth=2, color=" << getColor(input, colors)
-           << "];\n";
+           << input->data->getName() << "\", shape=ellipse, penwidth=2, color="
+           << get_color(input, colors) << "];\n";
       file << "  " << getID(input.get()) << " -> " << opID << ";\n";
     }
 

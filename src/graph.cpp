@@ -1,6 +1,18 @@
-#pragma once
-
 #include "../include/graph.hpp"
+Graph Graph::build_graph(std::vector<TensorPtr> inputs, TensorPtr out,
+                         const std::vector<OpNodePtr> &ops) {
+  Graph g;
+  g.inputs = inputs;
+  g.output = out;
+  g.nodes = ops;
+  for (auto op : ops) {
+    for (auto input : op->inputs) {
+      input->inputOps.push_back(op);
+    }
+    op->output->outputOp = op;
+  }
+  return g;
+}
 
 void Graph::run_propagation() {
   run_propagation(Direction::FORWARD);

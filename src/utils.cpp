@@ -1,7 +1,8 @@
-#pragma once
 #include "../include/utils.hpp"
 #include <fstream>
 #include <sys/resource.h>
+
+unsigned int SEED = 123;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -124,12 +125,12 @@ void write_kernel(const std::string &filename,
   file.close();
 }
 
-inline std::chrono::time_point<std::chrono::high_resolution_clock> begin() {
+std::chrono::time_point<std::chrono::high_resolution_clock> begin() {
   return std::chrono::high_resolution_clock::now();
 }
 
-inline void
-end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+void end(
+    const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
     const std::string &message) {
   auto stop = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double> duration{stop - start};
@@ -140,4 +141,18 @@ bool randomBool(double probability) {
   static std::mt19937 gen(SEED); // Mersenne Twister
   std::bernoulli_distribution dist(probability);
   return dist(gen);
+}
+
+std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse) {
+
+  taco::ModeFormat format;
+  if (sparse)
+    format = taco::Sparse;
+  else
+    format = taco::Dense;
+
+  std::vector<taco::ModeFormatPack> modes;
+  for (int j = 0; j < order; ++j)
+    modes.push_back(format);
+  return modes;
 }

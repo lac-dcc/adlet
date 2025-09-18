@@ -1,5 +1,4 @@
 #include "../include/tensor.hpp"
-#include "../include/utils.hpp"
 
 void Tensor::create_data(const double threshold) {
   taco::ModeFormat sparse = taco::Sparse;

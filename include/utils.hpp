@@ -10,7 +10,7 @@ enum Direction { FORWARD, INTRA, BACKWARD };
 
 size_t count_bits(bitset A, int pos);
 
-unsigned int SEED;
+extern unsigned int SEED;
 
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
@@ -29,9 +29,11 @@ void print_memory_usage();
 void write_kernel(const std::string &filename,
                   const taco::Tensor<float> &compiledOut);
 
-inline std::chrono::time_point<std::chrono::high_resolution_clock> begin();
+std::chrono::time_point<std::chrono::high_resolution_clock> begin();
 
-inline void
-end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
+void end(
+    const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
     const std::string &message);
+
 bool randomBool(double probability = 0.5);
+std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse);

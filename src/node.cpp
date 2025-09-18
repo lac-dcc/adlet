@@ -1,8 +1,14 @@
-#pragma once
-
 #include "../include/node.hpp"
 #include "taco/format.h"
 #include "taco/parser/einsum_parser.h"
+
+Add::Add(std::vector<TensorPtr> inputs, TensorPtr &Out) {
+  this->inputs = inputs;
+  this->output = Out;
+  this->output->outputTensor = true;
+  for (auto &input : inputs)
+    input->numOps++;
+}
 
 void Add::set_expression() {
   std::vector<taco::IndexVar> inds(output->numDims);
@@ -179,6 +185,44 @@ void Einsum::propagate_forward() {
   }
 }
 
+void Einsum::propagate_intra() {
+  for (auto kv : reductionDims) { // iterate over character: pair(inputInd,
+                                  // inputDim) map.
+    for (auto p : kv.second) {
+      int inputInd = p.first;  // which of the inputs
+      int inputDim = p.second; // which dimension
+      inputs[inputInd]->sparsities[inputDim] &=
+          propagate_intra_dimension(inputInd, inputDim, kv.first);
+    }
+  }
+}
+
+void Einsum::propagate_backward() {
+  for (auto kv : outputDims) { // iterate over character: pair(inputInd,
+                               // inputDim) map.
+    for (auto p : kv.second) {
+      int inputInd = p.first;  // which of the inputs
+      int inputDim = p.second; // which dimension
+      inputs[inputInd]->sparsities[inputDim] &=
+          propagate_intra_dimension(inputInd, inputDim, kv.first);
+    }
+  }
+}
+
+void Einsum::propagate(Direction dir) {
+  switch (dir) {
+  case FORWARD:
+    propagate_forward();
+    break;
+  case INTRA:
+    if (inputs.size() >= 2)
+      propagate_intra();
+    break;
+  case BACKWARD:
+    propagate_backward();
+    break;
+  }
+}
 // op: pointer to Add
 // inputInd: the location of the input propagating to in THIS Einsum
 // inputDim: the dim of the input propagating to in THIS Einsum
@@ -278,18 +322,6 @@ bitset Einsum::propagate_intra_dimension(int inputInd, int inputDim,
   return inputBitset;
 }
 
-void Einsum::propagate_intra() {
-  for (auto kv : reductionDims) { // iterate over character: pair(inputInd,
-                                  // inputDim) map.
-    for (auto p : kv.second) {
-      int inputInd = p.first;  // which of the inputs
-      int inputDim = p.second; // which dimension
-      inputs[inputInd]->sparsities[inputDim] &=
-          propagate_intra_dimension(inputInd, inputDim, kv.first);
-    }
-  }
-}
-
 bitset Einsum::compute_multiop_einsum_sparsity(Einsum *opPtr, int inputInd,
                                                int inputDim) {
   char indexVar = opPtr->tensorIndicesVector[inputInd][inputDim];
@@ -331,33 +363,6 @@ bitset Einsum::compute_multiop_sparsity(OpNode *opPtr, int inputInd,
   }
 
   return inputBitset;
-}
-
-void Einsum::propagate_backward() {
-  for (auto kv : outputDims) { // iterate over character: pair(inputInd,
-                               // inputDim) map.
-    for (auto p : kv.second) {
-      int inputInd = p.first;  // which of the inputs
-      int inputDim = p.second; // which dimension
-      inputs[inputInd]->sparsities[inputDim] &=
-          propagate_intra_dimension(inputInd, inputDim, kv.first);
-    }
-  }
-}
-
-void Einsum::propagate(Direction dir) {
-  switch (dir) {
-  case FORWARD:
-    propagate_forward();
-    break;
-  case INTRA:
-    if (inputs.size() >= 2)
-      propagate_intra();
-    break;
-  case BACKWARD:
-    propagate_backward();
-    break;
-  }
 }
 
 void Einsum::print() {
