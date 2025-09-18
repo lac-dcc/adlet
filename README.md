@@ -25,9 +25,29 @@ SPA is built on top of the [Tensor Algebra Compiler](https://github.com/tensor-c
 1. Clone and build `taco`
 2. Clone SPA
 ```bash
-  git clone https://github.com/lac-dcc/adlet/tree/main
-  mkdir build && cd build
-  cmake -G Ninja ../ && ninja
+  $ git clone https://github.com/lac-dcc/adlet/tree/main
 ```
+
+3. Build
+```bash
+  $ mkdir build && cd build
+  $ cmake -G Ninja ../ && ninja
+```
+
 ### Running tests
+
+Once built, you can run the test files:
+```bash
+$ ./tests
+```
+
+### Contributing
+
+You need [`pre-commit`](https://pre-commit.com/) for contributing to the project.
+
+After installed, run:
+
+```bash
+$ pre-commit install
+```
 
