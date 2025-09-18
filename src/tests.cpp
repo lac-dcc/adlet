@@ -1,11 +1,13 @@
-#include "dot.hpp"
-#include "einsum.hpp"
-#include "graph.hpp"
+#include "../include/tests.hpp"
+#include "../include/einsum.hpp"
+#include "../include/graph.hpp"
+#include "../include/node.hpp"
+#include "../include/tensor.hpp"
+#include "../include/utils.hpp"
 #include "taco.h"
 #include "taco/format.h"
 #include "taco/index_notation/index_notation.h"
 #include "taco/tensor.h"
-#include "utils.hpp"
 #include <cassert>
 
 void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
@@ -34,7 +36,6 @@ bool is_same(taco::Tensor<float> &a, taco::Tensor<float> &b,
     auto diff = a.at(index) - b.at(index);
     diff = diff < 0 ? diff * -1 : diff;
     if (diff > 1e-5) {
-      // std::cout << index[0] << ", " << index[1] << ": " << diff << std::endl;
       return false;
     }
   }
@@ -179,9 +180,6 @@ void test_backward_prop() {
   O1->print_full_sparsity();
   assert(X1->sparsities[0][1] == 1 && "Einsum: Backward propagation failed!");
   assert(X1->sparsities[0][0] == 0 && "Einsum: Backward propagation failed!");
-  // assert(X2->sparsities[1][0] == 1 && "Einsum: Backward propagation
-  // failed!"); assert(X2->sparsities[1][1] == 0 && "Einsum: Backward
-  // propagation failed!");
 }
 
 void test_einsum() {
@@ -609,7 +607,7 @@ void test_einsum_utils() {
   tensorSizes.push_back({16, 15, 16, 13});
   tensorSizes.push_back({10, 9, 10, 17});
 
-  auto graph = buildTree(tensorSizes, contractionStrings, contractionInds);
+  auto graph = build_tree(tensorSizes, contractionStrings, contractionInds);
   assert(graph.inputs.size() == tensorSizes.size());
   assert(graph.nodes.size() == 4);
   std::cout << "test_einsum_utils() OK " << std::endl;
@@ -698,7 +696,7 @@ void test_init_data() {
     }
 
     auto tmpVec = std::make_shared<Tensor>(s, bitVectors);
-    tmpVec->create_data(generateModes(s.size()));
+    tmpVec->create_data(generate_modes(s.size()));
     tmpVec->initialize_data();
   }
   std::cout << "test_init_data() OK " << std::endl;
@@ -710,7 +708,18 @@ void test_count_bits() {
   std::cout << "test_count_bits() OK " << std::endl;
 }
 
+void testSizes() {
+
+  std::vector<int> dimSizes({1024, 1024, 1024});
+  taco::Tensor<float> A(dimSizes, {taco::Dense, taco::Dense, taco::Dense});
+
+  std::vector<float> sparsities({0.0, 0.0, 0.0});
+  print_tensor_memory_usage(A, "A");
+}
+
 int main(int argc, char **argv) {
+  testSizes();
+
   test_propagation();
   test_addition();
   test_backward_prop();

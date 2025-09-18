@@ -13,19 +13,41 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
-add_executable(adlet src/main.cpp src/graph.hpp)
-add_executable(tests src/tests.cpp src/graph.hpp)
-add_executable(benchmark benchmarks/main.cpp src/graph.hpp)
+add_library(adlet_lib
+    src/graph.cpp
+    src/node.cpp
+    src/tensor.cpp
+    src/einsum.cpp
+    src/utils.cpp
+    src/viz.cpp
+)
 
-target_link_directories(benchmark PRIVATE ../taco/build/lib)
+target_include_directories(adlet_lib
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+        ../taco/include
+)
+
+
+add_executable(adlet src/main.cpp include/)
+add_executable(tests src/tests.cpp include/)
+add_executable(benchmark
+    benchmarks/benchmark.cpp
+    benchmarks/benchmark_graph.cpp
+    benchmarks/benchmark_einsum.cpp
+    benchmarks/benchmark_format.cpp
+)
+
+target_include_directories(adlet_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(adlet PRIVATE adlet_lib taco)
+target_link_libraries(tests PRIVATE adlet_lib taco)
+target_link_libraries(benchmark PRIVATE adlet_lib taco)
+
+
+target_include_directories(adlet PRIVATE ../taco/include)
+target_include_directories(tests PRIVATE ../taco/include)
 target_include_directories(benchmark PRIVATE ../taco/include)
 
 target_link_directories(adlet PRIVATE ../taco/build/lib)
-target_include_directories(adlet PRIVATE ../taco/include)
-
 target_link_directories(tests PRIVATE ../taco/build/lib)
-target_include_directories(tests PRIVATE ../taco/include)
-
-target_link_libraries(adlet taco)
-target_link_libraries(tests taco)
-target_link_libraries(benchmark taco)
+target_link_directories(benchmark PRIVATE ../taco/build/lib)
