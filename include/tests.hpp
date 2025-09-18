@@ -1,7 +1,5 @@
 #pragma once
 
-void testSizes();
-
 void test_propagation();
 void test_addition();
 void test_backward_prop();
