@@ -1,11 +1,13 @@
 
 ## Sparsity Propagation Analysis
 
+```ascii
 ██████ ██████ ██████
 █····· █····█ █····█
 ██████ ██████ ██████
 ·····█ █····· █····█
 ██████ █····· █····█
+```
 
 ### About
 This repository implements the Sparsity Propagation Analysis (SPA).
