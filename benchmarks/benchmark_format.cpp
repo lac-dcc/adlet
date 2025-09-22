@@ -60,12 +60,18 @@ void show_sizes(const std::string format, int rank, std::vector<int> sizes,
     sparsity_vector.push_back(
         generate_sparsity_vector(sparsities[i], sizes[i]));
   }
-  auto tensor = std::make_shared<Tensor>(sizes, sparsity_vector);
+  auto tensor =
+      std::make_shared<Tensor>(sizes, sparsity_vector, "tensor", false);
   tensor->create_data(get_format(format));
   tensor->fill_tensor();
+  tensor->sparsities = sparsity_vector;
+
   std::cout << format << "," << rank << ",";
   for (int i = 0; i < rank; i++) {
-    std::cout << sizes[i] << "," << sparsities[i] << ",";
+    std::cout << sizes[i] << ",";
+  }
+  for (int i = 0; i < rank; i++) {
+    std::cout << sparsities[i] << ",";
   }
   std::cout << get_tensor_memory_usage(*(tensor->data)) << ","
             << get_memory_usage_mb() << std::endl;
