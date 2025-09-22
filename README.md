@@ -29,6 +29,9 @@ Furthermore, the analysis is not limited to matrices or matrix multiplication. I
 SPA is built on top of the [Tensor Algebra Compiler](https://github.com/tensor-compiler/taco/tree/0e79acb56cb5f3d1785179536256e206790b2a9e). The project expects the `taco` library to be installed in `../taco` relative to the root directory.
 
 The project was implemented using [Clang 14](https://releases.llvm.org/14.0.0/tools/clang/docs/ReleaseNotes.html)
+Build Dependencies:
+- CMake
+- Ninja
 
 ## How to build
 

@@ -81,9 +81,7 @@ void Tensor::create_data(taco::Format format) {
 void Tensor::fill_tensor() {
   std::vector<int> positions;
   std::vector<std::vector<int>> coords;
-  std::cout << "start" << std::endl;
   this->gen_coord(0, coords, positions);
-  std::cout << "coords generated" << std::endl;
   for (auto coord : coords) {
     float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     this->data->insert(coord, val);
