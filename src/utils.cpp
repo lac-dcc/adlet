@@ -104,9 +104,9 @@ double get_memory_usage_mb() {
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
 #ifdef __APPLE__
-  return usage.ru_maxrss / (1024.0 * 1024.0); // bytes → MB
+  return usage.ru_maxrss / (1024.0 * 1024.0); // bytes -> MB
 #else
-  return usage.ru_maxrss / 1024.0; // KB → MB
+  return usage.ru_maxrss / 1024.0; // KB -> MB
 #endif
 }
 

@@ -86,6 +86,7 @@ void Tensor::fill_tensor() {
     float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
     this->data->insert(coord, val);
   }
+  this->data->pack();
 }
 
 void Tensor::gen_coord(size_t d, std::vector<std::vector<int>> &indices,
