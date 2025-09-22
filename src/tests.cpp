@@ -9,6 +9,7 @@
 #include "taco/index_notation/index_notation.h"
 #include "taco/tensor.h"
 #include <cassert>
+#include <cstddef>
 
 void print_matrix(taco::Tensor<float> &tensor, std::vector<int> sizes) {
   assert(sizes.size() == 2 && "Tensor must be a matrix to call this method");
@@ -703,6 +704,38 @@ void test_count_bits() {
   std::cout << "test_count_bits() OK " << std::endl;
 }
 
+void test_fill_tensor() {
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{4, 4},
+      std::vector<bitset>{bitset("1001"), bitset("1100")});
+  X1->create_data();
+  X1->fill_tensor();
+  size_t nnz = 0;
+  for (auto coord : *(X1->data)) {
+    float val = X1->data->at(coord.first.toVector());
+    if (val != 0.0f) {
+      nnz++;
+    }
+  }
+  assert(nnz == 4);
+  nnz = 0;
+
+  X1 = std::make_shared<Tensor>(
+      std::vector<int>{4, 4, 4},
+      std::vector<bitset>{bitset("1001"), bitset("1100"), bitset("1011")});
+
+  X1->create_data();
+  X1->fill_tensor();
+  for (auto coord : *(X1->data)) {
+    float val = X1->data->at(coord.first.toVector());
+    if (val != 0.0f) {
+      nnz++;
+    }
+  }
+  assert(nnz == 12);
+  std::cout << "test_fill_tensor() OK " << std::endl;
+}
+
 int main(int argc, char **argv) {
   test_propagation();
   test_addition();
@@ -718,4 +751,5 @@ int main(int argc, char **argv) {
   test_einsum_utils();
   test_count_bits();
   test_scalar_computation();
+  test_fill_tensor();
 }
