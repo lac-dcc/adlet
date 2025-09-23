@@ -1,6 +1,5 @@
 #pragma once
 #include "taco/format.h"
-#include <memory>
 
 void deepFM(taco::Format format, bool propagate, float row_sparsity,
             float col_sparsity);

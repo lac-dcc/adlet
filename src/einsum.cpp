@@ -108,10 +108,9 @@ std::vector<int> deduceOutputDims(std::string const &einsumString,
   return outputSizes;
 }
 
-std::vector<taco::ModeFormatPack> generate_modes(int order,
-                                                 std::vector<int> sizes,
-                                                 std::vector<bitset> sparsities,
-                                                 bool sparse) {
+std::vector<taco::ModeFormatPack>
+generate_modes(int order, std::vector<int> sizes,
+               std::vector<SparsityVector> sparsities, bool sparse) {
   std::vector<taco::ModeFormatPack> modes;
   for (int j = 0; j < order; ++j) {
     if (!sparse)
@@ -154,14 +153,14 @@ Graph build_tree(const std::vector<std::vector<int>> &tensorSizes,
 
     bool prune = false;
     if (!t1->outputTensor) {
-      std::vector<bitset> sparsityVectors;
+      std::vector<SparsityVector> sparsityVectors;
       for (auto dim : t1->sizes) {
         sparsityVectors.push_back(generate_sparsity_vector(sparsity, dim));
       }
       t1->sparsities = sparsityVectors;
       prune = true;
     } else if (!t2->outputTensor && !prune) {
-      std::vector<bitset> sparsityVectors;
+      std::vector<SparsityVector> sparsityVectors;
       for (auto dim : t2->sizes) {
         sparsityVectors.push_back(generate_sparsity_vector(sparsity, dim));
       }
@@ -172,7 +171,7 @@ Graph build_tree(const std::vector<std::vector<int>> &tensorSizes,
         deduceOutputDims(contractionStrings[i], tensorStack[ind1]->sizes,
                          tensorStack[ind2]->sizes);
 
-    std::vector<bitset> sparsityVectors;
+    std::vector<SparsityVector> sparsityVectors;
     for (auto dim : outputDims) {
       sparsityVectors.push_back(generate_sparsity_vector(0.0, dim));
     }

@@ -16,112 +16,112 @@ void deepFM(taco::Format format, bool propagate, float row_sparsity,
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{32, 100},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 100)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 100)},
       "X1");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{100, 256},
-      std::vector<bitset>{generate_sparsity_vector(0, 100),
-                          generate_sparsity_vector(col_sparsity, 256)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 100),
+                                  generate_sparsity_vector(col_sparsity, 256)},
       "W1");
 
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{100, 8},
-      std::vector<bitset>{generate_sparsity_vector(0, 100),
-                          generate_sparsity_vector(col_sparsity, 8)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 100),
+                                  generate_sparsity_vector(col_sparsity, 8)},
       "W2");
 
   auto W3 = std::make_shared<Tensor>(
       std::vector<int>{100, 8},
-      std::vector<bitset>{generate_sparsity_vector(0, 100),
-                          generate_sparsity_vector(col_sparsity, 8)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 100),
+                                  generate_sparsity_vector(col_sparsity, 8)},
       "W3");
 
   auto W4 = std::make_shared<Tensor>(
       std::vector<int>{8, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 8),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 8),
+                                  generate_sparsity_vector(0, 1)},
       "W4");
 
   auto W5 = std::make_shared<Tensor>(
       std::vector<int>{100, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 100),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 100),
+                                  generate_sparsity_vector(0, 1)},
       "W5");
 
   auto W6 = std::make_shared<Tensor>(
       std::vector<int>{256, 128},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, 256),
-                          generate_sparsity_vector(col_sparsity, 128)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, 256),
+                                  generate_sparsity_vector(col_sparsity, 128)},
       "W6");
 
   auto W7 = std::make_shared<Tensor>(
       std::vector<int>{128, 64},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, 128),
-                          generate_sparsity_vector(col_sparsity, 64)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, 128),
+                                  generate_sparsity_vector(col_sparsity, 64)},
       "W7");
 
   auto W8 = std::make_shared<Tensor>(
       std::vector<int>{64, 1},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, 64),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, 64),
+                                  generate_sparsity_vector(0, 1)},
       "W8");
 
   auto outputs = std::vector<TensorPtr>(11);
   outputs[0] = std::make_shared<Tensor>(
       std::vector<int>{32, 256},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 256)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 256)},
       "O1");
   outputs[1] = std::make_shared<Tensor>(
       std::vector<int>{32, 8},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 8)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 8)},
       "O2");
   outputs[2] = std::make_shared<Tensor>(
       std::vector<int>{32, 8},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 8)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 8)},
       "O3");
   outputs[3] = std::make_shared<Tensor>(
       std::vector<int>{32, 8},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 8)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 8)},
       "O4");
   outputs[4] = std::make_shared<Tensor>(
       std::vector<int>{32, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 1)},
       "O5");
   outputs[5] = std::make_shared<Tensor>(
       std::vector<int>{32, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 1)},
       "O6");
   outputs[6] = std::make_shared<Tensor>(
       std::vector<int>{32, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 1)},
       "O7");
   outputs[7] = std::make_shared<Tensor>(
       std::vector<int>{32, 128},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 128)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 128)},
       "O8");
   outputs[8] = std::make_shared<Tensor>(
       std::vector<int>{32, 64},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 64)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 64)},
       "O9");
   outputs[9] = std::make_shared<Tensor>(
       std::vector<int>{32, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 1)},
       "O10");
   outputs[10] = std::make_shared<Tensor>(
       std::vector<int>{32, 1},
-      std::vector<bitset>{generate_sparsity_vector(0, 32),
-                          generate_sparsity_vector(0, 1)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0, 32),
+                                  generate_sparsity_vector(0, 1)},
       "O11");
 
   auto linear1 = std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1},
@@ -231,49 +231,50 @@ void bert(taco::Format format, bool propagate, float row_sparsity,
 
   auto input = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "input");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "input");
 
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W1");
 
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W2");
 
   auto W3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W3");
 
   auto W4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W4");
 
   auto W5 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, size),
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W5");
 
   auto W6 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(col_sparsity, size),
-                          denseSparsityVector},
+      std::vector<SparsityVector>{generate_sparsity_vector(col_sparsity, size),
+                                  denseSparsityVector},
       "W6");
 
   auto outputs = std::vector<TensorPtr>(10);
   for (int i = 0; i < 10; i++) {
     outputs[i] = std::make_shared<Tensor>(
         std::vector<int>{size, size},
-        std::vector<bitset>{denseSparsityVector, denseSparsityVector},
+        std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
         "O" + std::to_string(i));
   }
 
@@ -382,42 +383,46 @@ void run(taco::Format format, bool propagate, float row_sparsity,
 
   auto X = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, size),
+                                  generate_sparsity_vector(col_sparsity, size)},
       "X");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W1");
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W2");
   auto W3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W3");
   auto W4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W4");
   // outputs
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O1");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "O1");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O2");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "O2");
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O3");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "O3");
   auto O4 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O4");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "O4");
 
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X}, O1, "ik,kj->ij");
@@ -501,17 +506,18 @@ void memtest(taco::Format format, bool propagate, float row_sparsity,
 
   auto X = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{generate_sparsity_vector(row_sparsity, size),
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(row_sparsity, size),
+                                  generate_sparsity_vector(col_sparsity, size)},
       "X");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector,
-                          generate_sparsity_vector(col_sparsity, size)},
+      std::vector<SparsityVector>{denseSparsityVector,
+                                  generate_sparsity_vector(col_sparsity, size)},
       "W1");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{denseSparsityVector, denseSparsityVector}, "O1");
+      std::vector<SparsityVector>{denseSparsityVector, denseSparsityVector},
+      "O1");
 
   std::cout << "memory usage after Tensor load is ";
   print_memory_usage();

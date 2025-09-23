@@ -4,7 +4,6 @@
 #include "../include/node.hpp"
 #include "../include/tensor.hpp"
 #include "../include/utils.hpp"
-#include "taco.h"
 #include "taco/format.h"
 #include "taco/index_notation/index_notation.h"
 #include "taco/tensor.h"
@@ -47,31 +46,38 @@ void test_propagation() {
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("11")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("11")},
+      "X1");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("10")}, "W1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("10")},
+      "W1");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
 
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto W2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "W2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "W2");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W2}, O2, "ik,kj->ij");
 
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O3");
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
@@ -122,17 +128,21 @@ void test_addition() {
   const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("10")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("10")},
+      "X2");
   auto X3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X3");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X3");
 
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
 
   std::vector<TensorPtr> inputs{X1, X2, X3};
 
@@ -152,19 +162,24 @@ void test_backward_prop() {
   const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto X3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X3");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X3");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("10"), bitset("01")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("10"), SparsityVector("01")},
+      "O2");
   std::vector<TensorPtr> inputs1{X1, X2};
   auto einsum1 =
       std::make_shared<Einsum>(inputs1, O1, std::string{"ik,kj->ij"});
@@ -186,23 +201,28 @@ void test_einsum() {
   const int size = 2;
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   std::vector<TensorPtr> inputs1{X1, X2};
   auto einsum1 =
       std::make_shared<Einsum>(inputs1, O1, std::string{"ik,kj->ij"});
 
   auto X3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O2");
   std::vector<TensorPtr> inputs2{O1, X3};
   auto einsum2 =
       std::make_shared<Einsum>(inputs2, O2, std::string{"ik,kj->ij"});
@@ -253,10 +273,12 @@ void test_einsum_transpose() {
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("10")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("10")},
+      "X1");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto transpose =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1}, O1, "ij->ji");
 
@@ -290,28 +312,34 @@ void test_einsum_multiop_1() {
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("01")},
+      "W1");
 
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{W1, X2}, O2, "ik,kj->ij");
 
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O3");
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
@@ -344,28 +372,34 @@ void test_einsum_multiop_2() {
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("01")},
+      "W1");
 
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
 
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O3");
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
@@ -396,29 +430,34 @@ void test_einsum_multiop_2() {
 void compare_taco_matmul() {
   int size = 3;
 
-  bitset X1Vec1 = generate_sparsity_vector(0.5, size);
-  bitset X1Vec2 = generate_sparsity_vector(0.5, size);
-  bitset denseVec = generate_sparsity_vector(0, size);
-  bitset X2Vec1 = generate_sparsity_vector(0.5, size);
-  bitset X2Vec2 = generate_sparsity_vector(0.5, size);
+  SparsityVector X1Vec1 = generate_sparsity_vector(0.5, size);
+  SparsityVector X1Vec2 = generate_sparsity_vector(0.5, size);
+  SparsityVector denseVec = generate_sparsity_vector(0, size);
+  SparsityVector X2Vec1 = generate_sparsity_vector(0.5, size);
+  SparsityVector X2Vec2 = generate_sparsity_vector(0.5, size);
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("110"), bitset("111")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("110"), SparsityVector("111")},
+      "X1");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("011"), bitset("111")}, "W1");
+      std::vector<SparsityVector>{SparsityVector("011"), SparsityVector("111")},
+      "W1");
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("111"), bitset("111")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("111"), SparsityVector("111")},
+      "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, W1}, O1, "ik,kj->ij");
 
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("101"), bitset("111")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("101"), SparsityVector("111")},
+      "X2");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("111"), bitset("111")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("111"), SparsityVector("111")},
+      "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, O1}, O2, "ik,kj->ij");
 
@@ -494,39 +533,41 @@ void compare_taco_matmul() {
 void compare_taco_einsum() {
   int size = 10;
 
-  bitset X1Vec1 = generate_sparsity_vector(0.5, size);
-  bitset X1Vec2 = generate_sparsity_vector(0.5, size);
-  bitset X2Vec1 = generate_sparsity_vector(0.5, size);
-  bitset X2Vec2 = generate_sparsity_vector(0.5, size);
+  SparsityVector X1Vec1 = generate_sparsity_vector(0.5, size);
+  SparsityVector X1Vec2 = generate_sparsity_vector(0.5, size);
+  SparsityVector X2Vec1 = generate_sparsity_vector(0.5, size);
+  SparsityVector X2Vec2 = generate_sparsity_vector(0.5, size);
 
-  bitset denseVec = generate_sparsity_vector(0, size);
+  SparsityVector denseVec = generate_sparsity_vector(0, size);
 
-  auto X1 = std::make_shared<Tensor>(std::vector<int>{size, size},
-                                     std::vector<bitset>{X1Vec1, X1Vec2}, "X1");
-  auto X2 = std::make_shared<Tensor>(std::vector<int>{size, size},
-                                     std::vector<bitset>{X2Vec1, X2Vec2}, "X2");
-  auto W1 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "W1");
+  auto X1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size}, std::vector<SparsityVector>{X1Vec1, X1Vec2},
+      "X1");
+  auto X2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size}, std::vector<SparsityVector>{X2Vec1, X2Vec2},
+      "X2");
+  auto W1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<SparsityVector>{denseVec, denseVec}, "W1");
 
-  auto O1 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O1");
+  auto O1 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<SparsityVector>{denseVec, denseVec}, "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
-  auto O2 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O2");
-  auto O2_T =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O2_T");
+  auto O2 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<SparsityVector>{denseVec, denseVec}, "O2");
+  auto O2_T = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<SparsityVector>{denseVec, denseVec}, "O2_T");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
   auto transpose =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O2}, O2_T, "ij->ji");
-  auto O3 =
-      std::make_shared<Tensor>(std::vector<int>{size, size},
-                               std::vector<bitset>{denseVec, denseVec}, "O3");
+  auto O3 = std::make_shared<Tensor>(
+      std::vector<int>{size, size},
+      std::vector<SparsityVector>{denseVec, denseVec}, "O3");
   auto matmul3 = std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2_T}, O3,
                                           "ik,kj->ij");
 
@@ -578,18 +619,18 @@ void compare_taco_einsum() {
 void test_get_sparsity_ratio() {
   // these tests may fail if the global size is less than 10
   float tolerance = 1e-5;
-  auto rowSparsityVector = bitset("101");
-  auto colSparsityVector = bitset("111");
+  auto rowSparsityVector = SparsityVector("101");
+  auto colSparsityVector = SparsityVector("111");
   auto tensor = std::make_shared<Tensor>(
       std::vector<int>{3, 3},
-      std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
+      std::vector<SparsityVector>{rowSparsityVector, colSparsityVector}, "X");
   assert(std::fabs(tensor->get_sparsity_ratio() - 0.333333f) < tolerance);
 
-  rowSparsityVector = bitset("0010101011");
-  colSparsityVector = bitset("1110100100");
+  rowSparsityVector = SparsityVector("0010101011");
+  colSparsityVector = SparsityVector("1110100100");
   tensor = std::make_shared<Tensor>(
       std::vector<int>{10, 10},
-      std::vector<bitset>{rowSparsityVector, colSparsityVector}, "X");
+      std::vector<SparsityVector>{rowSparsityVector, colSparsityVector}, "X");
   assert(std::fabs(tensor->get_sparsity_ratio() - 0.75f) < tolerance);
 
   std::cout << "test_get_sparsity_ratio() OK " << std::endl;
@@ -618,33 +659,39 @@ void test_scalar_computation() {
 
   auto X1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("01"), bitset("01")}, "X1");
+      std::vector<SparsityVector>{SparsityVector("01"), SparsityVector("01")},
+      "X1");
   auto X2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "X2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "X2");
   auto W1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("01")}, "W1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("01")},
+      "W1");
 
   auto O1 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O1");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O1");
   auto matmul1 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X1, X2}, O1, "ik,kj->ij");
   auto O2 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O2");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O2");
   auto matmul2 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{X2, W1}, O2, "ik,kj->ij");
 
   auto O3 = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<bitset>{bitset("11"), bitset("11")}, "O3");
+      std::vector<SparsityVector>{SparsityVector("11"), SparsityVector("11")},
+      "O3");
   auto matmul3 =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O1, O2}, O3, "ik,kj->ij");
 
-  auto O4 =
-      std::make_shared<Tensor>(std::vector<int>{}, std::vector<bitset>{}, "O4");
+  auto O4 = std::make_shared<Tensor>(std::vector<int>{},
+                                     std::vector<SparsityVector>{}, "O4");
   auto reduction =
       std::make_shared<Einsum>(std::vector<TensorPtr>{O3}, O4, "ij->");
   auto g = Graph::build_graph({X1, X2, W1}, O4,
@@ -688,7 +735,7 @@ void test_init_data() {
       {6, 25},          {25, 79, 9}};
 
   for (auto s : sizes) {
-    std::vector<bitset> bitVectors;
+    std::vector<SparsityVector> bitVectors;
     int totalElements = 1;
     for (auto dim : s) {
       totalElements *= dim;
@@ -703,7 +750,7 @@ void test_init_data() {
 }
 
 void test_count_bits() {
-  bitset sparsity = generate_sparsity_vector(0.5, 200);
+  SparsityVector sparsity = generate_sparsity_vector(0.5, 200);
   assert(count_bits(sparsity, 200) == 100);
   std::cout << "test_count_bits() OK " << std::endl;
 }

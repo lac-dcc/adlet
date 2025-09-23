@@ -10,8 +10,8 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
   int zeroRowCount = static_cast<int>(rows * rowSparsityRatio);
   int zeroColCount = static_cast<int>(cols * colSparsityRatio);
 
-  std::bitset<MAX_SIZE> rowSparsity;
-  std::bitset<MAX_SIZE> colSparsity;
+  SparsityVector rowSparsity;
+  SparsityVector colSparsity;
   rowSparsity.set();
   colSparsity.set();
 
@@ -64,7 +64,7 @@ taco::Format get_format(const std::string format) {
   return outFormat;
 }
 
-size_t count_bits(std::bitset<MAX_SIZE> A, int pos) {
+size_t count_bits(SparsityVector A, int pos) {
   assert(pos > 0 && pos <= MAX_SIZE && "pos out of bounds");
   size_t bits = 0;
   for (size_t i = 0; i < pos; i++)
@@ -84,8 +84,8 @@ std::vector<int> get_indices(std::vector<int> dimSizes, int numElement) {
   return indices;
 }
 
-std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length) {
-  std::bitset<MAX_SIZE> sparsityVector;
+SparsityVector generate_sparsity_vector(double sparsity, int length) {
+  SparsityVector sparsityVector;
   sparsityVector.set();
 
   int numZeros = static_cast<int>(length * sparsity);

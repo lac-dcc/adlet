@@ -19,7 +19,7 @@ void Tensor::create_data(const double threshold) {
 }
 
 // constructor from sparsity vector (doesn't initialize tensor)
-Tensor::Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
+Tensor::Tensor(std::vector<int> sizes, std::vector<SparsityVector> sparsities,
                const std::string &n, const bool outputTensor)
     : name(n), sizes(sizes), sparsities(sparsities) {
   numDims = sizes.size();
@@ -30,7 +30,7 @@ Tensor::Tensor(std::vector<int> sizes, const std::string &n)
     : name(n), sizes(sizes) {
   numDims = sizes.size();
   for (int i = 0; i < numDims; ++i) {
-    sparsities.push_back(bitset());
+    sparsities.push_back(SparsityVector());
     sparsities[i].set();
   }
 }
@@ -41,7 +41,7 @@ Tensor::Tensor(std::vector<int> sizes, const std::string &n,
       sizes(sizes) {
   numDims = sizes.size();
   for (int i = 0; i < numDims; ++i) {
-    sparsities.push_back(bitset());
+    sparsities.push_back(SparsityVector());
     sparsities[i].set();
   }
 }
@@ -53,7 +53,7 @@ Tensor::Tensor(std::vector<int> sizes, std::vector<float> sparsityRatios,
   numDims = sizes.size();
   // Initialize sparsity bitsets to 1 (active)
   for (int i = 0; i < numDims; ++i) {
-    sparsities.push_back(bitset());
+    sparsities.push_back(SparsityVector());
     sparsities[i].set();
   }
 
