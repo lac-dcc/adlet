@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build g++ git python3
+          sudo apt-get install -y cmake ninja-build g++ git python3 clang-format
 
       - name: Cache TACO
         id: cache-taco
@@ -36,6 +36,18 @@ jobs:
           mkdir -p build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release -G Ninja ..
           ninja
+
+      - name: Check clang-format
+        run: |
+          UNFORMATTED=$(find . -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\)' \
+            ! -path "./build/*" \
+            ! -path "./taco/*" \
+            -exec clang-format --dry-run --Werror {} +)
+          if [ ! -z "$UNFORMATTED" ]; then
+            echo "Some files are not properly formatted:"
+            echo "$UNFORMATTED"
+            exit 1
+          fi
 
       - name: Configure CMake
         run: cmake -S . -B build -G Ninja

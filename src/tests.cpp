@@ -188,11 +188,6 @@ void test_backward_prop() {
 
   auto g = Graph::build_graph({X1, X2, X3}, O2, {einsum1, einsum2});
   g.run_propagation(BACKWARD);
-  X1->print_full_sparsity();
-  X2->print_full_sparsity();
-  std::cout << std::endl;
-  X3->print_full_sparsity();
-  O1->print_full_sparsity();
   assert(X1->sparsities[0][1] == 1 && "Einsum: Backward propagation failed!");
   assert(X1->sparsities[0][0] == 0 && "Einsum: Backward propagation failed!");
 }
@@ -755,18 +750,7 @@ void test_count_bits() {
   std::cout << "test_count_bits() OK " << std::endl;
 }
 
-void testSizes() {
-
-  std::vector<int> dimSizes({1024, 1024, 1024});
-  taco::Tensor<float> A(dimSizes, {taco::Dense, taco::Dense, taco::Dense});
-
-  std::vector<float> sparsities({0.0, 0.0, 0.0});
-  print_tensor_memory_usage(A, "A");
-}
-
 int main(int argc, char **argv) {
-  testSizes();
-
   test_propagation();
   test_addition();
   test_backward_prop();
