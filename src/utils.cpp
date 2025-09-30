@@ -5,6 +5,23 @@
 
 unsigned int SEED = 123;
 
+void fill_tensor(taco::Tensor<float> &tensor, double sparsityRatio, int rows,
+                 int cols) {
+  std::mt19937 gen(SEED);
+  std::uniform_real_distribution<> dist(0.0, 1.0);
+
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      if (dist(gen) < sparsityRatio) {
+        continue;
+      }
+
+      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      tensor.insert({i, j}, val);
+    }
+  }
+  tensor.pack();
+}
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
                  double colSparsityRatio, int rows, int cols) {
@@ -133,6 +150,13 @@ void end(
   auto stop = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double> duration{stop - start};
   std::cout << message << duration.count() << std::endl;
+}
+
+double
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start) {
+  auto stop = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double> duration{stop - start};
+  return duration.count();
 }
 
 bool randomBool(double probability) {

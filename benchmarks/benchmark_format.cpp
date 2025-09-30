@@ -1,6 +1,7 @@
 #include "benchmark_format.hpp"
 #include "../include/tensor.hpp"
 #include "../include/utils.hpp"
+#include <string>
 
 double compute(taco::Tensor<float> &A, const taco::Tensor<float> &B,
                const taco::Tensor<float> &C) {
@@ -77,23 +78,45 @@ void show_sizes(const std::string format, int rank, std::vector<int> sizes,
             << get_memory_usage_mb() << std::endl;
 }
 
-int parseArguments(int argc, char *argv[]) {
-  int param = 1;
-  std::string format = argv[++param];
-  int rank = std::stoi(argv[++param]);
-  std::vector<int> sizes;
-  std::vector<double> sparsities;
-  for (int i = 0; i < rank; i++) {
-    sizes.push_back(std::stoi(argv[++param]));
-  }
-  for (int i = 0; i < rank; i++) {
-    sparsities.push_back(std::stod(argv[++param]));
-  }
+/*int parseArguments(int argc, char *argv[]) {*/
+/*  int param = 1;*/
+/*  std::string format = argv[++param];*/
+/*  int rank = std::stoi(argv[++param]);*/
+/*  std::vector<int> sizes;*/
+/*  std::vector<double> sparsities;*/
+/*  for (int i = 0; i < rank; i++) {*/
+/*    sizes.push_back(std::stoi(argv[++param]));*/
+/*  }*/
+/*  for (int i = 0; i < rank; i++) {*/
+/*    sparsities.push_back(std::stod(argv[++param]));*/
+/*  }*/
+/**/
+/*  show_sizes(format, rank, sizes, sparsities);*/
+/*  return 0;*/
+/*}*/
 
-  show_sizes(format, rank, sizes, sparsities);
+int benchmarkKernels(int argc, char *argv[]) {
+  int param = 1;
+  int N = std::stoi(argv[++param]);
+  double sparsity = std::stod(argv[++param]);
+  const int M = N;
+  const int K = N;
+  taco::Tensor<float> A({M, N}, {taco::Dense, taco::Sparse});
+  fill_tensor(A, sparsity, M, N);
+  taco::Tensor<float> B({N, K}, {taco::Dense, taco::Dense});
+  fill_tensor(B, 0.0, N, K);
+  taco::Tensor<float> C({M, K}, {taco::Dense, taco::Dense});
+  taco::IndexVar i("i"), j("j"), k("k");
+  C(i, k) = A(i, j) * B(j, k);
+  C.compile();
+  auto start = begin();
+  C.evaluate();
+  auto time = end(start);
+  std::cout << N << "," << N << "," << N << "," << sparsity << "," << time;
   return 0;
 }
 
-int benchmarkFormats(int argc, char *argv[]) {
-  return parseArguments(argc, argv);
+int parseArguments(int argc, char *argv[]) {
+  // return parseArguments(argc, argv);
+  return benchmarkKernels(argc, argv);
 }

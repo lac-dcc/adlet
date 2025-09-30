@@ -16,6 +16,9 @@ extern unsigned int SEED;
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
                  double colSparsityRatio, int rows, int cols);
 
+void fill_tensor(taco::Tensor<float> &tensor, double sparsityRatio, int rows,
+                 int cols);
+
 taco::Format get_format(const std::string format);
 
 std::vector<int> get_indices(std::vector<int> dimSizes, int numElement);
@@ -40,5 +43,7 @@ void end(
     const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
     const std::string &message);
 
+double
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start);
 bool randomBool(double probability = 0.5);
 std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse);
