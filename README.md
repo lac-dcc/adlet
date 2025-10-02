@@ -30,8 +30,9 @@ SPA is built on top of the [Tensor Algebra Compiler](https://github.com/tensor-c
 
 The project was implemented using [Clang 14](https://releases.llvm.org/14.0.0/tools/clang/docs/ReleaseNotes.html)
 Build Dependencies:
-- CMake
-- Ninja
+
+- [CMake](https://cmake.org/download/)
+- [Ninja](https://github.com/ninja-build/ninja)
 
 ## How to build
 
@@ -53,6 +54,20 @@ Once built, you can run the test files:
 ```bash
 $ ./tests
 ```
+
+## Artifact
+
+Build the image:
+
+```bash
+$ docker build -t spa-artifact
+```
+
+Run the experiments:
+```bash
+$ docker run --rm -v $(pwd)/images:/workspace/images spa-artifact
+```
+
 
 ## Contributing
 
