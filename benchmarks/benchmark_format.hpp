@@ -18,3 +18,8 @@ void run(const int rows, const int cols, const std::string out_format,
 
 int parseArguments(int argc, char *argv[]);
 int benchmarkFormats(int argc, char *argv[]);
+double fused(taco::Tensor<float> A, taco::Tensor<float> B,
+             taco::Tensor<float> C);
+double gspmm(taco::Tensor<float> A, taco::Tensor<float> B,
+             taco::Tensor<float> C);
+int poc_matrix(int argc, char *argv[]);

@@ -22,7 +22,7 @@ taco::Tensor<float> assembleTensor(const int rows, const int cols,
                                    taco::Format format) {
 
   taco::Tensor<float> A({rows, cols}, format);
-  fill_tensor(A, rowSparsity, columnSparsity, rows, cols);
+  fill_matrix(A, rowSparsity, columnSparsity, rows, cols);
   return A;
 }
 
@@ -77,23 +77,73 @@ void show_sizes(const std::string format, int rank, std::vector<int> sizes,
             << get_memory_usage_mb() << std::endl;
 }
 
-int parseArguments(int argc, char *argv[]) {
+/**
+ * fused          = S * S * D
+ * SpMM           = S * (S * D)
+ * mode ordering  = abc,dbe,adce->ade
+ */
+
+double fused(taco::Tensor<float> A, taco::Tensor<float> B,
+             taco::Tensor<float> C) {
+
+  taco::Tensor<float> result({A.getDimension(0), C.getDimension(1)},
+                             taco::Format({taco::Dense, taco::Dense}));
+
+  taco::IndexVar i("i"), j("j"), k("k"), l("l");
+  result(i, l) = A(i, j) * B(j, k) * C(k, l);
+  result.compile();
+  auto start = begin();
+  result.evaluate();
+  auto time = end(start);
+  return time;
+}
+
+double gspmm(taco::Tensor<float> A, taco::Tensor<float> B,
+             taco::Tensor<float> C) {
+
+  taco::Tensor<float> result({B.getDimension(0), C.getDimension(1)},
+                             taco::Format({taco::Dense, taco::Dense}));
+  taco::Tensor<float> t1({A.getDimension(0), B.getDimension(1)},
+                         taco::Format({taco::Dense, taco::Dense}));
+  taco::IndexVar i("i"), j("j"), k("k"), l("l");
+  t1(j, l) = B(j, k) * C(k, l);
+  result(i, l) = A(i, j) * t1(j, l);
+  t1.compile();
+  result.compile();
+  auto start = begin();
+  t1.evaluate();
+  result.evaluate();
+  auto time = end(start);
+  return time;
+}
+
+int poc_matrix(int argc, char *argv[]) {
   int param = 1;
-  std::string format = argv[++param];
-  int rank = std::stoi(argv[++param]);
-  std::vector<int> sizes;
-  std::vector<double> sparsities;
-  for (int i = 0; i < rank; i++) {
-    sizes.push_back(std::stoi(argv[++param]));
-  }
-  for (int i = 0; i < rank; i++) {
-    sparsities.push_back(std::stod(argv[++param]));
+  int N = std::stoi(argv[++param]);
+  double sparsity = std::stod(argv[++param]);
+  int opt = std::stoi(argv[++param]);
+  const int M = N;
+  const int K = N;
+  taco::Tensor<float> A({M, N}, {taco::Dense, taco::Sparse});
+  fill_matrix(A, sparsity, M, N);
+  taco::Tensor<float> B({N, K}, {taco::Dense, taco::Sparse});
+  fill_matrix(B, sparsity, N, K);
+
+  taco::Tensor<float> C({M, K}, {taco::Dense, taco::Sparse});
+  fill_matrix(B, 0.0, N, K);
+
+  double r_time;
+  if (opt == 0) {
+    std::cout << N << "," << sparsity << "," << fused(A, B, C);
+  } else {
+    std::cout << N << "," << sparsity << "," << gspmm(A, B, C);
   }
 
-  show_sizes(format, rank, sizes, sparsities);
   return 0;
 }
 
-int benchmarkFormats(int argc, char *argv[]) {
-  return parseArguments(argc, argv);
+int parseArguments(int argc, char *argv[]) {
+  // return parseArguments(argc, argv);
+  /*return benchmarkKernels(argc, argv);*/
+  return poc_matrix(argc, argv);
 }
