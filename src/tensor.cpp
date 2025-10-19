@@ -152,26 +152,18 @@ float Tensor::get_sparsity_ratio() {
 }
 
 size_t Tensor::get_nnz() {
-  size_t nnz = 0;
+  size_t nnz = 1;
 
   size_t numElements = 1;
-  for (auto size : sizes)
-    numElements *= size;
 
-  for (int i = 0; i < numElements; ++i) {
-    std::vector<int> index(numDims);
-    bool zero = false;
-    for (int j = 0; j < numDims; ++j) {
-      // check if this index is sparse, skip if it is
-      if (!sparsities[j].test(i % sizes[j])) {
-        zero = true;
-        break;
-      }
-    }
-    if (zero)
-      continue;
-    nnz++; // not sparse so increment
+  std::vector<size_t> dimNnz;
+  for (int i = 0; i < sparsities.size(); ++i) {
+    std::cout << count_bits(sparsities[i], sizes[i]) << " ";
+    nnz *= count_bits(sparsities[i], sizes[i]);
   }
+
+  std::cout << std::endl;
+  
   return nnz;
 }
 
@@ -181,4 +173,49 @@ void Tensor::print_shape() {
     std::cout << size << ", ";
   }
   std::cout << ")" << std::endl;
+}
+
+size_t Tensor::compute_size_in_bytes() {
+  size_t size{ 0 };
+  auto index = data->getStorage().getIndex();
+  auto format = data->getFormat().getModeFormats();
+
+  int nnz{ 1 };
+  std::vector<int> dimNnz;
+
+  for (int i = 0; i < sparsities.size(); ++i)
+    dimNnz.push_back(count_bits(sparsities[i], sizes[i]));
+
+  bool hadSparse = false;
+  for (int i = format.size() - 1; i >= 0; --i) {
+    if (format[i] == taco::Sparse)
+      hadSparse = true;
+    if (hadSparse) {
+      nnz *= dimNnz[i];
+    } else {
+      nnz *= sizes[i];
+    }
+  }
+
+  int currDims{ 1 };
+  int currSparseDims{ 1 };
+  int prevDims{ -1 };
+
+  for (int i = 0; i < format.size(); ++i) {
+    if (format[i] == taco::Dense) {
+      std::cout << i << " " << 1 << std::endl;
+      size += 1;
+      currDims *= sizes[i];
+      currSparseDims *= dimNnz[i];
+      prevDims = prevDims == -1 ? currDims : prevDims * sizes[i];
+      continue;
+    }
+    size += prevDims != -1 ? prevDims + 1 : currSparseDims + 1;
+    currDims *= dimNnz[i];
+    currSparseDims *= dimNnz[i];
+    size += currSparseDims;
+    prevDims = currSparseDims;
+  }
+  
+  return (size + nnz) * sizeof(float);
 }

@@ -38,6 +38,7 @@ public:
   void print_full_sparsity();
   float get_sparsity_ratio();
   size_t get_nnz();
+  size_t compute_size_in_bytes();
   void print_shape();
 };
 using TensorPtr = std::shared_ptr<Tensor>;
