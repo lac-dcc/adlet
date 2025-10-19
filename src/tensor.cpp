@@ -157,12 +157,8 @@ size_t Tensor::get_nnz() {
   size_t numElements = 1;
 
   std::vector<size_t> dimNnz;
-  for (int i = 0; i < sparsities.size(); ++i) {
-    std::cout << count_bits(sparsities[i], sizes[i]) << " ";
+  for (int i = 0; i < sparsities.size(); ++i)
     nnz *= count_bits(sparsities[i], sizes[i]);
-  }
-
-  std::cout << std::endl;
   
   return nnz;
 }
@@ -203,7 +199,6 @@ size_t Tensor::compute_size_in_bytes() {
 
   for (int i = 0; i < format.size(); ++i) {
     if (format[i] == taco::Dense) {
-      std::cout << i << " " << 1 << std::endl;
       size += 1;
       currDims *= sizes[i];
       currSparseDims *= dimNnz[i];
