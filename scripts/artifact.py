@@ -15,7 +15,7 @@ def figure7():
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
     einsum_experiments.run(EINSUM_DIR, sparsity, seed, repeats)
-    result_file = f"result{sparsity}{seed}{repeats}.csv"
+    result_file = f"result_{sparsity}_{seed}_{repeats}.csv"
     plot_experiments.figure7(result_file)
 
 

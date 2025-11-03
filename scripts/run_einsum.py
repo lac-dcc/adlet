@@ -42,7 +42,7 @@ def parse_output(output):
 def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
-    with open(f"{RESULT_DIR}/result{sparsity}{seed}{n}.csv", "wt") as result_file:
+    with open(f"{RESULT_DIR}/result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}/{file}"
@@ -76,7 +76,7 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
     run_fw = 1
-    with open(f"{RESULT_DIR}/result_prop{sparsity}{seed}{n}.csv", "wt") as result_file:
+    with open(f"{RESULT_DIR}/result_prop_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,initial_ratio,fw_ratio,lat_ratio,bw_ratio\n')
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}{file}"
