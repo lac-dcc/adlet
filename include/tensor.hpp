@@ -10,7 +10,7 @@ class Tensor {
 public:
   std::shared_ptr<taco::Tensor<float>> data;
   int numDims{};
-  std::vector<bitset> sparsities;
+  std::vector<SparsityVector> sparsities;
   const std::string name;
   std::vector<int> sizes;
   int numOps{0}; // number of operators this tensor belongs to as an operand
@@ -20,7 +20,7 @@ public:
   OpNodePtr outputOp;              // ops where this tensor is an input
 
   // constructor from sparsity vector (doesn't initialize tensor)
-  Tensor(std::vector<int> sizes, std::vector<bitset> sparsities,
+  Tensor(std::vector<int> sizes, std::vector<SparsityVector> sparsities,
          const std::string &n = "", const bool outputTensor = false);
   // constructor for empty output tensors
   Tensor(std::vector<int> sizes, const std::string &n = "");
@@ -41,6 +41,7 @@ public:
   void print_full_sparsity();
   float get_sparsity_ratio();
   size_t get_nnz();
+  size_t compute_size_in_bytes();
   void print_shape();
 };
 using TensorPtr = std::shared_ptr<Tensor>;

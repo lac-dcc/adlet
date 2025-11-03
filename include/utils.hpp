@@ -3,12 +3,12 @@
 #include <bitset>
 #include <cstddef>
 
-constexpr int MAX_SIZE = 4096;
-using bitset = std::bitset<MAX_SIZE>;
+constexpr int MAX_SIZE = 2048;
+using SparsityVector = std::bitset<MAX_SIZE>;
 
 enum Direction { FORWARD, INTRA, BACKWARD };
 
-size_t count_bits(bitset A, int pos);
+size_t count_bits(SparsityVector A, int pos);
 
 extern unsigned int SEED;
 
@@ -23,7 +23,7 @@ taco::Format get_format(const std::string format);
 
 std::vector<int> get_indices(std::vector<int> dimSizes, int numElement);
 
-std::bitset<MAX_SIZE> generate_sparsity_vector(double sparsity, int length);
+SparsityVector generate_sparsity_vector(double sparsity, int length);
 
 void print_tensor_memory_usage(const taco::Tensor<float> &tensor,
                                const std::string &name);
