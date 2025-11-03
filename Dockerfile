@@ -52,9 +52,6 @@ RUN echo "Building SPA"
 RUN mkdir -p adlet/build && cd adlet/build && cmake -G Ninja ../ && ninja 
 
 
-RUN echo "BERT FIGURES"
-RUN echo "EINSUM FIGURES"
-
 COPY scripts/ /app/scripts/
 
 RUN python3 -m venv /venv \
@@ -62,5 +59,10 @@ RUN python3 -m venv /venv \
     && /venv/bin/pip install -r scripts/requirements.txt
 
 ENV PATH="/venv/bin:$PATH"
+
+# generate einsum files
+RUN echo "Generating einsum benchmarks"
+RUN python3 scripts/einsum.py 
+
 
 CMD ["python", "scripts/artifact.py"]
