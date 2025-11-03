@@ -1,7 +1,12 @@
-import statistics
-import sys
 import os
+import sys
+import statistics
 import subprocess
+
+
+BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
+RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
+
 
 
 def parse_output(output):
@@ -37,12 +42,10 @@ def parse_output(output):
 def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
-    with open(f"result{sparsity}{seed}{n}.txt", "wt") as result_file:
+    with open(f"{RESULT_DIR}/result{sparsity}{seed}{n}.csv", "wt") as result_file:
         result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
-        files = ["lm_batch_likelihood_brackets_3_16d.txt", "lm_batch_likelihood_sentence_3_12d.txt", "str_nw_mera_open_26.txt", "lm_batch_likelihood_sentence_4_8d.txt", "str_nw_ftps_open_30.txt", "str_matrix_chain_multiplication_100.txt", "str_nw_ftps_open_28.txt", "lm_batch_likelihood_sentence_4_4d.txt", "mc_2021_027.txt", "str_mps_varying_inner_product_200.txt", "str_nw_mera_closed_120.txt", "gm_queen5_5_3.wcsp.txt", "str_matrix_chain_multiplication_1000.txt",]
-        files = ["str_nw_ftps_open_30.txt"]
         for idx, file in enumerate(files):
-            file_path = f"{benchmark_dir}{file}"
+            file_path = f"{benchmark_dir}/{file}"
             for format_str in ["sparse", "dense"]:
                 for propagate in [0, 1]:
                     if format_str == "dense" and propagate == 1:
@@ -51,7 +54,7 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
                     print(f"[running {idx}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
                         for i in range(n):
-                            cmd = ["./benchmark", "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
+                            cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
                             print(f"iteration {i}/{n}",  end="\r")
                             process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                             process.wait()
@@ -73,7 +76,7 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
     run_fw = 1
-    with open(f"result_prop{sparsity}{seed}{n}.txt", "wt") as result_file:
+    with open(f"{RESULT_DIR}/result_prop{sparsity}{seed}{n}.csv", "wt") as result_file:
         result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,initial_ratio,fw_ratio,lat_ratio,bw_ratio\n')
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}{file}"
@@ -83,7 +86,7 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
                     print(f"[running {idx}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
                     try:
                         for i in range(n):
-                            cmd = ["./benchmark", "einsum", "prop", file_path, str(sparsity), str(run_fw), str(run_lat), str(run_bw), str(seed + i)]
+                            cmd = [BIN_PATH, "einsum", "prop", file_path, str(sparsity), str(run_fw), str(run_lat), str(run_bw), str(seed + i)]
                             print(f"iteration {i}/{n}",  end="\r")
                             process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                             process.wait()
@@ -119,7 +122,7 @@ def run_with_timeout(benchmark_dir:str, sparsity: float, seed: int, timeout_seco
         for idx, file in enumerate(files):
             print(f"{idx}/{len(files)}", end="\r")
             file_path = f"{benchmark_dir}{file}"
-            cmd = ["./benchmark", "einsum", file_path, "dense", str(sparsity), str(propagate), str(seed)]
+            cmd = [BIN_PATH, "einsum", file_path, "dense", str(sparsity), str(propagate), str(seed)]
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
                 metrics = parse_output(result.stdout)

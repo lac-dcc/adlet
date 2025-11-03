@@ -1,22 +1,30 @@
+import os
 import random
 from typing import List
 import argparse
-import run_einsum as einsum_experiment
+import run_einsum as einsum_experiments
+import plot as plot_experiments
 
+EINSUM_DIR = os.environ.get('EINSUM_DIR', "einsum12")
+BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
 
 
 def figure7():
+    print("[FIGURE 7]")
     seed = random.randint(1, 1024)
     sparsity = 0.5
-    repeats = 5
-    einsum_experiment.run(benchmark_dir, sparsity, seed, repeats)
-    result_file = f"result{sparsity}{seed}{repeats}.txt"
-    plot_figure7(result_file)
+    repeats = BENCHMARK_REPEATS
+    einsum_experiments.run(EINSUM_DIR, sparsity, seed, repeats)
+    result_file = f"result{sparsity}{seed}{repeats}.csv"
+    plot_experiments.figure7(result_file)
 
-    pass
+
 
 def run(figures: List[str]):
-    pass
+    for fig in figures:
+        if fig == '7':
+            figure7()
+
 
 if __name__ == "__main__":
     # Figure 7 - SPA runtime vs compilation vs execution time (einsum)
@@ -33,12 +41,10 @@ if __name__ == "__main__":
         "--figures",
         type=str,
         help="Comma-separated list of figures",
+        default="7,8,9,10,11,12",
     )
 
     args = parser.parse_args()
 
-    if args.figures:
-        figures = [x.strip() for x in args.figures.split(",")]
-    else:
-        figures = ['7']
+    figures = [x.strip() for x in args.figures.split(",")]
     run(figures)

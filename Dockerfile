@@ -26,8 +26,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 
-ENV CC=clang
-ENV CXX=clang++
 
 WORKDIR /app
 
@@ -52,7 +50,9 @@ RUN echo "Building SPA"
 RUN mkdir -p adlet/build && cd adlet/build && cmake -G Ninja ../ && ninja 
 
 
+
 COPY scripts/ /app/scripts/
+RUN mkdir figures/ && mkdir results/
 
 RUN python3 -m venv /venv \
     && /venv/bin/pip install --upgrade pip \
@@ -60,9 +60,17 @@ RUN python3 -m venv /venv \
 
 ENV PATH="/venv/bin:$PATH"
 
-# generate einsum files
 RUN echo "Generating einsum benchmarks"
 RUN python3 scripts/einsum.py 
 
 
-CMD ["python", "scripts/artifact.py"]
+#Environment variables
+ARG BENCHMARK_REPEATS=5
+ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
+ENV EINSUM_DIR="einsum-dataset/"
+ENV BIN_PATH=/app/adlet/build/benchmark
+ENV CC=clang
+ENV CXX=clang++
+
+CMD ["python", "-u", "scripts/artifact.py"]
+

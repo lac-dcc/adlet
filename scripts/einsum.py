@@ -1,5 +1,5 @@
-from typing import List
 import os
+from typing import List
 import einsum_benchmark
 import opt_einsum as oe
 
@@ -60,7 +60,7 @@ def get_paper_einsum_benchmarks():
         if instance.name in names:
             benchmarks.append(instance)
 
-    einsum_dir = "./einsum12"
+    einsum_dir = os.environ['EINSUM_DIR']
     os.makedirs(einsum_dir, exist_ok=True)
     for instance in benchmarks:
         write_benchmark(f"{einsum_dir}/{instance.name}", *generate_lists(instance.format_string, instance.tensors))
