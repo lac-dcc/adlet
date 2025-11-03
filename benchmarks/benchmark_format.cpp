@@ -56,7 +56,7 @@ void show_sizes(const std::string format, int rank, std::vector<int> sizes,
 
   assert(sizes.size() == sparsities.size());
 
-  std::vector<bitset> sparsity_vector;
+  std::vector<SparsityVector> sparsity_vector;
   for (int i = 0; i < rank; i++) {
     sparsity_vector.push_back(
         generate_sparsity_vector(sparsities[i], sizes[i]));
