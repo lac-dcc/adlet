@@ -60,7 +60,7 @@ def get_paper_einsum_benchmarks():
         if instance.name in names:
             benchmarks.append(instance)
 
-    einsum_dir = os.environ['EINSUM_DIR']
+    einsum_dir = os.environ.get('EINSUM_DATASET', 'einsum-dataset/')
     os.makedirs(einsum_dir, exist_ok=True)
     for instance in benchmarks:
         write_benchmark(f"{einsum_dir}/{instance.name}", *generate_lists(instance.format_string, instance.tensors))

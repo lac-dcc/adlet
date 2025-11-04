@@ -5,7 +5,7 @@ import argparse
 import run_einsum as einsum_experiments
 import plot as plot_experiments
 
-EINSUM_DIR = os.environ.get('EINSUM_DIR', "einsum12")
+EINSUM_DATASET = os.environ.get('EINSUM_DATASET', 'einsum-dataset')
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
 
 
@@ -14,7 +14,7 @@ def figure7():
     seed = random.randint(1, 1024)
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
-    einsum_experiments.run(EINSUM_DIR, sparsity, seed, repeats)
+    einsum_experiments.run(EINSUM_DATASET, sparsity, seed, repeats)
     result_file = f"result_{sparsity}_{seed}_{repeats}.csv"
     plot_experiments.figure7(result_file)
 
