@@ -3,7 +3,6 @@
 #include "../include/node.hpp"
 #include "../include/tensor.hpp"
 #include "../include/utils.hpp"
-#include "taco.h"
 #include <memory>
 #include <string>
 

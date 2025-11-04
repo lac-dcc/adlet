@@ -3,9 +3,9 @@ import random
 from typing import List
 import argparse
 import run_einsum as einsum_experiments
+import run_graph as graph_experiments
 import plot as plot_experiments
 
-EINSUM_DATASET = os.environ.get('EINSUM_DATASET', 'einsum-dataset')
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
 RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
@@ -13,15 +13,38 @@ RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 def figure7():
     #TODO: check if Figure 11 was already generated to reuse results
     print("[FIGURE 7]")
-    figure_path = f"{RESULT_DIR}/figure7"
-    if not os.path.exists(figure_path):
-        os.makedirs(figure_path)
+    result_path = f"{RESULT_DIR}/figure7"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
     seed = random.randint(1, 1024)
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
-    einsum_experiments.run(EINSUM_DATASET, figure_path, sparsity, seed, repeats)
-    result_file = f"{figure_path}/result_{sparsity}_{seed}_{repeats}.csv"
-    plot_experiments.figure7(result_file)
+    einsum_experiments.run(result_path, sparsity, seed, repeats)
+    result_file = f"{result_path}/einsum_result_{sparsity}_{seed}_{repeats}.csv"
+    plot_experiments.figure7(result_path, result_file)
+
+def figure8():
+    pass
+
+def figure9():
+    pass
+
+def figure10():
+    print("[FIGURE 10]")
+    result_path = f"{RESULT_DIR}/figure10"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    graph_experiments.run(result_path, graph_experiments.run_row_col_sparsity)
+    result_file = f"{result_path}/bert_result.csv"
+    plot_experiments.figure10(result_path, result_file)
+
+def figure11():
+    #TODO: reuse the .5 result from figure7
+    pass
+
+
+def figure12():
+    pass
 
 
 
@@ -29,6 +52,8 @@ def run(figures: List[str]):
     for fig in figures:
         if fig == '7':
             figure7()
+        elif fig == '10':
+            figure10()
 
 
 if __name__ == "__main__":

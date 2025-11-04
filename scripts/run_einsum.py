@@ -1,11 +1,11 @@
 import os
-import sys
 import statistics
 import subprocess
 
 
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
-
+EINSUM_DATASET = os.environ.get('EINSUM_DATASET', 'einsum-dataset')
+BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
 
 
 def parse_output(output):
@@ -38,13 +38,13 @@ def parse_output(output):
             metrics["initial_ratio"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(benchmark_dir: str, result_dir:str, sparsity: float, seed: int, n: int):
-    files = os.listdir(benchmark_dir)
+def run(result_dir: str, sparsity: float, seed: int, n: int):
+    files = os.listdir(EINSUM_DATASET)
     errors = []
-    with open(f"{result_dir}/result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
+    with open(f"{result_dir}/einsum_result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
         for idx, file in enumerate(files):
-            file_path = f"{benchmark_dir}/{file}"
+            file_path = f"{EINSUM_DATASET}/{file}"
             for format_str in ["sparse", "dense"]:
                 for propagate in [0, 1]:
                     if format_str == "dense" and propagate == 1:
@@ -72,14 +72,14 @@ def run(benchmark_dir: str, result_dir:str, sparsity: float, seed: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
-    files = os.listdir(benchmark_dir)
+def run_prop(result_dir: str, sparsity: float, seed: int, n: int):
+    files = os.listdir(EINSUM_DATASET)
     errors = []
     run_fw = 1
-    with open(f"{RESULT_DIR}/result_prop_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
+    with open(f"{result_dir}/einsum_result_prop_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,initial_ratio,fw_ratio,lat_ratio,bw_ratio\n')
         for idx, file in enumerate(files):
-            file_path = f"{benchmark_dir}{file}"
+            file_path = f"{EINSUM_DATASET}{file}"
             for run_lat in [0, 1]:
                 for run_bw in [0, 1]:
                     data = {"fw_ratio":[], "lat_ratio": [], "bw_ratio": [], "initial_ratio": []}
@@ -105,24 +105,24 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def run_for_sparsities(benchmark_dir: str, seed: int, n: int):
+def run_for_sparsities(result_dir: str, seed: int, n: int):
     sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
-        run(benchmark_dir, sparsity, seed, n)
+        run(result_dir, sparsity, seed, n)
 
-def run_prop_for_sparsities(benchmark_dir: str, seed: int, n: int):
+def run_prop_for_sparsities(result_dir: str, seed: int, n: int):
     sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
-        run_prop(benchmark_dir, sparsity, seed, n)
+        run_prop(result_dir, sparsity, seed, n)
 
-def run_with_timeout(benchmark_dir:str, sparsity: float, seed: int, timeout_seconds: int):
+def run_with_timeout(result_dir: str, sparsity: float, seed: int, timeout_seconds: int):
     print("Testing benchmarks...")
-    files = os.listdir(benchmark_dir)
+    files = os.listdir(EINSUM_DATASET)
     propagate = 0
     with open("filter.txt", "wt") as result_file:
         for idx, file in enumerate(files):
             print(f"{idx}/{len(files)}", end="\r")
-            file_path = f"{benchmark_dir}{file}"
+            file_path = f"{EINSUM_DATASET}{file}"
             cmd = [BIN_PATH, "einsum", file_path, "dense", str(sparsity), str(propagate), str(seed)]
             try:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_seconds)
@@ -140,12 +140,8 @@ def run_with_timeout(benchmark_dir:str, sparsity: float, seed: int, timeout_seco
 
 
 if __name__ == "__main__":
-    benchmark_dir = sys.argv[1]
-    sparsity = float(sys.argv[2])
-    seed = int(sys.argv[3])
-    repeats = int(sys.argv[4])
-    #run(benchmark_dir, sparsity, seed, repeats)
-    #run_with_timeout(benchmark_dir, sparsity, seed, 900)
-    run_for_sparsities(benchmark_dir, seed, repeats)
-    #run_prop_for_sparsities(benchmark_dir, seed, repeats)
+    import random
+    seed = random.randint(1, 1024)
+    # run_for_sparsities("./", seed, BENCHMARK_REPEATS)
+    run("./", 0.5, 12, 1)
 
