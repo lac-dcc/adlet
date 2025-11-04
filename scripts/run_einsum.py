@@ -5,7 +5,6 @@ import subprocess
 
 
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
-RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
 
@@ -39,10 +38,10 @@ def parse_output(output):
             metrics["initial_ratio"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
+def run(benchmark_dir: str, result_dir:str, sparsity: float, seed: int, n: int):
     files = os.listdir(benchmark_dir)
     errors = []
-    with open(f"{RESULT_DIR}/result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
+    with open(f"{result_dir}/result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
         for idx, file in enumerate(files):
             file_path = f"{benchmark_dir}/{file}"
@@ -65,6 +64,7 @@ def run(benchmark_dir: str, sparsity: float, seed: int, n: int):
                         mean_metrics = {k: statistics.mean(times[k]) for k in times}
                         result_line = f'{file},{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
                         result_file.write(result_line + "\n")
+                        result_file.flush()
                     except Exception as e:
                         errors.append(file)
                         print(f"Error running {file_path}: {str(e)}")
@@ -97,6 +97,7 @@ def run_prop(benchmark_dir: str, sparsity: float, seed: int, n: int):
                         mean_metrics = {k: statistics.mean(data[k]) for k in data}
                         result_line = f'{file},{sparsity},{run_fw},{run_lat},{run_bw},{mean_metrics["initial_ratio"]},{mean_metrics["fw_ratio"]},{mean_metrics["lat_ratio"]},{mean_metrics["bw_ratio"]}'
                         result_file.write(result_line + "\n")
+                        result_file.flush()
                     except Exception as e:
                         errors.append(file)
                         print(f"Error running {file_path}: {str(e)}")

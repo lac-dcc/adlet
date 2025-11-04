@@ -5,9 +5,7 @@ import pandas as pd
 import plotly.io as pio
 from plotly.subplots import make_subplots
 
-from run_einsum import RESULT_DIR
-
-FIGURES_DIR = os.environ.get('FIGURES_DIR', 'figures/')
+RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
 def method_label(row):
@@ -21,7 +19,7 @@ def method_label(row):
         return "Other"
 
 def figure7(file_name):
-    df = pd.read_csv(f"{RESULT_DIR}/{file_name}")
+    df = pd.read_csv(file_name)
     df.columns = df.columns.str.strip()
     df["benchmark_id"] = df["file_name"].factorize()[0] + 1
     df["method"] = df.apply(method_label, axis=1)
@@ -184,5 +182,6 @@ def figure7(file_name):
     )
     fig.update_annotations(font_size=12)
 
-    pio.write_image(fig, f"./{FIGURES_DIR}/figure7.png", width=500, height=600)
+    figure_name = file_name.split(".csv")[0] + ".png"
+    pio.write_image(fig, figure_name, width=500, height=600)
 

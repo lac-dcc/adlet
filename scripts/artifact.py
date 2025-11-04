@@ -7,15 +7,20 @@ import plot as plot_experiments
 
 EINSUM_DATASET = os.environ.get('EINSUM_DATASET', 'einsum-dataset')
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
+RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
 def figure7():
+    #TODO: check if Figure 11 was already generated to reuse results
     print("[FIGURE 7]")
+    figure_path = f"{RESULT_DIR}/figure7"
+    if not os.path.exists(figure_path):
+        os.makedirs(figure_path)
     seed = random.randint(1, 1024)
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
-    einsum_experiments.run(EINSUM_DATASET, sparsity, seed, repeats)
-    result_file = f"result_{sparsity}_{seed}_{repeats}.csv"
+    einsum_experiments.run(EINSUM_DATASET, figure_path, sparsity, seed, repeats)
+    result_file = f"{figure_path}/result_{sparsity}_{seed}_{repeats}.csv"
     plot_experiments.figure7(result_file)
 
 
