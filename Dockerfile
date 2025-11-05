@@ -1,7 +1,6 @@
 FROM ubuntu:24.04
 
-RUN echo "SPA - Artifact"
-RUN echo "Installing dependencies"
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -23,54 +22,79 @@ RUN apt-get update && apt-get install -y \
     python3.12 \
     python3-pip \
     python3.12-venv \
+    libglib2.0-0 \
+    libnss3 \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libxext6 \
+    libxfixes3 \
+    libxi6 \
+    libxrender1 \
+    libxcb1 \
+    libxcb-shm0 \
+    libxcb-dri3-0 \
+    libxshmfence1 \
+    libgbm1 \
+    fonts-liberation \
+    libdrm2 \
+    xdg-utils \
+    chromium-browser \
     && rm -rf /var/lib/apt/lists/*
+  
 
-
-
-WORKDIR /app
-
-RUN echo "Cloning TACO"
-RUN git clone --depth 1 https://github.com/tensor-compiler/taco.git \
-    && cd taco/ \
-    && git checkout 0e79acb56cb5f3d1785179536256e206790b2a9e
-
-
-RUN echo "Cloning SPA"
-#TODO: remove when the repo become public
-ARG GITHUB_TOKEN
-RUN git clone --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git \
-    && cd adlet \
-    #TODO: use tags instead
-    && git checkout 29a959e11e9d3a19d48cd0c4dcc23529945926f4
-
-RUN echo "Building TACO"
-RUN mkdir -p taco/build && cd taco/build && cmake -DCMAKE_BUILD_TYPE=Release -DOPENMP=ON .. && make -j$(nproc) && cd ../../
-
-RUN echo "Building SPA"
-RUN mkdir -p adlet/build && cd adlet/build && cmake -G Ninja ../ && ninja 
-
-
-
-COPY scripts/ /app/scripts/
-RUN mkdir figures/ && mkdir results/
-
-RUN python3 -m venv /venv \
-    && /venv/bin/pip install --upgrade pip \
-    && /venv/bin/pip install -r scripts/requirements.txt
-
-ENV PATH="/venv/bin:$PATH"
-
-RUN echo "Generating einsum benchmarks"
-RUN python3 scripts/einsum.py 
-
-
-#Environment variables
-ARG BENCHMARK_REPEATS=5
-ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
-ENV EINSUM_DIR="einsum-dataset/"
-ENV BIN_PATH=/app/adlet/build/benchmark
 ENV CC=clang
 ENV CXX=clang++
 
-CMD ["python", "-u", "scripts/artifact.py"]
+WORKDIR /app
 
+# Clone TACO
+RUN echo "Cloning TACO" && \
+    git clone --depth 1 https://github.com/tensor-compiler/taco.git && \
+    cd taco && \
+    git checkout 0e79acb56cb5f3d1785179536256e206790b2a9e
+
+# Clone SPA (adlet)
+ARG GITHUB_TOKEN
+RUN echo "Cloning SPA" && \
+    git clone --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
+    cd adlet && \
+    git checkout 29a959e11e9d3a19d48cd0c4dcc23529945926f4
+
+# Build TACO WITH PYTHON BINDINGS
+RUN echo "Building TACO" && \
+    mkdir -p taco/build && \
+    cd taco/build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DOPENMP=ON .. && \
+    make -j$(nproc)
+
+# Build SPA
+RUN echo "Building SPA" && \
+    mkdir -p adlet/build && \
+    cd adlet/build && \
+    cmake -G Ninja ../ && \
+    ninja
+
+# Copy scripts
+COPY scripts/ /app/scripts/
+RUN mkdir -p /app/results/
+
+# Create virtual environment and install Python dependencies
+RUN python3 -m venv /venv && \
+    /venv/bin/pip install --upgrade pip && \
+    /venv/bin/pip install -r /app/scripts/requirements.txt
+
+# Activate venv in PATH
+ENV PATH="/venv/bin:$PATH"
+
+# Environment variables for your script
+ENV BENCHMARK_REPEATS=5
+ENV EINSUM_DIR="einsum-dataset/"
+ENV BIN_PATH=/app/adlet/build/benchmark
+
+# Entry point
+ENTRYPOINT ["python", "-u", "scripts/artifact.py"]
+CMD []
