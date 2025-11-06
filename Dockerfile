@@ -68,6 +68,7 @@ RUN python3 -m venv /venv && \
     /venv/bin/pip install --upgrade pip && \
     /venv/bin/pip install -r /app/scripts/requirements.txt
 
+
 # Activate venv in PATH
 ENV PATH="/venv/bin:$PATH"
 
@@ -76,6 +77,9 @@ ARG BENCHMARK_REPEATS=5
 ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
 ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
+
+# Download the einsum dataset
+RUN python3 script/einsum.py
 
 # Entry point
 ENTRYPOINT ["python", "-u", "scripts/artifact.py"]
