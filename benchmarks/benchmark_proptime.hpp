@@ -1,0 +1,2 @@
+void benchmark_proptime();
+

@@ -3,6 +3,7 @@ import random
 from typing import List
 import argparse
 import run_einsum as einsum_experiments
+import run_proptime as proptime_experiments
 import run_graph as graph_experiments
 import plot as plot_experiments
 
@@ -24,10 +25,33 @@ def figure7():
     plot_experiments.figure7(result_path, result_file)
 
 def figure8():
-    pass
+    print("[FIGURE 8]")
+    result_path = f"{RESULT_DIR}/figure8"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    repeats = BENCHMARK_REPEATS
+
+    sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
+    for size in sizes:
+        proptime_experiments.run_spa(result_path, size, repeats)
+        result_file = f"{RESULT_DIR}/proptime_spa_result_{size}.csv"
+        proptime_experiments.run_tesa(result_path, size, repeats)
+        result_file = f"{RESULT_DIR}/proptime_tesa_result_{size}.csv"
+    # plot_experiments.figure8(result_path, result_file)
 
 def figure9():
-    pass
+    print("[FIGURE 9]")
+    result_path = f"{RESULT_DIR}/figure9"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    sparsity = 0.5
+    repeats = BENCHMARK_REPEATS
+    sparsities = [0.9, 0.7, 0.5, 0.3]
+    for sparsity in sparsities:
+        seed = random.randint(1, 1024) # probably should generate a fixed set of seeds for final artifact
+        einsum_experiments.run_prop(result_path, sparsity, seed, repeats)
+        result_file = f"{result_path}/einsum_result_{sparsity}_{seed}_{repeats}.csv"
+    # plot_experiments.figure7(result_path, result_file)
 
 def figure10():
     print("[FIGURE 10]")
@@ -41,7 +65,6 @@ def figure10():
 def figure11():
     #TODO: reuse the .5 result from figure7
     pass
-
 
 def figure12():
     print("[FIGURE 12]")

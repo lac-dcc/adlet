@@ -36,6 +36,7 @@ add_executable(benchmark
     benchmarks/benchmark_graph.cpp
     benchmarks/benchmark_einsum.cpp
     benchmarks/benchmark_format.cpp
+    benchmarks/benchmark_proptime.cpp
 )
 
 target_include_directories(adlet_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
@@ -51,3 +52,6 @@ target_include_directories(benchmark PRIVATE ../taco/include)
 target_link_directories(adlet PRIVATE ../taco/build/lib)
 target_link_directories(tests PRIVATE ../taco/build/lib)
 target_link_directories(benchmark PRIVATE ../taco/build/lib)
+
+set(SIZE_MACRO "2048" CACHE STRING "Macro to set bit_set size to")
+add_compile_definitions(SIZE_MACRO=${SIZE_MACRO})

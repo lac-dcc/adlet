@@ -2,72 +2,85 @@ import os
 import statistics
 import subprocess
 
-
+BUILD_DIR = os.environ.get("BUILD_PATH", "./build")
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
-EINSUM_DATASET = os.environ.get('EINSUM_DATASET', 'einsum-dataset')
-BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
-
+BIN_PATH = os.environ.get("TESA_BIN_PATH", "../tesa-prop/build/tesa-prop")
+BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 
 def parse_output(output):
     metrics = {}
     lines = output.strip().splitlines()
     for line in lines:
-        if "analysis" in line:
-            metrics["analysis"] = float(line.split("=")[-1].strip())
-        elif "load graph" in line:
-            metrics["load"] = float(line.split("=")[-1].strip())
-        elif "compilation" in line:
-            metrics["compilation"] = float(line.split("=")[-1].strip())
-        elif "runtime" in line:
-            metrics["runtime"] = float(line.split("=")[-1].strip())
-        elif "memory used" in line:
-            metrics["memory"] = float(line.split("=")[-1].strip())
-        elif "before" in line:
-            metrics["before"] = float(line.split("=")[-1].strip())
-        elif "after" in line:
-            metrics["after"] = float(line.split("=")[-1].strip())
-        elif "tensors" in line:
-            metrics["tensors-size"] = float(line.split("=")[-1].strip())
-        elif "fw_ratio" in line:
-            metrics["fw_ratio"] = float(line.split("=")[-1].strip())
-        elif "lat_ratio" in line:
-            metrics["lat_ratio"] = float(line.split("=")[-1].strip())
-        elif "bw_ratio" in line:
-            metrics["bw_ratio"] = float(line.split("=")[-1].strip())
-        elif "initial_ratio" in line:
-            metrics["initial_ratio"] = float(line.split("=")[-1].strip())
+        if "proptime" in line:
+            metrics["proptime"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(result_dir: str, sparsity: float, seed: int, n: int):
-    files = os.listdir(EINSUM_DATASET)
-    errors = []
-    with open(f"{result_dir}/einsum_result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
-        result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime, overall_memory, tensors-size\n')
-        for idx, file in enumerate(files):
-            file_path = f"{EINSUM_DATASET}/{file}"
-            for format_str in ["sparse", "dense"]:
-                for propagate in [0, 1]:
-                    if format_str == "dense" and propagate == 1:
-                        continue
-                    times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
-                    print(f"[running {idx + 1}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
-                    try:
-                        for i in range(n):
-                            cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
-                            print(f"iteration {i}/{n}",  end="\r")
-                            process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                            process.wait()
-                            metrics = parse_output(process.stdout.read())
-                            for k in times:
-                                times[k].append(metrics.get(k, 0.0))
+def recompile_spa_size(root_dir: str, build_dir: str, size: int):
+    cmd = ["cmake", "-S" + root_dir, "-B" + build_dir, "-G", "Ninja", f"-DSIZE_MACRO={size}"]
+    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process.wait()
+    cmd = ["cmake", "--build", build_dir]
+    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process.wait()
 
-                        mean_metrics = {k: statistics.mean(times[k]) for k in times}
-                        result_line = f'{file},{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
-                        result_file.write(result_line + "\n")
-                        result_file.flush()
-                    except Exception as e:
-                        errors.append(file)
-                        print(f"Error running {file_path}: {str(e)}")
+def run_spa(result_dir: str, size: int, n: int):
+    recompile_spa_size(".", "./build", size)
+    errors = []
+    with open(f"{result_dir}/proptime_spa_result_{seed}_{size}.csv", "wt") as result_file:
+        result_file.write('size,proptime\n')
+        times = {"proptime":[]}
+        print(f"[running proptime for SPA size {size}]")
+        try:
+            for i in range(n):
+                cmd = [BIN_PATH, "proptime"]
+                print(f"iteration {i + 1}/{n}",  end="\r")
+                process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                process.wait()
+                metrics = parse_output(process.stdout.read())
+                for k in times:
+                    times[k].append(metrics.get(k, 0.0))
+
+            mean_metrics = {k: statistics.mean(times[k]) for k in times}
+            result_line = f'{size},{mean_metrics["proptime"]}'
+            result_file.write(result_line + "\n")
+            result_file.flush()
+        except Exception as e:
+            print(f"Error: {str(e)}")
+
+    with open("errors.txt", "wt") as error_file:
+        error_file.write("\n".join(errors))
+
+def recompile_tesa_size(root_dir: str, build_dir: str, size: int):
+    cmd = ["cmake", "-S" + root_dir, "-B" + build_dir, "-G", "Ninja", f"-DSIZE_MACRO={size}"]
+    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process.wait()
+    cmd = ["cmake", "--build", build_dir]
+    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process.wait()
+
+def run_tesa(result_dir: str, size: int, n: int):
+    recompile_tesa_size("../tesa-prop", "../tesa-prop/build", size)
+    errors = []
+    with open(f"{result_dir}/proptime_tesa_result_{size}.csv", "wt") as result_file:
+        result_file.write('size,proptime\n')
+        times = {"proptime":[]}
+        print(f"[running proptime for SPA size {size}]")
+        try:
+            for i in range(n):
+                cmd = [BIN_PATH, "proptime"]
+                print(f"iteration {i + 1}/{n}",  end="\r")
+                process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                process.wait()
+                metrics = parse_output(process.stdout.read())
+                for k in times:
+                    times[k].append(metrics.get(k, 0.0))
+
+            mean_metrics = {k: statistics.mean(times[k]) for k in times}
+            result_line = f'{size},{mean_metrics["proptime"]}'
+            result_file.write(result_line + "\n")
+            result_file.flush()
+        except Exception as e:
+            print(f"Error: {str(e)}")
 
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
@@ -79,11 +92,11 @@ def run_prop(result_dir: str, sparsity: float, seed: int, n: int):
     with open(f"{result_dir}/einsum_result_prop_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,initial_ratio,fw_ratio,lat_ratio,bw_ratio\n')
         for idx, file in enumerate(files):
-            file_path = f"{EINSUM_DATASET}/{file}"
+            file_path = f"{EINSUM_DATASET}{file}"
             for run_lat in [0, 1]:
                 for run_bw in [0, 1]:
                     data = {"fw_ratio":[], "lat_ratio": [], "bw_ratio": [], "initial_ratio": []}
-                    print(f"[running {idx + 1}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
+                    print(f"[running {idx}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
                     try:
                         for i in range(n):
                             cmd = [BIN_PATH, "einsum", "prop", file_path, str(sparsity), str(run_fw), str(run_lat), str(run_bw), str(seed + i)]
@@ -144,4 +157,5 @@ if __name__ == "__main__":
     seed = random.randint(1, 1024)
     # run_for_sparsities("./", seed, BENCHMARK_REPEATS)
     run("./", 0.5, 12, 1)
+
 
