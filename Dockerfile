@@ -61,6 +61,7 @@ RUN echo "Building SPA" && \
 
 # Copy scripts
 COPY scripts/ /app/scripts/
+COPY einsum-dataset/ /app/einsum-dataset/
 RUN mkdir -p /app/results/
 
 # Create virtual environment and install Python dependencies
@@ -77,9 +78,6 @@ ARG BENCHMARK_REPEATS=5
 ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
 ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
-
-# Download the einsum dataset
-RUN python3 script/einsum.py
 
 # Entry point
 ENTRYPOINT ["python", "-u", "scripts/artifact.py"]
