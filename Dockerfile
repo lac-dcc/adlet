@@ -74,7 +74,7 @@ ENV PATH="/venv/bin:$PATH"
 # Environment variables for your script
 ARG BENCHMARK_REPEATS=5
 ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
-ENV EINSUM_DIR="einsum-dataset/"
+ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
 
 # Entry point
