@@ -3,7 +3,11 @@
 #include <bitset>
 #include <cstddef>
 
-constexpr int MAX_SIZE = 2048;
+#ifndef SIZE_MACRO
+  #define SIZE_MACRO 2048
+#endif
+constexpr int MAX_SIZE = SIZE_MACRO;
+
 using SparsityVector = std::bitset<MAX_SIZE>;
 
 enum Direction { FORWARD, INTRA, BACKWARD };
