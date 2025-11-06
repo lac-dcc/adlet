@@ -50,7 +50,7 @@ def run(result_dir: str, sparsity: float, seed: int, n: int):
                     if format_str == "dense" and propagate == 1:
                         continue
                     times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
-                    print(f"[running {idx}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
+                    print(f"[running {idx + 1}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
                         for i in range(n):
                             cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
@@ -79,11 +79,11 @@ def run_prop(result_dir: str, sparsity: float, seed: int, n: int):
     with open(f"{result_dir}/einsum_result_prop_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('file_name,sparsity,run_fw,run_lat,run_bw,initial_ratio,fw_ratio,lat_ratio,bw_ratio\n')
         for idx, file in enumerate(files):
-            file_path = f"{EINSUM_DATASET}{file}"
+            file_path = f"{EINSUM_DATASET}/{file}"
             for run_lat in [0, 1]:
                 for run_bw in [0, 1]:
                     data = {"fw_ratio":[], "lat_ratio": [], "bw_ratio": [], "initial_ratio": []}
-                    print(f"[running {idx}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
+                    print(f"[running {idx + 1}/{len(files)}]: {file} - run_fw={run_fw}, run_lat={run_lat}, run_bw={run_bw}")
                     try:
                         for i in range(n):
                             cmd = [BIN_PATH, "einsum", "prop", file_path, str(sparsity), str(run_fw), str(run_lat), str(run_bw), str(seed + i)]

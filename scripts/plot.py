@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import plotly.io as pio
 from plotly.subplots import make_subplots
+from pathlib import Path
 
 
 
@@ -251,3 +252,5 @@ def figure7(result_path, file_name):
 
     pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
 
+def figure9(result_path, file_name):
+    pass
