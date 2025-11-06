@@ -46,15 +46,18 @@ def figure11():
 def figure12():
     pass
 
-
-
 def run(figures: List[str]):
-    for fig in figures:
-        if fig == '7':
-            figure7()
-        elif fig == '10':
-            figure10()
+    dispatch = {
+        '7': figure7,
+        '8': figure8,
+        '9': figure9,
+        '10': figure10,
+        '11': figure11,
+    }
 
+    for fig in figures:
+        func = dispatch.get(fig, figure12)
+        func()
 
 if __name__ == "__main__":
     # Figure 7 - SPA runtime vs compilation vs execution time (einsum)
