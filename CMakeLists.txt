@@ -36,6 +36,7 @@ add_executable(benchmark
     benchmarks/benchmark_graph.cpp
     benchmarks/benchmark_einsum.cpp
     benchmarks/benchmark_format.cpp
+    benchmarks/benchmark_proptime.cpp
 )
 
 target_include_directories(adlet_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)

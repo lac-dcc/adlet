@@ -1,6 +1,7 @@
 #include "benchmark_einsum.hpp"
 #include "benchmark_format.hpp"
 #include "benchmark_graph.hpp"
+#include "benchmark_proptime.hpp"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -18,6 +19,8 @@ int main(int argc, char *argv[]) {
     return parseArguments(argc, argv);
   } else if (benchmark == "einsum") {
     return benchmark_einsum(argc, argv);
+  } else if (benchmark == "proptime") {
+    benchmark_proptime();
   } else {
     std::cerr << "Error: unknown benchmark" << std::endl;
   }

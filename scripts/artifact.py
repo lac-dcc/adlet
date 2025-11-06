@@ -3,10 +3,11 @@ import random
 from typing import List
 import argparse
 import run_einsum as einsum_experiments
+import run_proptime as proptime_experiments
 import run_graph as graph_experiments
 import plot as plot_experiments
 
-BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
+BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
@@ -24,7 +25,19 @@ def figure7():
     plot_experiments.figure7(result_path, result_file)
 
 def figure8():
-    pass
+    print("[FIGURE 8]")
+    result_path = f"{RESULT_DIR}/figure8"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    repeats = BENCHMARK_REPEATS
+
+    sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
+    for size in sizes:
+        proptime_experiments.run_spa(result_path, size, repeats)
+        result_file = f"{RESULT_DIR}/proptime_spa_result_{size}.csv"
+        proptime_experiments.run_tesa(result_path, size, repeats)
+        result_file = f"{RESULT_DIR}/proptime_tesa_result_{size}.csv"
+    # plot_experiments.figure8(result_path, result_file)
 
 def figure9():
     pass
@@ -52,6 +65,8 @@ def run(figures: List[str]):
     for fig in figures:
         if fig == '7':
             figure7()
+        if fig == '8':
+            figure8()
         elif fig == '10':
             figure10()
 

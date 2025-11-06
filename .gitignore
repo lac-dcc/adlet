@@ -162,3 +162,5 @@ pyrightconfig.json
 *.dot
 
 .DS_Store
+
+results/
