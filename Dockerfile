@@ -2,7 +2,11 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y wget
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
+
+RUN apt-get install -y \
     build-essential \
     clang \
     libomp-dev \
@@ -22,11 +26,17 @@ RUN apt-get update && apt-get install -y \
     python3.12 \
     python3-pip \
     python3.12-venv \
+    libatk-bridge2.0-0 \
+    libcups2 \  
+    libcairo2 \
+    libasound2t64 \
     libglib2.0-0 \
     libnss3 \
+    libpango-1.0-0  \
     libgdk-pixbuf2.0-0 \
     libgtk-3-0 \
     libx11-xcb1 \
+    libxkbcommon0  \
     libxcomposite1 \
     libxdamage1 \
     libxrandr2 \
@@ -42,9 +52,7 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     libdrm2 \
     xdg-utils \
-    chromium-browser \
     && rm -rf /var/lib/apt/lists/*
-  
 
 ENV CC=clang
 ENV CXX=clang++

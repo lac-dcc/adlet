@@ -60,7 +60,7 @@ $ ./tests
 Build the image:
 
 ```bash
-$ docker build -t spa-artifact
+$ docker build -t spa-artifact .
 ```
 
 Run the experiments:
