@@ -91,7 +91,8 @@ RUN python3 -m venv /venv && \
 ENV PATH="/venv/bin:$PATH"
 
 # Environment variables for your script
-ENV BENCHMARK_REPEATS=5
+ARG BENCHMARK_REPEATS=5
+ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
 ENV EINSUM_DIR="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
 
