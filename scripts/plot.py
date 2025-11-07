@@ -7,6 +7,21 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 import glob
 
+EINSUM_ORDER = [
+    "lm_batch_likelihood_brackets_3_16d.txt",
+    "lm_batch_likelihood_sentence_3_12d.txt",
+    "str_nw_mera_open_26.txt",
+    "lm_batch_likelihood_sentence_4_8d.txt",
+    "str_nw_ftps_open_30.txt",
+    "str_matrix_chain_multiplication_100.txt",
+    "str_nw_ftps_open_28.txt",
+    "lm_batch_likelihood_sentence_4_4d.txt",
+    "str_mps_varying_inner_product_200.txt",
+    "str_nw_mera_closed_120.txt",
+    "gm_queen5_5_3.wcsp.txt",
+    "str_matrix_chain_multiplication_1000.txt"
+]
+
 def method_label(row):
     if row["format"] == "dense":
         return "Dense"
@@ -591,3 +606,363 @@ def figure8(result_path):
     pio.renderers.default = "browser"
         
     create_combined_plot()
+
+def figure9(result_path):
+    def get_last_nonzero_ratios(group):
+        ratios = []
+        
+        for col in ['fw_ratio', 'lat_ratio', 'bw_ratio']:
+            nonzero_values = group[group[col] != 0][col]
+            if not nonzero_values.empty:
+                ratios.append(nonzero_values.iloc[-1])
+
+        return max(ratios) if ratios else 0
+
+    def get_config_label(config_string):
+        parts = config_string.split(', ')
+        
+        fw = '1' in parts[0]  # run_fw
+        lat = '1' in parts[1]  # run_lat  
+        bw = '1' in parts[2]  # run_bw
+        
+        label_parts = []
+        if fw:
+            label_parts.append('F')
+        if lat:
+            label_parts.append('L') 
+        if bw:
+            label_parts.append('B')
+        
+        if not label_parts:
+            return "No Prop"
+        
+        return f"{''.join(label_parts)}"
+
+    def create_plotly_bar_plot(data, sparsity_level):
+        data = data.sort_values('benchmark_id')
+        
+        unique_benchmarks = sorted(data['benchmark_id'].unique())
+        unique_configs = sorted(data['config'].unique())
+        
+        # Color scheme similar to your second file
+        #gray, red, blue, yellow, green
+        colors = ['#7f7f7f','#d62728', '#ff7f0e','#1f77b4', '#2ca02c',]
+        # Split benchmarks into two groups
+        benchmarks_1 = unique_benchmarks[:6]  # First 6 benchmarks
+        benchmarks_2 = unique_benchmarks[6:]  # Remaining benchmarks
+        
+        # Create subplots with 2 rows, 1 column
+        fig = make_subplots(
+            rows=2, cols=1,
+            subplot_titles=('Benchmarks 1-6', 'Benchmarks 7-12'),
+            vertical_spacing=0.08,
+            row_heights=[0.5, 0.5]
+        )
+        
+        # Function to add bars to a subplot
+        def add_benchmark_subplot(benchmarks, row):
+            for i, config in enumerate(unique_configs):
+                config_data = data[data['config'] == config].sort_values('benchmark_id')
+                
+                # Get values for each benchmark in this group
+                values = []
+                benchmark_labels = []
+                for bench_id in benchmarks:
+                    bench_data = config_data[config_data['benchmark_id'] == bench_id]
+                    if not bench_data.empty:
+                        values.append(bench_data['val'].iloc[0])
+                        benchmark_labels.append(bench_data['filename'].iloc[0])
+                    else:
+                        values.append(0)
+                        benchmark_labels.append(f"Benchmark {bench_id}")
+                
+                # Calculate x positions for this configuration
+                n_configs = len(unique_configs)
+                bar_width = 0.13
+                x_offset = (i - n_configs/2 + 0.5) * bar_width
+                x_positions = [x + x_offset for x in range(len(benchmarks))]
+                
+                # Create bars
+                fig.add_trace(go.Bar(
+                    x=[0, 1, 2, 3, 4, 5, 6],
+                    y=values,
+                    name=get_config_label(config),
+                    marker_color=colors[i % len(colors)],
+                    marker_line_width=1,
+                    marker_line_color='black',
+                    opacity=0.9,
+                    width=bar_width,
+                    showlegend=(row == 1),  # Only show legend for first row
+                    hovertemplate=(
+                        'Benchmark: %{customdata}<br>' +
+                        'Config: ' + get_config_label(config) + '<br>' +
+                        'Ratio: %{y:.2f}%<br>' +
+                        '<extra></extra>'
+                    ),
+                    customdata=benchmark_labels
+                ), row=row, col=1)
+        
+        # Add both subplots
+        add_benchmark_subplot(benchmarks_1, 1)
+        add_benchmark_subplot(benchmarks_2, 2)
+        
+        # Apply professional styling
+        fig.update_layout(
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.09,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=11),
+                itemsizing='constant',
+            ),
+            #aqui
+            margin=dict(t=30, b=120, l=60, r=50),
+            font=dict(size=12),
+            hovermode='closest',
+            width=800,
+            height=1200
+        )
+        
+        # Customize x-axes for both subplots
+        fig.update_xaxes(
+            tickvals=list(range(len(benchmarks_1))),
+            ticktext=[str(bid) for bid in benchmarks_1],
+            row=1, col=1,
+            showgrid=True,
+            gridwidth=2,
+            gridcolor='#f0f0f0',
+            linecolor='black',
+            linewidth=2,
+            tickfont=dict(size=12)
+        )
+        
+        fig.update_xaxes(
+            tickvals=list(range(len(benchmarks_2))),
+            ticktext=[str(bid) for bid in benchmarks_2],
+            row=2, col=1,
+            showgrid=True,
+            gridwidth=2,
+            gridcolor='#f0f0f0',
+            linecolor='black',
+            linewidth=2,
+            tickfont=dict(size=12),
+            title_text="Benchmark ID"
+        )
+
+        fig.update_yaxes(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='#f0f0f0',
+            #linecolor='black',
+            linewidth=0,
+            tickfont=dict(size=14),
+            row=1, col=1
+        )
+        
+        # Add single Y-axis label using annotation
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            x=-0.09,
+            y=0.5,
+            text="Ratio (%)",
+            showarrow=False,
+            textangle=-90,
+            font=dict(size=16)
+        )
+        
+        return fig
+
+    def create_multi_sparsity_plot(sparsity_data_dict):
+        """Create subplot with multiple sparsity levels"""
+        n_plots = len(sparsity_data_dict)
+        
+        if n_plots <= 2:
+            rows, cols = 1, n_plots
+            subplot_titles = list(sparsity_data_dict.keys())
+        else:
+            rows = 2
+            cols = (n_plots + 1) // 2
+            subplot_titles = list(sparsity_data_dict.keys())
+        
+        fig = make_subplots(
+            rows=rows, cols=cols,
+            subplot_titles=[f'Sparsity: {title}' for title in subplot_titles],
+            vertical_spacing=0.15,
+            horizontal_spacing=0.1
+        )
+        
+        colors = ['#7f7f7f','#d62728', '#ff7f0e','#1f77b4', '#2ca02c',]
+        
+        for idx, (sparsity_level, data) in enumerate(sparsity_data_dict.items()):
+            row = (idx // cols) + 1
+            col = (idx % cols) + 1
+            
+            # Sort by benchmark_id for consistent ordering
+            data = data.sort_values('benchmark_id')
+            unique_benchmarks = sorted(data['benchmark_id'].unique())
+            unique_configs = sorted(data['config'].unique())
+            
+            n_configs = len(unique_configs)
+            bar_width = 0.15
+            
+            for i, config in enumerate(unique_configs):
+                config_data = data[data['config'] == config].sort_values('benchmark_id')
+                
+                # Get values for each benchmark
+                values = []
+                benchmark_labels = []
+                for bench_id in unique_benchmarks:
+                    bench_data = config_data[config_data['benchmark_id'] == bench_id]
+                    if not bench_data.empty:
+                        values.append(bench_data['val'].iloc[0])
+                        benchmark_labels.append(bench_data['filename'].iloc[0])
+                    else:
+                        values.append(0)
+                        benchmark_labels.append(f"Benchmark {bench_id}")
+                
+                # Calculate x positions for this configuration
+                x_offset = (i - n_configs/2 + 0.5) * bar_width
+                x_positions = [x + x_offset for x in range(len(unique_benchmarks))]
+                
+                # Create bars
+                fig.add_trace(go.Bar(
+                    x=x_positions,
+                    y=values,
+                    name=get_config_label(config) if idx == 0 else get_config_label(config),  # Show legend only for first subplot
+                    marker_color=colors[i % len(colors)],
+                    marker_line_width=1,
+                    marker_line_color='black',
+                    opacity=0.9,
+                    width=bar_width,
+                    showlegend=(idx == 0),  # Only show legend for first subplot
+                    hovertemplate=(
+                        'Benchmark: %{customdata}<br>' +
+                        f'Config: {get_config_label(config)}<br>' +
+                        'Ratio: %{y:.2f}%<br>' +
+                        '<extra></extra>'
+                    ),
+                    customdata=benchmark_labels
+                ), row=row, col=col)
+            
+            # Update x-axis for this subplot
+            fig.update_xaxes(
+                tickvals=list(range(len(unique_benchmarks))),
+                ticktext=[str(bid) for bid in unique_benchmarks],
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f0f0f0',
+                linecolor='black',
+                linewidth=1,
+                tickfont=dict(size=9),
+                title_text="Benchmark ID" if row == rows else "",
+                row=row, col=col
+            )
+            
+            # Update y-axis for this subplot
+            fig.update_yaxes(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f0f0f0',
+                linecolor='black',
+                linewidth=1,
+                tickfont=dict(size=9),
+                title_text="Ratio (%)" if col == 1 else "",
+                row=row, col=col
+            )
+        
+        # Apply professional styling
+        fig.update_layout(
+            title=dict(
+                text="Sparsity Analysis - Ratio Comparison Across Configurations",
+                x=0.5,
+                xanchor='center',
+                font=dict(size=16, color='#2c3e50'),
+                y=0.95
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.05,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=9),
+                itemsizing='constant',
+            ),
+            margin=dict(t=100, b=120, l=60, r=50),
+            font=dict(size=10),
+            hovermode='closest',
+            width=1000,
+            height=600 if rows == 1 else 800
+        )
+        
+        return fig
+
+    order_dict = {filename: idx for idx, filename in enumerate(EINSUM_ORDER)}
+    result_files = sorted(glob.glob(result_path + "/*.csv"))
+
+    sparsity_data = {}
+    for i, (level, filepath) in enumerate(zip([0.3, 0.5, 0.7, 0.9], result_files)):
+        print(filepath, level)
+        assert str(level) in filepath
+        df = pd.read_csv(filepath)
+
+        filtered = df[(df["run_fw"] == 1) & (df["run_lat"] == 1) & (df["run_bw"] == 1)]
+
+        filtered = filtered.copy()
+        filtered['diff'] = filtered['bw_ratio'] - filtered['initial_ratio']
+        
+        max_diff_row = filtered.loc[filtered['diff'].idxmax()]
+            
+        valid_files = set(order_dict.keys())
+        grouped_data = []
+        
+        for filename in df['file_name'].unique():
+            if valid_files and filename not in valid_files:
+                continue
+                
+            file_data = df[df['file_name'] == filename]
+            benchmark_id = order_dict[filename]
+            
+            # Get unique combinations of run flags
+            combinations = file_data[['run_fw', 'run_lat', 'run_bw']].drop_duplicates()
+            for _, combo in combinations.iterrows():
+                combo_data = file_data[
+                    (file_data['run_fw'] == combo['run_fw']) &
+                    (file_data['run_lat'] == combo['run_lat']) &
+                    (file_data['run_bw'] == combo['run_bw'])
+                ]
+
+                if not combo_data.empty:
+                    val = get_last_nonzero_ratios(combo_data)
+                    config = f"run_fw={combo['run_fw']}, run_lat={combo['run_lat']}, run_bw={combo['run_bw']}"
+                    grouped_data.append({
+                        'benchmark_id': benchmark_id + 1,
+                        'filename': filename,
+                        'config': config,
+                        'val': val * 100, 
+                    })
+
+            grouped_data.append({
+                'benchmark_id': benchmark_id + 1,
+                'filename': filename,
+                'config': f"run_fw=0, run_lat=0, run_bw=0",
+                'val': combo_data["initial_ratio"].item() * 100, 
+            })
+        sparsity_data[level] = pd.DataFrame(grouped_data)
+
+
+    single_fig = create_plotly_bar_plot(sparsity_data[0.5], "0.5")
+    single_fig.show()
+    multi_fig = create_multi_sparsity_plot(sparsity_data)
+    multi_fig.show()
+
+    single_fig.write_image(f"{result_path}/sparsity_single.svg", height=800, width=600)
+    multi_fig.write_image(f"{result_path}/sparsity_multi.svg")
+

@@ -43,16 +43,16 @@ def figure8():
 def figure9():
     print("[FIGURE 9]")
     result_path = f"{RESULT_DIR}/figure9"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
-    sparsity = 0.5
-    repeats = BENCHMARK_REPEATS
-    sparsities = [0.9, 0.7, 0.5, 0.3]
-    for sparsity in sparsities:
-        seed = random.randint(1, 1024) # probably should generate a fixed set of seeds for final artifact
-        einsum_experiments.run_prop(result_path, sparsity, seed, repeats)
-        result_file = f"{result_path}/einsum_result_{sparsity}_{seed}_{repeats}.csv"
-    # plot_experiments.figure7(result_path, result_file)
+    # if not os.path.exists(result_path):
+    #     os.makedirs(result_path)
+    # sparsity = 0.5
+    # repeats = BENCHMARK_REPEATS
+    # sparsities = [0.9, 0.7, 0.5, 0.3]
+    # for sparsity in sparsities:
+    #     seed = random.randint(1, 1024) # probably should generate a fixed set of seeds for final artifact
+    #     einsum_experiments.run_prop(result_path, sparsity, seed, repeats)
+    #     result_file = f"{result_path}/einsum_result_{sparsity}_{seed}_{repeats}.csv"
+    plot_experiments.figure9(result_path)
 
 def figure10():
     print("[FIGURE 10]")
