@@ -4,7 +4,7 @@ import subprocess
 
 BUILD_DIR = os.environ.get("BUILD_PATH", "./build")
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
-BIN_PATH = os.environ.get("TESA_BIN_PATH", "../tesa-prop/build/tesa-prop")
+TESA_BIN_PATH = os.environ.get("TESA_BIN_PATH", "../tesa-prop/build/tesa-prop")
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 
 def parse_output(output):
@@ -26,7 +26,7 @@ def recompile_spa_size(root_dir: str, build_dir: str, size: int):
 def run_spa(result_dir: str, size: int, n: int):
     recompile_spa_size(".", "./build", size)
     errors = []
-    with open(f"{result_dir}/proptime_spa_result_{seed}_{size}.csv", "wt") as result_file:
+    with open(f"{result_dir}/proptime_spa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')
         times = {"proptime":[]}
         print(f"[running proptime for SPA size {size}]")
@@ -64,10 +64,10 @@ def run_tesa(result_dir: str, size: int, n: int):
     with open(f"{result_dir}/proptime_tesa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')
         times = {"proptime":[]}
-        print(f"[running proptime for SPA size {size}]")
+        print(f"[running proptime for TeSA size {size}]")
         try:
             for i in range(n):
-                cmd = [BIN_PATH, "proptime"]
+                cmd = [TESA_BIN_PATH, "proptime"]
                 print(f"iteration {i + 1}/{n}",  end="\r")
                 process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 process.wait()

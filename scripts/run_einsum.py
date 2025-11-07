@@ -115,6 +115,38 @@ def run_prop_for_sparsities(result_dir: str, seed: int, n: int):
     for sparsity in sparsities:
         run_prop(result_dir, sparsity, seed, n)
 
+def run_benchmark_12(result_dir: str, sparsity: float, seed: int, n: int):
+    file_path = f"{EINSUM_DATASET}/str_matrix_chain_multiplication_1000.txt"
+    errors = []
+    with open(f"{result_dir}/benchmark_12_{seed}_{n}.csv", "wt") as result_file:
+        result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime,overall_memory,tensors-size\n')
+        for format_str in ["sparse", "dense"]:
+            for propagate in [0, 1]:
+                if format_str == "dense" and propagate == 1:
+                    continue
+                times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
+                print(f"[running: str_matrix_chain_multiplication_1000.txt - format={format_str} - prop={propagate}")
+                try:
+                    for i in range(n):
+                        cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
+                        print(f"iteration {i}/{n}",  end="\r")
+                        process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        process.wait()
+                        metrics = parse_output(process.stdout.read())
+                        for k in times:
+                            times[k].append(metrics.get(k, 0.0))
+
+                    mean_metrics = {k: statistics.mean(times[k]) for k in times}
+                    result_line = f'{file},{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
+                    result_file.write(result_line + "\n")
+                    result_file.flush()
+                except Exception as e:
+                    errors.append("str_matrix_chain_multiplication_1000.txt")
+                    print(f"Error running {file_path}: {str(e)}")
+
+    with open("errors.txt", "wt") as error_file:
+        error_file.write("\n".join(errors))
+
 def run_with_timeout(result_dir: str, sparsity: float, seed: int, timeout_seconds: int):
     print("Testing benchmarks...")
     files = os.listdir(EINSUM_DATASET)

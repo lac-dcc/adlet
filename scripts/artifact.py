@@ -37,7 +37,8 @@ def figure8():
         result_file = f"{RESULT_DIR}/proptime_spa_result_{size}.csv"
         proptime_experiments.run_tesa(result_path, size, repeats)
         result_file = f"{RESULT_DIR}/proptime_tesa_result_{size}.csv"
-    # plot_experiments.figure8(result_path, result_file)
+    proptime_experiments.recompile_spa_size(".", "./build", 2048)
+    plot_experiments.figure8(result_path)
 
 def figure9():
     print("[FIGURE 9]")
@@ -63,8 +64,17 @@ def figure10():
     plot_experiments.figure10(result_path, result_file)
 
 def figure11():
-    #TODO: reuse the .5 result from figure7
-    pass
+    print("[FIGURE 11]")
+    result_path = f"{RESULT_DIR}/figure11"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    seed = random.randint(1, 1024) # probably should generate a fixed set of seeds for final artifact
+    repeats = BENCHMARK_REPEATS
+    sparsities = [0.9, 0.7, 0.5, 0.3]
+    for sparsity in sparsities:
+        einsum_experiments.run_benchmark_12(result_path, sparsity, seed, repeats)
+        result_file = f"{result_path}/benchmark_12_{sparsity}_{seed}_{repeats}.csv.csv"
+    # plot_experiments.figure10(result_path, result_file)
 
 def figure12():
     pass
