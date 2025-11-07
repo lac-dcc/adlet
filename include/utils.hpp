@@ -4,7 +4,7 @@
 #include <cstddef>
 
 #ifndef SIZE_MACRO
-  #define SIZE_MACRO 2048
+#define SIZE_MACRO 4096
 #endif
 constexpr int MAX_SIZE = SIZE_MACRO;
 

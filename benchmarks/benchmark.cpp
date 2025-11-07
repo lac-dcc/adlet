@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   } else if (benchmark == "proptime") {
     benchmark_proptime();
   } else if (benchmark == "einsum") {
-    benchmark_einsum_prop(argc, argv);
+    benchmark_einsum(argc, argv);
   } else {
     std::cerr << "Error: unknown benchmark" << std::endl;
   }
