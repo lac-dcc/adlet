@@ -119,7 +119,7 @@ def run_benchmark_12(result_dir: str, sparsity: float, seed: int, n: int):
     file_path = f"{EINSUM_DATASET}/str_matrix_chain_multiplication_1000.txt"
     errors = []
     with open(f"{result_dir}/benchmark_12_{seed}_{n}.csv", "wt") as result_file:
-        result_file.write('file_name,format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime,overall_memory,tensors-size\n')
+        result_file.write('format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime,overall_memory,tensors-size\n')
         for format_str in ["sparse", "dense"]:
             for propagate in [0, 1]:
                 if format_str == "dense" and propagate == 1:
@@ -137,7 +137,7 @@ def run_benchmark_12(result_dir: str, sparsity: float, seed: int, n: int):
                             times[k].append(metrics.get(k, 0.0))
 
                     mean_metrics = {k: statistics.mean(times[k]) for k in times}
-                    result_line = f'{file},{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
+                    result_line = f'{format_str},{sparsity}, {propagate}, {mean_metrics["before"]}, {mean_metrics["after"]}, {mean_metrics["analysis"]}, {mean_metrics["load"]}, {mean_metrics["compilation"]}, {mean_metrics["runtime"]}, {mean_metrics["memory"]}, {mean_metrics["tensors-size"]}'
                     result_file.write(result_line + "\n")
                     result_file.flush()
                 except Exception as e:

@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.io as pio
 from plotly.subplots import make_subplots
 from pathlib import Path
+import glob
 
 def method_label(row):
     if row["format"] == "dense":
@@ -491,5 +492,102 @@ def figure7(result_path, file_name):
 
     pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
 
-def figure9(result_path, file_name):
-    pass
+def figure8(result_path):
+    spa_files = glob.glob('results/figure8/proptime_spa_result_*.csv')
+    tesa_files = glob.glob('results/figure8/proptime_tesa_result_*.csv')
+
+    spa_data = []
+    tesa_data = []
+    for file in spa_files:
+        df = pd.read_csv(file)
+        spa_data.append({
+            'size': df['size'].iloc[0],
+            'proptime': df['proptime'].iloc[0]
+        })
+    for file in tesa_files:
+        df = pd.read_csv(file)
+        tesa_data.append({
+            'size': df['size'].iloc[0],
+            'proptime': df['proptime'].iloc[0]
+        })
+
+    spa_df = pd.DataFrame(spa_data).sort_values('size').reset_index(drop=True)
+    tesa_df = pd.DataFrame(tesa_data).sort_values('size').reset_index(drop=True)
+
+    fig = go.Figure()
+            
+    fig.add_trace(
+        go.Scatter(
+            x=tesa_df['size'],
+            y=tesa_df['proptime'],
+            mode='lines+markers',
+            name='TeSA Timing (seconds)',
+            line=dict(color='blue', width=2),
+            marker=dict(size=8, color='blue'),
+            hovertemplate='<b>TeSA</b><br>' +
+                         'Size: %{x}<br>' +
+                         'Time: %{y:.6e}s<br>' +
+                         '<extra></extra>'
+        )
+    )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=spa_df['size'],
+            y=spa_df['proptime'],
+            mode='lines+markers',
+            name='SPA Prop',
+            line=dict(color='red', width=2),
+            marker=dict(size=8, color='red'),
+            hovertemplate='<b>SPA</b><br>' +
+                         'Size: %{x}<br>' +
+                         'Prop: %{y:.6e}<br>' +
+                         '<extra></extra>'
+        )
+    )
+            
+    fig.update_xaxes(
+        title_text="Size",
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray'
+    )
+            
+    fig.update_yaxes(
+        title_text="Value (Log Scale)",
+        type="log",
+        tickformat='.2e',  # Scientific notation
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='lightgray'
+    )
+            
+    fig.update_layout(
+        title={
+            'text': 'TeSA Timing vs SPA Prop Analysis',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 20}
+        },
+        width=1000,
+        height=600,
+        hovermode='x unified',
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+            
+    pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
+    print(f"Plot saved as {result_path}/figure.png")
+    
+    fig.show()
+    
+    pio.renderers.default = "browser"
+        
+    create_combined_plot()
