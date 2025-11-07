@@ -38,7 +38,7 @@ def parse_output(output):
             metrics["initial_ratio"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(result_dir: str, sparsity: float, seed: int, n: int):
+def run(result_dir: str, sparsity: float, seed: int, n: int, compute: int = 1):
     files = os.listdir(EINSUM_DATASET)
     errors = []
     with open(f"{result_dir}/einsum_result_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
@@ -53,7 +53,7 @@ def run(result_dir: str, sparsity: float, seed: int, n: int):
                     print(f"[running {idx + 1}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
                     try:
                         for i in range(n):
-                            cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
+                            cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i), str(compute)]
                             print(f"iteration {i}/{n}",  end="\r")
                             process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                             process.wait()
@@ -105,10 +105,10 @@ def run_prop(result_dir: str, sparsity: float, seed: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def run_for_sparsities(result_dir: str, seed: int, n: int):
+def run_for_sparsities(result_dir: str, seed: int, n: int, compute: int = 1):
     sparsities = [0.9, 0.7, 0.5, 0.3]
     for sparsity in sparsities:
-        run(result_dir, sparsity, seed, n)
+        run(result_dir, sparsity, seed, n, compute)
 
 def run_prop_for_sparsities(result_dir: str, seed: int, n: int):
     sparsities = [0.9, 0.7, 0.5, 0.3]

@@ -2,7 +2,7 @@
 #include "../include/utils.hpp"
 
 void run(const std::string &file_path, const bool propagate,
-         const double sparsity, const bool sparse) {
+         const double sparsity, const bool sparse, const bool compute = true) {
 
   auto benchmark = read_einsum_benchmark(file_path);
 
@@ -42,7 +42,8 @@ void run(const std::string &file_path, const bool propagate,
   g.compile();
   end(startComp, "compilation = ");
   const auto startRun = begin();
-  auto result = g.compute();
+  if (compute)
+    auto result = g.compute();
   end(startRun, "runtime = ");
   print_memory_usage();
   g.get_tensor_sizes();
@@ -78,10 +79,10 @@ void run_prop(const std::string &file_path, const double sparsity, bool run_fw,
 }
 
 int benchmark_einsum(int argc, char *argv[]) {
-  if (argc != 7 && argc != 9) {
+  if (argc != 8 && argc != 9) {
     std::cerr << "Usage for runtime/memory: " << argv[0]
               << " einsum <file_path> <sparsity> "
-                 "<format> <propagate> <random_seed>\n ";
+                 "<format> <propagate> <random_seed> <compute>\n ";
     std::cerr << "Usage for analysis: " << argv[0]
               << " einsum prop <file_path> <sparsity> "
                  "<run_fw> <run_lat> <run_bw> <random_seed>\n ";
@@ -89,14 +90,15 @@ int benchmark_einsum(int argc, char *argv[]) {
   }
 
   int param = 1;
-  if (argc == 7) {
+  if (argc == 8) {
     const std::string file_path = argv[++param];
     const std::string sparseStr = argv[++param];
     const bool format = sparseStr == "sparse";
     const double sparsity = std::stod(argv[++param]);
     const bool propagate = std::stoi(argv[++param]);
     SEED = std::stoi(argv[++param]);
-    run(file_path, propagate, sparsity, format);
+    const bool compute = std::stoi(argv[++param]);
+    run(file_path, propagate, sparsity, format, compute);
   } else {
     const std::string propStr = argv[++param];
     if (propStr != "prop") {
