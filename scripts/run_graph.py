@@ -1,7 +1,6 @@
 import os
 import random
 import statistics
-from datetime import datetime
 import subprocess
 
 #only column sparsity
@@ -19,7 +18,7 @@ run_full = [["0.0", "0.1", "SD", "0"], ["0.0", "0.3", "SD", "0"], ["0.0", "0.5",
 seed = "1"
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
 GRAPH_NAME = "bert"
-BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
+BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 
 
 def parse_output(output):
@@ -129,13 +128,6 @@ def random_run(list_runs):
             results.append(mean_metrics)
         return results
 
-def run_all():
-    run(run_row_sparsity, False)
-    run(run_column_sparsity, False)
-    run(run_row_col_sparsity, False)
-
-
 if __name__ == "__main__":
-    run_all()
-    #run(list_runs=run1, warmup=False)
+    run("./", [["0.0", "0.1", "SD", "0"]], False)
 

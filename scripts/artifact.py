@@ -77,7 +77,14 @@ def figure11():
     # plot_experiments.figure10(result_path, result_file)
 
 def figure12():
-    pass
+    print("[FIGURE 12]")
+    result_path = f"{RESULT_DIR}/figure12"
+    if not os.path.exists(result_path):
+        os.makedirs(result_path)
+    seed = random.randint(1, 1024)
+    repeats = BENCHMARK_REPEATS
+    einsum_experiments.run_for_sparsities(result_path, seed, repeats)
+    plot_experiments.figure12(result_path)
 
 def run(figures: List[str]):
     dispatch = {
@@ -86,6 +93,7 @@ def run(figures: List[str]):
         '9': figure9,
         '10': figure10,
         '11': figure11,
+        '12': figure12,
     }
 
     for fig in figures:

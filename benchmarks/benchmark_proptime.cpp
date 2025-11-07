@@ -6,25 +6,22 @@
 
 void benchmark_proptime() {
   int size = MAX_SIZE;
-  double sparsity{ 0.5 }; // arbitrary: static analysis runtime doesn't change
+  double sparsity{0.5}; // arbitrary: static analysis runtime doesn't change
 
   auto A = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<SparsityVector>{
-        generate_sparsity_vector(0.5, size),
-        generate_sparsity_vector(0.5, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0.5, size),
+                                  generate_sparsity_vector(0.5, size)},
       "A");
   auto B = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<SparsityVector>{
-        generate_sparsity_vector(0.5, size),
-        generate_sparsity_vector(0.5, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0.5, size),
+                                  generate_sparsity_vector(0.5, size)},
       "B");
   auto C = std::make_shared<Tensor>(
       std::vector<int>{size, size},
-      std::vector<SparsityVector>{
-        generate_sparsity_vector(0.5, size),
-        generate_sparsity_vector(0.5, size)},
+      std::vector<SparsityVector>{generate_sparsity_vector(0.5, size),
+                                  generate_sparsity_vector(0.5, size)},
       "C");
 
   auto matmul =

@@ -1,8 +1,6 @@
 #include "../include/einsum.hpp"
 #include "../include/utils.hpp"
 
-#include "taco/format.h"
-
 void run(const std::string &file_path, const bool propagate,
          const double sparsity, const bool sparse) {
 
