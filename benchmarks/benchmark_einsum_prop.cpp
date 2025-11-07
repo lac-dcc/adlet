@@ -2,7 +2,7 @@
 #include "../include/utils.hpp"
 
 void run(const std::string &file_path, const double sparsity, bool run_fw,
-              bool run_lat, bool run_bw) {
+         bool run_lat, bool run_bw) {
   auto benchmark = read_einsum_benchmark(file_path);
 
   if (benchmark.path.empty() || benchmark.strings.empty() ||
