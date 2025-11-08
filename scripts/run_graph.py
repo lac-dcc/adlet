@@ -43,9 +43,9 @@ def parse_output(output):
             metrics["tensors-size"] = float(line.split("=")[-1].strip())
     return metrics
 
-def run(result_dir: str, list_runs, warmup=False):
+def run(result_dir: str, list_runs, warmup=False, repeat: int = 5):
     results = []
-    total = len(list_runs) * BENCHMARK_REPEATS
+    total = len(list_runs) * repeat
     iter_count = 0
     file_name = f"{result_dir}/{GRAPH_NAME}_result.csv"
     with open(file_name, "wt") as file:
@@ -64,7 +64,7 @@ def run(result_dir: str, list_runs, warmup=False):
 
             print(f"{iter_count}/{total} - {config_name}")
 
-            for _ in range(BENCHMARK_REPEATS):
+            for _ in range(repeat):
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 iter_count+=1
                 metrics = parse_output(result.stdout)
