@@ -50,7 +50,7 @@ def run(result_dir: str, sparsity: float, seed: int, n: int, compute: int = 1):
                     if format_str == "dense" and propagate == 1:
                         continue
                     times = {"before":[], "after": [], "analysis": [], "load": [], "compilation": [], "runtime": [], "memory": [], "tensors-size":[]}
-                    print(f"[running {idx + 1}/{len(files)}]: {file} - format={format_str} - prop={propagate}")
+                    print(f"[running {idx + 1}/{len(files)}]: {file} - format={format_str} - prop={propagate} - sparsity={sparsity}")
                     try:
                         for i in range(n):
                             cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i), str(compute)]
