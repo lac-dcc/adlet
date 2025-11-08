@@ -62,7 +62,7 @@ def run(result_dir: str, list_runs, warmup=False):
                 result = subprocess.run(cmd, capture_output=True, text=True)
                 metrics = parse_output(result.stdout)
 
-            print(f"{iter_count}/{total} - {config_name}", end='\r')
+            print(f"{iter_count}/{total} - {config_name}")
 
             for _ in range(BENCHMARK_REPEATS):
                 result = subprocess.run(cmd, capture_output=True, text=True)

@@ -12,7 +12,6 @@ RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
 def figure7():
-    #TODO: check if Figure 11 was already generated to reuse results
     print("[FIGURE 7]")
     result_path = f"{RESULT_DIR}/figure7"
     if not os.path.exists(result_path):
@@ -82,8 +81,8 @@ def figure12():
         os.makedirs(result_path)
     seed = random.randint(1, 1024)
     repeats = BENCHMARK_REPEATS
-    einsum_experiments.run_for_sparsities(result_path, seed, repeats)
-    # plot_experiments.figure12(result_path)
+    einsum_experiments.run_for_sparsities(result_path, seed, repeats, compute=0)
+    plot_experiments.figure12(result_path)
 
 def run(figures: List[str]):
     dispatch = {
