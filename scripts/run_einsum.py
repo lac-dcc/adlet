@@ -118,7 +118,7 @@ def run_prop_for_sparsities(result_dir: str, seed: int, n: int):
 def run_benchmark_12(result_dir: str, sparsity: float, seed: int, n: int):
     file_path = f"{EINSUM_DATASET}/str_matrix_chain_multiplication_1000.txt"
     errors = []
-    with open(f"{result_dir}/benchmark_12_{seed}_{n}.csv", "wt") as result_file:
+    with open(f"{result_dir}/benchmark_12_{sparsity}_{seed}_{n}.csv", "wt") as result_file:
         result_file.write('format,sparsity,propagate,ratio_before,ratio_after,analysis,load_time,compilation_time,runtime,overall_memory,tensors-size\n')
         for format_str in ["sparse", "dense"]:
             for propagate in [0, 1]:

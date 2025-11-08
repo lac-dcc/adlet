@@ -963,6 +963,91 @@ def figure9(result_path):
     multi_fig = create_multi_sparsity_plot(sparsity_data)
     multi_fig.show()
 
-    single_fig.write_image(f"{result_path}/sparsity_single.svg", height=800, width=600)
-    multi_fig.write_image(f"{result_path}/sparsity_multi.svg")
+    single_fig.write_image(f"{result_path}/figure_single.png", height=800, width=600)
+    multi_fig.write_image(f"{result_path}/figure_multi.png")
 
+
+def figure11(result_path):
+    def plot_runtime(data_frame):
+        df = data_frame.copy()
+        df['config'] = df.apply(lambda row: "Dense" if row['format'].strip() == 'dense' else( 'Sparse + Prop' if row['propagate'] == 1 else 'Sparse'), axis=1)
+        df = df.sort_values(by=['config'])
+        fig = go.Figure()
+
+        current_x = 0
+
+        
+        for config in df['config'].unique():
+            x_positions = []
+            x_labels = []
+            for i in range(len(df[df['config'] == config])):
+                x_positions.append(i * 4 + current_x)
+                x_labels.append(i * 4 + 1)
+            current_x += 1
+
+            config_data = df[df['config'] == config]
+            fig.add_trace(go.Bar(
+                x=x_positions,
+                y=config_data['runtime'],
+                marker_line_width=1,
+                marker_line_color='black',
+                opacity=0.9,
+                name=config,
+                showlegend=True,
+                hovertemplate=(
+                    'Sparsity: %{customdata[13]}<br>' +
+                    'Format: %{customdata[14]}<br>' +
+                    'Size: %{y:.3f}s<br>'
+                ),
+                customdata=config_data,
+            ))
+
+        fig.update_layout(
+            xaxis=dict(
+                tickmode="array",
+                tickvals=x_labels,
+                ticktext=[i*100 for i in df['sparsity'].unique()],
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f0f0f0',
+                linecolor='black',
+                linewidth=2,
+                tickfont=dict(size=12),
+                title_text="% Sparsity",
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='#f0f0f0',
+                tickfont=dict(size=12),
+                title_text="Runtime (s)",
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            font=dict(size=11),
+            width=500,
+            height=250,
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.25,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=12),
+                itemsizing='trace',
+            ),
+            margin=dict(t=0, b=0, l=0, r=40),
+        )
+        fig.show()
+        pio.write_image(fig, f"{result_path}/figure.png", width=500, height=250)
+
+    def read_csvs(result_path):
+        df = pd.concat([pd.read_csv(file) for file in glob.glob(result_path + "/*.csv")])
+        df.columns = df.columns.str.strip()
+        df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
+        df = df.sort_values(by=['sparsity'])
+        return df
+
+    row_df = read_csvs(result_path)
+
+    plot_runtime(row_df)
