@@ -44,7 +44,7 @@ ARG GITHUB_TOKEN
 RUN echo "Cloning SPA" && \
     git clone -b artifact --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout 41525952f3da59fdff993db3911b5227b72b9049
+    git checkout dc486135966ffadefe1b9af12ac8dae51186ff73
 
 RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
