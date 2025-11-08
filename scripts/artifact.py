@@ -7,7 +7,7 @@ import run_proptime as proptime_experiments
 import run_graph as graph_experiments
 import plot as plot_experiments
 
-BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 1))
+BENCHMARK_REPEATS = 5 
 RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 
 
@@ -58,7 +58,7 @@ def figure10():
     result_path = f"{RESULT_DIR}/figure10"
     if not os.path.exists(result_path):
         os.makedirs(result_path)
-    graph_experiments.run(result_path, graph_experiments.run_row_col_sparsity)
+    graph_experiments.run(result_path, graph_experiments.run_row_col_sparsity, repeat=BENCHMARK_REPEATS)
     result_file = f"{result_path}/bert_result.csv"
     plot_experiments.figure10(result_path, result_file)
 
@@ -94,9 +94,13 @@ def run(figures: List[str]):
         '12': figure12,
     }
 
+    print(f"Building figures {figures}")
     for fig in figures:
         func = dispatch.get(fig, figure12)
-        func()
+        try:
+            func()
+        except Exception as e:
+            print(f"Error  running figure {fig} - {str(e)}")
 
 if __name__ == "__main__":
     # Figure 7 - SPA runtime vs compilation vs execution time (einsum)
@@ -116,7 +120,15 @@ if __name__ == "__main__":
         default="7,8,9,10,11,12",
     )
 
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        help="Number of executions for each benchmark",
+        default=5,
+    )
+
     args = parser.parse_args()
 
     figures = [x.strip() for x in args.figures.split(",")]
+    BENCHMARK_REPEATS = args.repeat
     run(figures)

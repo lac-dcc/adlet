@@ -44,7 +44,7 @@ ARG GITHUB_TOKEN
 RUN echo "Cloning SPA" && \
     git clone -b artifact --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout a9c6b7b1994004275f1bf364d9759e08602aec76
+    git checkout dc486135966ffadefe1b9af12ac8dae51186ff73
 
 RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
@@ -52,7 +52,7 @@ RUN echo "Cloning C++ TeSA Prop" && \
     git checkout 60f3370e3f5e8282c01b2de10fac6337c3a8c63c && \
     mkdir tesa-prop/build
 
-# Build TACO WITH PYTHON BINDINGS
+# Build TACO
 RUN echo "Building TACO" && \
     mkdir -p taco/build && \
     cd taco/build && \
@@ -61,14 +61,13 @@ RUN echo "Building TACO" && \
 
 # Build SPA
 RUN echo "Building SPA" && \
+    cp -r adlet/scripts /app/scripts/ && \
+    cp -r adlet/einsum-dataset/ /app/einsum-dataset/ && \
     mkdir -p adlet/build && \
     cd adlet/build && \
     cmake -G Ninja ../ && \
     ninja
 
-# Copy scripts
-COPY scripts/ /app/scripts/
-COPY einsum-dataset/ /app/einsum-dataset/
 RUN mkdir -p /app/results/
 
 # Create virtual environment and install Python dependencies
@@ -81,8 +80,6 @@ RUN python3 -m venv /venv && \
 ENV PATH="/venv/bin:$PATH"
 
 # Environment variables for your script
-ARG BENCHMARK_REPEATS=5
-ENV BENCHMARK_REPEATS=${BENCHMARK_REPEATS}
 ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
 
