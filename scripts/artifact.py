@@ -94,9 +94,13 @@ def run(figures: List[str]):
         '12': figure12,
     }
 
+    print(f"Building figures {figures}")
     for fig in figures:
         func = dispatch.get(fig, figure12)
-        func()
+        try:
+            func()
+        except Exception as e:
+            print(f"Error  running figure {fig} - {str(e)}")
 
 if __name__ == "__main__":
     # Figure 7 - SPA runtime vs compilation vs execution time (einsum)
