@@ -44,12 +44,13 @@ ARG GITHUB_TOKEN
 RUN echo "Cloning SPA" && \
     git clone -b artifact --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout 48118bbab89d7ed768d68e159d8188562c83f135
+    git checkout a9c6b7b1994004275f1bf364d9759e08602aec76
 
 RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
     cd tesa-prop && \
-    git checkout 60f3370e3f5e8282c01b2de10fac6337c3a8c63c
+    git checkout 60f3370e3f5e8282c01b2de10fac6337c3a8c63c && \
+    mkdir tesa-prop/build
 
 # Build TACO WITH PYTHON BINDINGS
 RUN echo "Building TACO" && \
