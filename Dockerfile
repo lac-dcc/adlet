@@ -45,7 +45,7 @@ ARG GITHUB_TOKEN
 RUN echo "Cloning SPA" && \
     git clone -b artifact --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout dc486135966ffadefe1b9af12ac8dae51186ff73
+    git checkout a81b4a0e077b1e79d2e433d70980116dc220a6ba
 
 RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
@@ -83,6 +83,10 @@ ENV PATH="/venv/bin:$PATH"
 # Environment variables for your script
 ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
+ENV SPA_ROOT=/app/adlet/
+ENV BUILD_PATH=/app/adlet/build
+ENV TESA_ROOT=/app/tesa-prop/
+ENV TESA_BIN_PATH=/app/tesa-prop/build/tesa-prop
 
 # Entry point
 ENTRYPOINT ["python", "-u", "scripts/artifact.py"]

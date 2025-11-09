@@ -4,6 +4,8 @@ import subprocess
 
 BUILD_DIR = os.environ.get("BUILD_PATH", "./build")
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
+SPA_ROOT = os.environ.get("SPA_ROOT", ".")
+TESA_ROOT = os.environ.get("TESA_ROOT", "../tesa-prop")
 TESA_BIN_PATH = os.environ.get("TESA_BIN_PATH", "../tesa-prop/build/tesa-prop")
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 
@@ -24,7 +26,7 @@ def recompile_spa_size(root_dir: str, build_dir: str, size: int):
     process.wait()
 
 def run_spa(result_dir: str, size: int, n: int):
-    recompile_spa_size(".", "./build", size)
+    recompile_spa_size(SPA_ROOT, BUILD_DIR, size)
     errors = []
     with open(f"{result_dir}/proptime_spa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')
@@ -59,7 +61,7 @@ def recompile_tesa_size(root_dir: str, build_dir: str, size: int):
     process.wait()
 
 def run_tesa(result_dir: str, size: int, n: int):
-    recompile_tesa_size("../tesa-prop", "../tesa-prop/build", size)
+    recompile_tesa_size(TESA_ROOT, TESA_ROOT + "/build", size)
     errors = []
     with open(f"{result_dir}/proptime_tesa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')

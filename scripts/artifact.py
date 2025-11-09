@@ -36,7 +36,7 @@ def figure8():
         result_file = f"{RESULT_DIR}/proptime_spa_result_{size}.csv"
         proptime_experiments.run_tesa(result_path, size, repeats)
         result_file = f"{RESULT_DIR}/proptime_tesa_result_{size}.csv"
-    proptime_experiments.recompile_spa_size(".", "./build", 2048)
+    proptime_experiments.recompile_spa_size(proptime_experiments.SPA_ROOT, proptime_experiments.BUILD_DIR, 2048)
     plot_experiments.figure8(result_path)
 
 def figure9():

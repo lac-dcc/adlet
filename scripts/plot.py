@@ -604,8 +604,6 @@ def figure8(result_path):
     fig.show()
     
     pio.renderers.default = "browser"
-        
-    create_combined_plot()
 
 def figure9(result_path):
     def get_last_nonzero_ratios(group):
