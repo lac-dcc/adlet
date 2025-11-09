@@ -40,12 +40,10 @@ RUN echo "Cloning TACO" && \
     git checkout 0e79acb56cb5f3d1785179536256e206790b2a9e
 
 # Clone SPA (adlet)
-ARG GITHUB_TOKEN
-#TODO: remove token parameter
 RUN echo "Cloning SPA" && \
-    git clone -b artifact --depth 1 https://$GITHUB_TOKEN@github.com/lac-dcc/adlet.git && \
+    git clone https://github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout 3945729024d33dd92836f5f9b7abaa5d0390bd5b
+    git checkout v1.0
 
 RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
