@@ -1,5 +1,7 @@
 #include "benchmark_format.hpp"
+#include "../include/tensor.hpp"
 #include "../include/utils.hpp"
+#include <string>
 
 double compute(taco::Tensor<float> &A, const taco::Tensor<float> &B,
                const taco::Tensor<float> &C) {
@@ -49,30 +51,72 @@ void run(const int rows, const int cols, const std::string out_format,
             << right_col_sparsity << "," << time << std::endl;
 }
 
-int parseArguments(int argc, char *argv[]) {
-  if (argc != 11) {
-    std::cerr
-        << "Usage: " << argv[0]
-        << " format <rows> <cols> <out_format> <left_format> <right_format> "
-           "<left_row_sparsity> <left_col_sparsity> <right_row_sparsity> "
-           "<right_col_sparsity> \n";
-    return 1;
+void show_sizes(const std::string format, int rank, std::vector<int> sizes,
+                std::vector<double> sparsities) {
+
+  assert(sizes.size() == sparsities.size());
+
+  std::vector<SparsityVector> sparsity_vector;
+  for (int i = 0; i < rank; i++) {
+    sparsity_vector.push_back(
+        generate_sparsity_vector(sparsities[i], sizes[i]));
   }
+  auto tensor =
+      std::make_shared<Tensor>(sizes, sparsity_vector, "tensor", false);
+  tensor->create_data(get_format(format));
+  tensor->fill_tensor();
+  tensor->sparsities = sparsity_vector;
+
+  std::cout << format << "," << rank << ",";
+  for (int i = 0; i < rank; i++) {
+    std::cout << sizes[i] << ",";
+  }
+  for (int i = 0; i < rank; i++) {
+    std::cout << sparsities[i] << ",";
+  }
+  std::cout << get_tensor_memory_usage(*(tensor->data)) << ","
+            << get_memory_usage_mb() << std::endl;
+}
+
+/*int parseArguments(int argc, char *argv[]) {*/
+/*  int param = 1;*/
+/*  std::string format = argv[++param];*/
+/*  int rank = std::stoi(argv[++param]);*/
+/*  std::vector<int> sizes;*/
+/*  std::vector<double> sparsities;*/
+/*  for (int i = 0; i < rank; i++) {*/
+/*    sizes.push_back(std::stoi(argv[++param]));*/
+/*  }*/
+/*  for (int i = 0; i < rank; i++) {*/
+/*    sparsities.push_back(std::stod(argv[++param]));*/
+/*  }*/
+/**/
+/*  show_sizes(format, rank, sizes, sparsities);*/
+/*  return 0;*/
+/*}*/
+
+int benchmarkKernels(int argc, char *argv[]) {
   int param = 1;
-  int rows = std::stoi(argv[++param]);
-  int cols = std::stoi(argv[++param]);
-  std::string out_format = argv[++param];
-  std::string left_format = argv[++param];
-  std::string right_format = argv[++param];
-  double left_row_sparsity = std::stod(argv[++param]);
-  double left_col_sparsity = std::stod(argv[++param]);
-  double right_row_sparsity = std::stod(argv[++param]);
-  double right_col_sparsity = std::stod(argv[++param]);
-  run(rows, cols, out_format, left_format, right_format, left_row_sparsity,
-      left_col_sparsity, right_row_sparsity, right_col_sparsity);
+  int N = std::stoi(argv[++param]);
+  double sparsity = std::stod(argv[++param]);
+  const int M = N;
+  const int K = N;
+  taco::Tensor<float> A({M, N}, {taco::Dense, taco::Sparse});
+  fill_tensor(A, sparsity, M, N);
+  taco::Tensor<float> B({N, K}, {taco::Dense, taco::Dense});
+  fill_tensor(B, 0.0, N, K);
+  taco::Tensor<float> C({M, K}, {taco::Dense, taco::Dense});
+  taco::IndexVar i("i"), j("j"), k("k");
+  C(i, k) = A(i, j) * B(j, k);
+  C.compile();
+  auto start = begin();
+  C.evaluate();
+  auto time = end(start);
+  std::cout << N << "," << N << "," << N << "," << sparsity << "," << time;
   return 0;
 }
 
-int benchmarkFormats(int argc, char *argv[]) {
-  return parseArguments(argc, argv);
+int parseArguments(int argc, char *argv[]) {
+  // return parseArguments(argc, argv);
+  return benchmarkKernels(argc, argv);
 }

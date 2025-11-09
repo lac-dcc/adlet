@@ -4,7 +4,7 @@
 #include <cstddef>
 
 #ifndef SIZE_MACRO
-  #define SIZE_MACRO 2048
+#define SIZE_MACRO 4096
 #endif
 constexpr int MAX_SIZE = SIZE_MACRO;
 
@@ -20,6 +20,9 @@ extern unsigned int SEED;
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
                  double colSparsityRatio, int rows, int cols);
 
+void fill_tensor(taco::Tensor<float> &tensor, double sparsityRatio, int rows,
+                 int cols);
+
 taco::Format get_format(const std::string format);
 
 std::vector<int> get_indices(std::vector<int> dimSizes, int numElement);
@@ -28,6 +31,11 @@ SparsityVector generate_sparsity_vector(double sparsity, int length);
 
 void print_tensor_memory_usage(const taco::Tensor<float> &tensor,
                                const std::string &name);
+
+double get_tensor_memory_usage(const taco::Tensor<float> &tensor);
+
+double get_memory_usage_mb();
+
 void print_memory_usage();
 
 void write_kernel(const std::string &filename,
@@ -39,5 +47,7 @@ void end(
     const std::chrono::time_point<std::chrono::high_resolution_clock> &start,
     const std::string &message);
 
+double
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start);
 bool randomBool(double probability = 0.5);
 std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse);

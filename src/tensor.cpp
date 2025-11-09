@@ -1,4 +1,5 @@
 #include "../include/tensor.hpp"
+#include <cstddef>
 
 void Tensor::create_data(const double threshold) {
   taco::ModeFormat sparse = taco::Sparse;
@@ -75,6 +76,33 @@ Tensor::Tensor(std::vector<int> sizes, std::vector<float> sparsityRatios,
 void Tensor::create_data(taco::Format format) {
   this->data = std::make_shared<taco::Tensor<float>>(
       taco::Tensor<float>(this->name, this->sizes, format));
+}
+
+void Tensor::fill_tensor() {
+  std::vector<int> positions;
+  std::vector<std::vector<int>> coords;
+  this->gen_coord(0, coords, positions);
+  for (auto coord : coords) {
+    float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+    this->data->insert(coord, val);
+  }
+  this->data->pack();
+}
+
+void Tensor::gen_coord(size_t d, std::vector<std::vector<int>> &indices,
+                       std::vector<int> &positions) {
+  // TACO requires int
+  if (d == this->sizes.size()) {
+    indices.push_back(positions);
+  } else {
+    for (size_t i = 0; i < this->sizes[d]; i++) {
+      if (this->sparsities[d].test(i)) {
+        positions.push_back(i);
+        this->gen_coord(d + 1, indices, positions);
+        positions.pop_back();
+      }
+    }
+  }
 }
 
 void Tensor::initialize_data() {

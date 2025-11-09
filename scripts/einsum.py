@@ -1,5 +1,5 @@
-from typing import List
 import os
+from typing import List
 import einsum_benchmark
 import opt_einsum as oe
 
@@ -39,6 +39,31 @@ def write_benchmark(benchmark_name, indices, einsum_strings, tensor_sizes):
         file.write(str(indices) + "\n")
         file.write(str(einsum_strings) + "\n")
         file.write(str(tensor_sizes) + "\n")
+
+def get_paper_einsum_benchmarks():
+    names = [
+        "lm_batch_likelihood_brackets_3_16d",
+        "lm_batch_likelihood_sentence_3_12d",
+        "str_nw_mera_open_26",
+        "lm_batch_likelihood_sentence_4_8d",
+        "str_nw_ftps_open_30",
+        "str_matrix_chain_multiplication_100",
+        "str_nw_ftps_open_28",
+        "lm_batch_likelihood_sentence_4_4d",
+        "str_mps_varying_inner_product_200",
+        "str_nw_mera_closed_120",
+        "gm_queen5_5_3.wcsp",
+        "str_matrix_chain_multiplication_1000",
+    ]
+    benchmarks = []
+    for instance in einsum_benchmark.instances:
+        if instance.name in names:
+            benchmarks.append(instance)
+
+    einsum_dir = os.environ.get('EINSUM_DATASET', 'einsum-dataset/')
+    os.makedirs(einsum_dir, exist_ok=True)
+    for instance in benchmarks:
+        write_benchmark(f"{einsum_dir}/{instance.name}", *generate_lists(instance.format_string, instance.tensors))
 
 def get_small_benchmarks(threshold: int = 100):
     benchmarks = []
@@ -84,5 +109,6 @@ def get_biggest_dim(names: List[str]) -> int:
     return biggest
 
 if __name__ == "__main__":
-    get_small_benchmarks(1000)
+    #get_small_benchmarks(1000)
+    get_paper_einsum_benchmarks()
 

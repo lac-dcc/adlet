@@ -34,6 +34,9 @@ public:
 
   void create_data(taco::Format format);
   void initialize_data();
+  void gen_coord(size_t d, std::vector<std::vector<int>> &indices,
+                 std::vector<int> &positions);
+  void fill_tensor();
   void print_matrix();
   void print_full_sparsity();
   float get_sparsity_ratio();

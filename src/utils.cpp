@@ -1,9 +1,27 @@
 #include "../include/utils.hpp"
+#include "taco/format.h"
 #include <fstream>
 #include <sys/resource.h>
 
 unsigned int SEED = 123;
 
+void fill_tensor(taco::Tensor<float> &tensor, double sparsityRatio, int rows,
+                 int cols) {
+  std::mt19937 gen(SEED);
+  std::uniform_real_distribution<> dist(0.0, 1.0);
+
+  for (int i = 0; i < rows; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      if (dist(gen) < sparsityRatio) {
+        continue;
+      }
+
+      float val = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+      tensor.insert({i, j}, val);
+    }
+  }
+  tensor.pack();
+}
 // should be used for creating non-adlet tensors for comparison
 void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
                  double colSparsityRatio, int rows, int cols) {
@@ -44,24 +62,13 @@ void fill_tensor(taco::Tensor<float> &tensor, double rowSparsityRatio,
 }
 
 taco::Format get_format(const std::string format) {
-
-  taco::Format outFormat;
-  if (format == "CSR")
-    outFormat = taco::Format({taco::Dense, taco::Sparse});
-  else if (format == "CSC")
-    outFormat = taco::Format({taco::Dense, taco::Sparse}, {1, 0});
-  else if (format == "DD")
-    outFormat = taco::Format({taco::Dense, taco::Dense});
-  else if (format == "DCSR") {
-    outFormat = taco::Format({taco::Sparse, taco::Sparse}, {0, 1});
-  } else if (format == "DCSC") {
-    outFormat = taco::Format({taco::Sparse, taco::Sparse}, {1, 0});
-  } else if (format == "SparseDense") {
-    outFormat = taco::Format({taco::Sparse, taco::Dense});
-  } else if (format == "SparseDense10") {
-    outFormat = taco::Format({taco::Sparse, taco::Dense}, {1, 0});
-  }
-  return outFormat;
+  std::vector<taco::ModeFormatPack> modes;
+  for (char character : format)
+    if (character == 'S')
+      modes.push_back(taco::Sparse);
+    else
+      modes.push_back(taco::Dense);
+  return modes;
 }
 
 size_t count_bits(SparsityVector A, int pos) {
@@ -99,22 +106,30 @@ SparsityVector generate_sparsity_vector(double sparsity, int length) {
   return sparsityVector;
 }
 
-void print_tensor_memory_usage(const taco::Tensor<float> &tensor,
-                               const std::string &name) {
+double get_tensor_memory_usage(const taco::Tensor<float> &tensor) {
   taco::TensorStorage s = tensor.getStorage();
-  std::cout << name << " memory used = " << std::fixed
-            << s.getSizeInBytes() / (1024.0 * 1024.0) << "MB" << std::endl;
+  return s.getSizeInBytes() / (1024.0 * 1024.0);
 }
 
-void print_memory_usage() {
+void print_tensor_memory_usage(const taco::Tensor<float> &tensor,
+                               const std::string &name) {
+  std::cout << name << " memory used = " << get_tensor_memory_usage(tensor)
+            << std::endl;
+}
+
+double get_memory_usage_mb() {
   struct rusage usage;
   getrusage(RUSAGE_SELF, &usage);
 #ifdef __APPLE__
-  std::cout << "memory used = " << usage.ru_maxrss / (1024.0 * 1024.0)
-            << std::endl;
+  return usage.ru_maxrss / (1024.0 * 1024.0); // bytes -> MB
 #else
-  std::cout << "memory used = " << usage.ru_maxrss / 1024.0 << std::endl;
+  return usage.ru_maxrss / 1024.0; // KB -> MB
 #endif
+}
+
+void print_memory_usage() {
+  std::cout << "memory used = " << get_memory_usage_mb() / (1024.0 * 1024.0)
+            << std::endl;
 }
 
 void write_kernel(const std::string &filename,
@@ -135,6 +150,13 @@ void end(
   auto stop = std::chrono::high_resolution_clock::now();
   const std::chrono::duration<double> duration{stop - start};
   std::cout << message << duration.count() << std::endl;
+}
+
+double
+end(const std::chrono::time_point<std::chrono::high_resolution_clock> &start) {
+  auto stop = std::chrono::high_resolution_clock::now();
+  const std::chrono::duration<double> duration{stop - start};
+  return duration.count();
 }
 
 bool randomBool(double probability) {
