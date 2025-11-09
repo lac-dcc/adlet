@@ -22,7 +22,8 @@ RUN apt-get update && \
     ninja-build \
     python3.12 \
     python3-pip \
-    python3.12-venv
+    python3.12-venv \
+    clang-tools
 
 RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
 RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
@@ -50,7 +51,7 @@ RUN echo "Cloning C++ TeSA Prop" && \
     git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
     cd tesa-prop && \
     git checkout 60f3370e3f5e8282c01b2de10fac6337c3a8c63c && \
-    mkdir tesa-prop/build
+    mkdir build
 
 # Build TACO
 RUN echo "Building TACO" && \
