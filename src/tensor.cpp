@@ -159,7 +159,7 @@ size_t Tensor::get_nnz() {
   std::vector<size_t> dimNnz;
   for (int i = 0; i < sparsities.size(); ++i)
     nnz *= count_bits(sparsities[i], sizes[i]);
-  
+
   return nnz;
 }
 
@@ -172,11 +172,11 @@ void Tensor::print_shape() {
 }
 
 size_t Tensor::compute_size_in_bytes() {
-  size_t size{ 0 };
+  size_t size{0};
   auto index = data->getStorage().getIndex();
   auto format = data->getFormat().getModeFormats();
 
-  int nnz{ 1 };
+  int nnz{1};
   std::vector<int> dimNnz;
 
   for (int i = 0; i < sparsities.size(); ++i)
@@ -193,9 +193,9 @@ size_t Tensor::compute_size_in_bytes() {
     }
   }
 
-  int currDims{ 1 };
-  int currSparseDims{ 1 };
-  int prevDims{ -1 };
+  int currDims{1};
+  int currSparseDims{1};
+  int prevDims{-1};
 
   for (int i = 0; i < format.size(); ++i) {
     if (format[i] == taco::Dense) {
@@ -211,6 +211,6 @@ size_t Tensor::compute_size_in_bytes() {
     size += currSparseDims;
     prevDims = currSparseDims;
   }
-  
+
   return (size + nnz) * sizeof(float);
 }
