@@ -1041,8 +1041,6 @@ def figure11(result_path):
 
     def read_csvs(result_path):
         df = pd.concat([pd.read_csv(file) for file in glob.glob(result_path + "/*.csv")])
-        df.columns = df.columns.str.strip()
-        df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
         df = df.sort_values(by=['sparsity'])
         return df
 
