@@ -128,7 +128,7 @@ def run_benchmark_12(result_dir: str, sparsity: float, seed: int, n: int):
                 print(f"[running: str_matrix_chain_multiplication_1000.txt - format={format_str} - prop={propagate}")
                 try:
                     for i in range(n):
-                        cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i)]
+                        cmd = [BIN_PATH, "einsum", file_path, format_str, str(sparsity), str(propagate), str(seed + i), str(1)]
                         print(f"iteration {i}/{n}",  end="\r")
                         process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                         process.wait()
