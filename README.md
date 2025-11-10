@@ -39,7 +39,7 @@ Build Dependencies:
 1. Clone and build `taco`
 2. Clone SPA
 ```bash
-$ git clone https://github.com/lac-dcc/adlet/tree/main
+$ git clone https://github.com/lac-dcc/adlet
 ```
 
 3. Build
