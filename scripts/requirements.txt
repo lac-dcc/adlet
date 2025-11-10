@@ -12,3 +12,5 @@ tqdm==4.67.1
 plotly==6.2.0
 plotly-express==0.4.1
 kaleido==1.1.0
+pandas==2.3.3
+numpy==2.3.4

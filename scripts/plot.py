@@ -601,7 +601,7 @@ def figure8(result_path):
     pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
     print(f"Plot saved as {result_path}/figure.png")
     
-    fig.show()
+    # fig.show()
     
     pio.renderers.default = "browser"
 
@@ -957,9 +957,9 @@ def figure9(result_path):
 
 
     single_fig = create_plotly_bar_plot(sparsity_data[0.5], "0.5")
-    single_fig.show()
+    # single_fig.show()
     multi_fig = create_multi_sparsity_plot(sparsity_data)
-    multi_fig.show()
+    # multi_fig.show()
 
     single_fig.write_image(f"{result_path}/figure_single.png", height=800, width=600)
     multi_fig.write_image(f"{result_path}/figure_multi.png")
@@ -1036,7 +1036,7 @@ def figure11(result_path):
             ),
             margin=dict(t=0, b=0, l=0, r=40),
         )
-        fig.show()
+        # fig.show()
         pio.write_image(fig, f"{result_path}/figure.png", width=500, height=250)
 
     def read_csvs(result_path):
