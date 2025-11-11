@@ -1,4 +1,5 @@
 import os
+import shutil
 import random
 from typing import List
 import argparse
@@ -14,8 +15,9 @@ RESULT_DIR = os.environ.get("RESULT_DIR", "./results")
 def figure7():
     print("[FIGURE 7]")
     result_path = f"{RESULT_DIR}/figure7"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     seed = random.randint(1, 1024)
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
@@ -26,8 +28,9 @@ def figure7():
 def figure8():
     print("[FIGURE 8]")
     result_path = f"{RESULT_DIR}/figure8"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     repeats = 10 # very high variance so set higher
 
     sizes = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
@@ -42,8 +45,9 @@ def figure8():
 def figure9():
     print("[FIGURE 9]")
     result_path = f"{RESULT_DIR}/figure9"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     sparsity = 0.5
     repeats = BENCHMARK_REPEATS
     sparsities = [0.9, 0.7, 0.5, 0.3]
@@ -56,8 +60,9 @@ def figure9():
 def figure10():
     print("[FIGURE 10]")
     result_path = f"{RESULT_DIR}/figure10"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     graph_experiments.run(result_path, graph_experiments.run_row_col_sparsity, repeat=BENCHMARK_REPEATS)
     result_file = f"{result_path}/bert_result.csv"
     plot_experiments.figure10(result_path, result_file)
@@ -65,8 +70,9 @@ def figure10():
 def figure11():
     print("[FIGURE 11]")
     result_path = f"{RESULT_DIR}/figure11"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     seed = random.randint(1, 1024) # probably should generate a fixed set of seeds for final artifact
     repeats = BENCHMARK_REPEATS
     sparsities = [0.9, 0.7, 0.5, 0.3, 0.1]
@@ -77,8 +83,9 @@ def figure11():
 def figure12():
     print("[FIGURE 12]")
     result_path = f"{RESULT_DIR}/figure12"
-    if not os.path.exists(result_path):
-        os.makedirs(result_path)
+    if os.path.exists(result_path):
+        shutil.rmtree(result_path)
+    os.makedirs(result_path)
     seed = random.randint(1, 1024)
     repeats = BENCHMARK_REPEATS
     einsum_experiments.run_for_sparsities(result_path, seed, repeats, compute=0)

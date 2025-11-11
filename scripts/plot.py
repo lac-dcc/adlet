@@ -33,7 +33,6 @@ def method_label(row):
         return "Other"
 
 def figure12(result_path):
-    #TODO: remove commented code
     def read_csv(file_name):
         df = pd.read_csv(file_name)
         df.columns = df.columns.str.strip()
@@ -42,15 +41,9 @@ def figure12(result_path):
         df = df.sort_values(by=['benchmark_id', 'format'])
         return df
 
-    # script_path = os.path.dirname(os.path.realpath(__file__))
-    # maps_path = os.path.join(script_path, "../analysis/einsum-data/")
-    # files = os.listdir(maps_path)
     files = os.listdir(result_path)
     dfs = []
     for file in files:
-        # if "complete.csv" not in file:
-        #     continue
-        # dfs.append(read_csv(f"{maps_path}/{file}"))
         dfs.append(read_csv(f"{result_path}/{file}"))
 
     df = pd.concat(dfs)
@@ -601,9 +594,7 @@ def figure8(result_path):
     pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
     print(f"Plot saved as {result_path}/figure.png")
     
-    # fig.show()
     
-    pio.renderers.default = "browser"
 
 def figure9(result_path):
     def get_last_nonzero_ratios(group):
