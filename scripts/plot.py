@@ -529,7 +529,7 @@ def figure8(result_path):
             x=tesa_df['size'],
             y=tesa_df['proptime'],
             mode='lines+markers',
-            name='TeSA Timing (seconds)',
+            name='SparTA',
             line=dict(color='blue', width=2),
             marker=dict(size=8, color='blue'),
             hovertemplate='<b>TeSA</b><br>' +
@@ -544,7 +544,7 @@ def figure8(result_path):
             x=spa_df['size'],
             y=spa_df['proptime'],
             mode='lines+markers',
-            name='SPA Prop',
+            name='SPA',
             line=dict(color='red', width=2),
             marker=dict(size=8, color='red'),
             hovertemplate='<b>SPA</b><br>' +
@@ -562,7 +562,7 @@ def figure8(result_path):
     )
             
     fig.update_yaxes(
-        title_text="Value (Log Scale)",
+        title_text="Time (s) - (Log Scale)",
         type="log",
         tickformat='.2e',  # Scientific notation
         showgrid=True,
@@ -572,7 +572,7 @@ def figure8(result_path):
             
     fig.update_layout(
         title={
-            'text': 'TeSA Timing vs SPA Prop Analysis',
+            'text': 'Analysis Time of SPA vs SparTA',
             'x': 0.5,
             'xanchor': 'center',
             'font': {'size': 20}
@@ -591,7 +591,7 @@ def figure8(result_path):
         paper_bgcolor='white'
     )
             
-    pio.write_image(fig, f"{result_path}/figure.png", width=500, height=600, scale=5)
+    pio.write_image(fig, f"{result_path}/figure.png", width=500, height=500, scale=5)
     print(f"Plot saved as {result_path}/figure.png")
     
     
