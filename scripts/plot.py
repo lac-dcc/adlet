@@ -568,12 +568,6 @@ def figure8(result_path):
     )
             
     fig.update_layout(
-        title={
-            'text': 'Analysis Time of SPA vs SparTA',
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 20}
-        },
         width=1000,
         height=600,
         hovermode='x unified',
@@ -584,6 +578,7 @@ def figure8(result_path):
             bordercolor='black',
             borderwidth=1
         ),
+        margin=dict(b=20, t=20),
         plot_bgcolor='white',
         paper_bgcolor='white'
     )
