@@ -36,7 +36,8 @@ def figure12(result_path):
     def read_csv(file_name):
         df = pd.read_csv(file_name)
         df.columns = df.columns.str.strip()
-        df["benchmark_id"] = df["file_name"].factorize()[0] + 1
+        df["file_name"] = pd.Categorical(df["file_name"], categories=EINSUM_ORDER, ordered=True)
+        df["benchmark_id"] = df["file_name"].cat.codes + 1
         df["method"] = df.apply(method_label, axis=1)
         df = df.sort_values(by=['benchmark_id', 'format'])
         return df
@@ -44,6 +45,8 @@ def figure12(result_path):
     files = os.listdir(result_path)
     dfs = []
     for file in files:
+        if ".svg" in file or ".png" in file:
+            continue
         dfs.append(read_csv(f"{result_path}/{file}"))
 
     df = pd.concat(dfs)
@@ -231,7 +234,7 @@ def figure12(result_path):
     fig.add_annotation(
         xref="paper",
         yref="paper",
-        x=-0.07,
+        x=-0.08,
         y=0.5,
         text="Normalized Tensor Size (vs Dense)",
         showarrow=False,
@@ -255,7 +258,7 @@ def figure12(result_path):
         hovermode='closest',
         plot_bgcolor='white',
         paper_bgcolor='white',
-        margin=dict(t=0, b=0, l=0, r=40),
+        margin=dict(t=40, b=0, l=40, r=40),
         font=dict(size=11)
     )
 
@@ -342,7 +345,8 @@ def figure10(result_path, file_name):
 def figure7(result_path, file_name):
     df = pd.read_csv(file_name)
     df.columns = df.columns.str.strip()
-    df["benchmark_id"] = df["file_name"].factorize()[0] + 1
+    df["file_name"] = pd.Categorical(df["file_name"], categories=EINSUM_ORDER, ordered=True)
+    df["benchmark_id"] = df["file_name"].cat.codes + 1
     df["method"] = df.apply(method_label, axis=1)
     df = df.sort_values(by=['benchmark_id', 'format'])
 
@@ -417,13 +421,6 @@ def figure7(result_path, file_name):
     add_benchmark_subplot(fig, benchmarks_2, 2)
 
     fig.update_layout(
-        title=dict(
-            text="Analysis Time vs Compilation Time vs Runtime (propagation=true)",
-            x=0.5,
-            xanchor='center',
-            font=dict(size=14, color='#2c3e50'),
-            y=0.95
-        ),
         plot_bgcolor='white',
         paper_bgcolor='white',
         legend=dict(
