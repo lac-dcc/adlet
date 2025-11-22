@@ -39,6 +39,15 @@ add_executable(benchmark
     benchmarks/benchmark_proptime.cpp
 )
 
+add_executable(tesa-prop tesa-prop/tesa-prop.cpp 
+    tesa-prop/propagation/TeSA.cpp
+    tesa-prop/propagation/propagate.cpp
+    tesa-prop/propagation/utils.cpp
+)
+
+set(SIZE_MACRO "4096" CACHE STRING "Macro to set bit_set size to")
+add_compile_definitions(SIZE_MACRO=${SIZE_MACRO})
+
 target_include_directories(adlet_lib PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(adlet PRIVATE adlet_lib taco)
 target_link_libraries(tests PRIVATE adlet_lib taco)

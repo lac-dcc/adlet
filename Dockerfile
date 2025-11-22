@@ -68,15 +68,6 @@ RUN echo "Cloning SPA" && \
     git checkout v1.0
 
 # ---------------------------------------------------------------------------
-# Clone TeSA Prop
-# ---------------------------------------------------------------------------
-RUN echo "Cloning C++ TeSA Prop" && \
-    git clone -b artifact --depth 1 https://github.com/seliayeu/tesa-prop.git && \
-    cd tesa-prop && \
-    git checkout 60f3370e3f5e8282c01b2de10fac6337c3a8c63c && \
-    mkdir build
-
-# ---------------------------------------------------------------------------
 # Build TACO
 # ---------------------------------------------------------------------------
 RUN echo "Building TACO" && \
@@ -114,8 +105,7 @@ ENV EINSUM_DATASET="einsum-dataset/"
 ENV BIN_PATH=/app/adlet/build/benchmark
 ENV SPA_ROOT=/app/adlet/
 ENV BUILD_PATH=/app/adlet/build
-ENV TESA_ROOT=/app/tesa-prop/
-ENV TESA_BIN_PATH=/app/tesa-prop/build/tesa-prop
+ENV TESA_BIN_PATH=/app/adlet/build/tesa-prop
 
 # ---------------------------------------------------------------------------
 # Entrypoint
