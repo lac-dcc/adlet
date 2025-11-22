@@ -14,7 +14,7 @@ int main() {
     propagateMatmul(A, B, C);
     double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - start).count();
 
-    std::cout << "Took " << elapsed << std::endl;
+    std::cout << "proptime = " << elapsed << std::endl;
 
     return 0;
 }
