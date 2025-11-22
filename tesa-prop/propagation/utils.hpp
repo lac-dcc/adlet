@@ -2,7 +2,7 @@
 #include <bitset>
 
 #ifndef SIZE_MACRO
-  #define SIZE_MACRO 4096
+#define SIZE_MACRO 4096
 #endif
 
 constexpr int SIZE = SIZE_MACRO;
