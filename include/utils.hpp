@@ -196,3 +196,14 @@ bool randomBool(double probability = 0.5);
  * @return A vector of ModeFormatPack for initializing a TACO Format.
  */
 std::vector<taco::ModeFormatPack> generate_modes(int order, bool sparse);
+
+/**
+ * @brief Generates a random tensor for a given format and sparsity level.
+ * @param dims The vector of dimension sizes.
+ * @param sparsity The sparsity level.
+ * @param format The TACO level format (e.g., CSR/CSC).
+ * @return A packed TACO tensor.
+ */
+taco::Tensor<float> create_random_sparse_tensor(const std::vector<int> &dims,
+                                                const double sparsity,
+                                                const taco::Format &format);

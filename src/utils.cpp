@@ -5,6 +5,47 @@
 
 unsigned int SEED = 123;
 
+taco::Tensor<float> create_random_sparse_tensor(const std::vector<int> &dims,
+                                                const double sparsity,
+                                                const taco::Format &format) {
+  int order = dims.size();
+  taco::Tensor<float> T(dims, format);
+
+  long long total = 1;
+  for (int d : dims)
+    total *= d;
+
+  long long nnz_target = (long long)((1.0 - sparsity) * total);
+
+  std::mt19937 gen(42);
+  std::uniform_int_distribution<int> dist_dim(0, 1e9);
+  std::uniform_real_distribution<float> dist_val(1.0, 10.0);
+
+  std::unordered_set<long long> used;
+  used.reserve(nnz_target * 2);
+
+  auto coord_to_key = [&](const std::vector<int> &idx) {
+    long long key = 0;
+    for (int i = 0; i < order; i++)
+      key = key * 1000003 + idx[i];
+    return key;
+  };
+
+  while ((long long)used.size() < nnz_target) {
+    std::vector<int> idx(order);
+    for (int i = 0; i < order; i++)
+      idx[i] = dist_dim(gen) % dims[i];
+
+    long long key = coord_to_key(idx);
+    if (used.insert(key).second)
+      T.insert(idx, dist_val(gen));
+  }
+
+  T.pack();
+
+  return T;
+}
+
 void fill_tensor(taco::Tensor<float> &tensor, double sparsityRatio, int rows,
                  int cols) {
   std::mt19937 gen(SEED);
