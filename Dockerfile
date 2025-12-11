@@ -65,7 +65,7 @@ RUN echo "Cloning TACO" && \
 RUN echo "Cloning SPA" && \
     git clone https://github.com/lac-dcc/adlet.git && \
     cd adlet && \
-    git checkout v1.0
+    git checkout 7561b0792cb7894e2fe0d5e3fa60ba2d98a8c42a
 
 # ---------------------------------------------------------------------------
 # Clone TeSA Prop
