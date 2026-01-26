@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 import pandas as pd
 import plotly.io as pio
 from plotly.subplots import make_subplots
-from pathlib import Path
 import glob
 
 EINSUM_ORDER = [
@@ -481,7 +480,7 @@ def figure7(result_path, file_name):
         selector=dict(name='Compilation Time')
     )
     fig.update_traces(
-        name='Exeuction',
+        name='Execution',
         selector=dict(name='Runtime')
     )
     fig.add_annotation(
