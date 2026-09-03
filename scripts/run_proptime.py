@@ -5,8 +5,7 @@ import subprocess
 BUILD_DIR = os.environ.get("BUILD_PATH", "./build")
 BIN_PATH = os.environ.get("BIN_PATH", "./build/benchmark")
 SPA_ROOT = os.environ.get("SPA_ROOT", ".")
-TESA_ROOT = os.environ.get("TESA_ROOT", "../tesa-prop")
-TESA_BIN_PATH = os.environ.get("TESA_BIN_PATH", "../tesa-prop/build/tesa-prop")
+TESA_BIN_PATH = os.environ.get("BIN_PATH", "./build/tesa-prop")
 BENCHMARK_REPEATS = int(os.environ.get('BENCHMARK_REPEATS', 5))
 
 def parse_output(output):
@@ -17,7 +16,7 @@ def parse_output(output):
             metrics["proptime"] = float(line.split("=")[-1].strip())
     return metrics
 
-def recompile_spa_size(root_dir: str, build_dir: str, size: int):
+def recompile_size(root_dir: str, build_dir: str, size: int):
     cmd = ["cmake", "-S" + root_dir, "-B" + build_dir, "-G", "Ninja", f"-DSIZE_MACRO={size}"]
     process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     process.wait()
@@ -26,7 +25,7 @@ def recompile_spa_size(root_dir: str, build_dir: str, size: int):
     process.wait()
 
 def run_spa(result_dir: str, size: int, n: int):
-    recompile_spa_size(SPA_ROOT, BUILD_DIR, size)
+    recompile_size(SPA_ROOT, BUILD_DIR, size)
     errors = []
     with open(f"{result_dir}/proptime_spa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')
@@ -52,16 +51,8 @@ def run_spa(result_dir: str, size: int, n: int):
     with open("errors.txt", "wt") as error_file:
         error_file.write("\n".join(errors))
 
-def recompile_tesa_size(root_dir: str, build_dir: str, size: int):
-    cmd = ["cmake", "-S" + root_dir, "-B" + build_dir, "-G", "Ninja", f"-DSIZE_MACRO={size}"]
-    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    process.wait()
-    cmd = ["cmake", "--build", build_dir]
-    process = subprocess.Popen(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    process.wait()
-
 def run_tesa(result_dir: str, size: int, n: int):
-    recompile_tesa_size(TESA_ROOT, TESA_ROOT + "/build", size)
+    recompile_size(SPA_ROOT, BUILD_DIR, size)
     errors = []
     with open(f"{result_dir}/proptime_tesa_result_{size}.csv", "wt") as result_file:
         result_file.write('size,proptime\n')
